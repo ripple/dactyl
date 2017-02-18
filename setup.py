@@ -7,7 +7,7 @@ LONG_DESC = 'Tools to generate documentation.'
 
 setup(
     name='dactyl',
-    version='0.1.0',
+    version='0.2.0',
     description='Tools to generate documentation.',
     long_description=LONG_DESC,
     url='https://github.com/ripple/dactyl',
@@ -43,6 +43,8 @@ setup(
         'PyYAML',
         'requests',
         'watchdog'
-    ]
+    ],
+    package_data={
+        '': ["templates/*", "default-config.yml"],
+    }
 )
-

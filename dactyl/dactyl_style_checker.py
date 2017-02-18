@@ -19,29 +19,37 @@ from bs4 import BeautifulSoup
 from bs4 import Comment
 from bs4 import NavigableString
 
-import dactyl_build
+# Used for pulling in the default config file
+from pkg_resources import resource_stream
+
+from dactyl import dactyl_build
 
 DEFAULT_CONFIG_FILE = "dactyl-config.yml"
 OVERRIDE_COMMENT_REGEX = r" *STYLE_OVERRIDE: *([\w, -]+)"
 
 logger = logging.getLogger()
 
+config = dactyl_build.config
 def load_config(config_file=DEFAULT_CONFIG_FILE):
-	global config
-	dactyl_build.load_config(config_file)
-	config = dactyl_build.config
+    global config
+    dactyl_build.load_config(config_file)
 
-	if "word_substitutions_file" in config:
-		with open(config["word_substitutions_file"], "r") as f:
-			config["disallowed_words"] = yaml.load(f)
-	else:
-		logging.warning("No 'word_substitutions_file' found in config.")
+    if len(config["targets"]) == 0:
+        exit("No target found; maybe you need to specify a Dactyl config file?")
 
-	if "phrase_substitutions_file" in config:
-		with open(config["phrase_substitutions_file"], "r") as f:
-			config["disallowed_phrases"] = yaml.load(f)
-	else:
-		logging.warning("No 'phrase_substitutions_file' found in config.")
+    if "word_substitutions_file" in config:
+        with open(config["word_substitutions_file"], "r") as f:
+            config["disallowed_words"] = yaml.load(f)
+    else:
+        logger.warning("No 'word_substitutions_file' found in config.")
+        config["disallowed_words"] = {}
+
+    if "phrase_substitutions_file" in config:
+        with open(config["phrase_substitutions_file"], "r") as f:
+            config["disallowed_phrases"] = yaml.load(f)
+    else:
+        logger.warning("No 'phrase_substitutions_file' found in config.")
+        config["disallowed_phrases"] = {}
 
 def tokenize(passage):
     words = re.split(r"[\s,.;()!'\"]+", passage)
@@ -65,7 +73,7 @@ def check_all_pages(target=None):
         if "md" not in page:
             # Not a doc page, move on
             continue
-        logging.info("Checking page %s" % page["name"])
+        logger.info("Checking page %s" % page["name"])
         page_issues = []
         html = dactyl_build.parse_markdown(page, pages=pages, target=target)
         soup = BeautifulSoup(html, "html.parser")
@@ -102,7 +110,7 @@ def get_overrides(soup):
         if m:
             new_overrides = m.group(1).split(",")
             new_overrides = [o.strip() for o in new_overrides]
-            logging.info("Overrides found: %s" % new_overrides)
+            logger.info("Overrides found: %s" % new_overrides)
             overrides += new_overrides
     return overrides
 
@@ -115,14 +123,14 @@ def check_passage(passage, overrides):
     for t in tokens:
         if t.lower() in config["disallowed_words"]:
             if t.lower() in overrides:
-                logging.info("Unplain word violation %s overridden" % t)
+                logger.info("Unplain word violation %s overridden" % t)
                 continue
             issues.append( ("Unplain Word", t.lower()) )
 
     for phrase,sub in config["disallowed_phrases"].items():
         if phrase.lower() in depunctuate(passage):
             if phrase.lower() in overrides:
-                logging.info("Unplain phrase violation %s overridden" % t)
+                logger.info("Unplain phrase violation %s overridden" % t)
                 continue
             #logging.warn("Unplain phrase: %s; suggest %s instead" % (phrase, sub))
             issues.append( ("Unplain Phrase", phrase.lower()) )

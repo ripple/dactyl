@@ -8,10 +8,17 @@ import re
 from bs4 import BeautifulSoup
 from time import time, sleep
 
+# Used for pulling in the default config file
+from pkg_resources import resource_stream
+
 DEFAULT_CONFIG_FILE = "dactyl-config.yml"
 TIMEOUT_SECS = 9.1
 CHECK_IN_INTERVAL = 30
 FINAL_RETRY_DELAY = 4 * CHECK_IN_INTERVAL
+
+# The log level is configurable at runtime (see __main__ below)
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler())
 
 soupsCache = {}
 def getSoup(fullPath):
@@ -42,36 +49,36 @@ def check_remote_url(endpoint, fullPath, broken_links, externalCache, isImg=Fals
         linkword = "link"
     if endpoint in [v for k,v in broken_links]:
         # We already confirmed this was broken, so just add another instance
-        logging.warning("Broken %s %s appears again in %s" % (linkword, endpoint, fullPath))
+        logger.warning("Broken %s %s appears again in %s" % (linkword, endpoint, fullPath))
         broken_links.append( (fullPath, endpoint) )
         return False
     if endpoint in externalCache:
-        logging.debug("Skipping cached %s %s" % (linkword, endpoint))
+        logger.debug("Skipping cached %s %s" % (linkword, endpoint))
         return True
     if endpoint in config["known_broken_links"]:
-        logging.warning("Skipping known broken %s %s in %s" % (linkword, endpoint, fullPath))
+        logger.warning("Skipping known broken %s %s in %s" % (linkword, endpoint, fullPath))
         return True
 
-    logging.info("Testing remote %s URL %s"%(linkword, endpoint))
+    logger.info("Testing remote %s URL %s"%(linkword, endpoint))
     try:
         code = requests.head(endpoint, timeout=TIMEOUT_SECS).status_code
     except Exception as e:
-        logging.warning("Error occurred: %s" % e)
+        logger.warning("Error occurred: %s" % e)
         code = 500
     if code == 405 or code == 404:
         #HEAD didn't work, maybe GET will?
         try:
             code = requests.get(endpoint, timeout=TIMEOUT_SECS).status_code
         except Exception as e:
-          logging.warning("Error occurred: %s" % e)
+          logger.warning("Error occurred: %s" % e)
           code = 500
 
     if code < 200 or code >= 400:
-        logging.warning("Broken remote %s in %s to %s"%(linkword, fullPath, endpoint))
+        logger.warning("Broken remote %s in %s to %s"%(linkword, fullPath, endpoint))
         broken_links.append( (fullPath, endpoint) )
         return False
     else:
-        logging.info("...success.")
+        logger.info("...success.")
         externalCache.append(endpoint)
         return True
 
@@ -83,10 +90,13 @@ def checkLinks(offline=False):
     last_checkin = time()
     for dirpath, dirnames, filenames in os.walk(config["out_path"]):
       if time() - last_checkin > CHECK_IN_INTERVAL:
+        ## Print output periodically so Jenkins/etc. don't kill the job
         last_checkin = time()
         print("... still working (dirpath: %s) ..." % dirpath)
-      if os.path.abspath(dirpath) == os.path.abspath(config["template_path"]):
+      if "template_path" in config and \
+         os.path.abspath(dirpath) == os.path.abspath(config["template_path"]):
         # don't try to parse and linkcheck the templates
+        logger.warning("Skipping link checking for template path %s" % dirpath)
         continue
       for fname in filenames:
         if time() - last_checkin > CHECK_IN_INTERVAL:
@@ -94,13 +104,13 @@ def checkLinks(offline=False):
           print("... still working (file: %s) ..." % fname)
         fullPath = os.path.join(dirpath, fname)
         if "/node_modules/" in fullPath or ".git" in fullPath:
-          logging.debug("skipping ignored dir: %s" % fullPath)
+          logger.debug("skipping ignored dir: %s" % fullPath)
           continue
         if fullPath.endswith(".html"):
           soup = getSoup(fullPath)
           unparsed_links = check_for_unparsed_reference_links(soup)
           if unparsed_links:
-            logging.warning("Found %d unparsed Markdown reference links: %s" %
+            logger.warning("Found %d unparsed Markdown reference links: %s" %
                         (len(unparsed_links), "\n... ".join(unparsed_links)))
             [broken_links.append( (fullPath, u) ) for u in unparsed_links]
           links = soup.find_all('a')
@@ -114,7 +124,7 @@ def checkLinks(offline=False):
 
             endpoint = link['href']
             if not endpoint.strip():
-              logging.warning("Empty link in %s" % fullPath)
+              logger.warning("Empty link in %s" % fullPath)
               broken_links.append( (fullPath, endpoint) )
               num_links_checked += 1
 
@@ -122,12 +132,12 @@ def checkLinks(offline=False):
               continue
 
             elif "mailto:" in endpoint:
-              logging.info("Skipping email link in %s to %s"%(fullPath, endpoint))
+              logger.info("Skipping email link in %s to %s"%(fullPath, endpoint))
               continue
 
             elif "://" in endpoint:
               if offline:
-                logging.info("Offline - Skipping remote URL %s"%(endpoint))
+                logger.info("Offline - Skipping remote URL %s"%(endpoint))
                 continue
 
               num_links_checked += 1
@@ -136,9 +146,9 @@ def checkLinks(offline=False):
 
             elif '#' in endpoint:
               if fname in config["ignore_anchors_in"]:
-                logging.info("Ignoring anchor %s in dynamic page %s"%(endpoint,fname))
+                logger.info("Ignoring anchor %s in dynamic page %s"%(endpoint,fname))
                 continue
-              logging.info("Testing local link %s from %s"%(endpoint, fullPath))
+              logger.info("Testing local link %s from %s"%(endpoint, fullPath))
               num_links_checked += 1
               filename,anchor = endpoint.split("#",1)
               if filename == "":
@@ -146,13 +156,13 @@ def checkLinks(offline=False):
               else:
                 fullTargetPath = os.path.join(dirpath, filename)
               if not os.path.exists(fullTargetPath):
-                logging.warning("Broken local link in %s to %s"%(fullPath, endpoint))
+                logger.warning("Broken local link in %s to %s"%(fullPath, endpoint))
                 broken_links.append( (fullPath, endpoint) )
 
               elif filename in config["ignore_anchors_in"]:
                   #Some pages are populated dynamically, so BeatifulSoup wouldn't
                   # be able to find anchors in them anyway
-                  logging.info("Skipping anchor link in %s to dynamic page %s" %
+                  logger.info("Skipping anchor link in %s to dynamic page %s" %
                         (fullPath, endpoint))
                   continue
 
@@ -161,21 +171,21 @@ def checkLinks(offline=False):
                 targetSoup = getSoup(fullTargetPath)
                 if not targetSoup.find(id=anchor) and not targetSoup.find(
                         "a",attrs={"name":anchor}):
-                  logging.warning("Broken anchor link in %s to %s"%(fullPath, endpoint))
+                  logger.warning("Broken anchor link in %s to %s"%(fullPath, endpoint))
                   broken_links.append( (fullPath, endpoint) )
                 else:
-                  logging.info("...anchor found.")
+                  logger.info("...anchor found.")
                 continue
 
             elif endpoint[0] == '/':
               #can't really test links out of the local field
-              logging.info("Skipping absolute link in %s to %s"%(fullPath, endpoint))
+              logger.info("Skipping absolute link in %s to %s"%(fullPath, endpoint))
               continue
 
             else:
               num_links_checked += 1
               if not os.path.exists(os.path.join(dirpath, endpoint)):
-                logging.warning("Broken local link in %s to %s"%(fullPath, endpoint))
+                logger.warning("Broken local link in %s to %s"%(fullPath, endpoint))
                 broken_links.append( (fullPath, endpoint) )
 
           #Now check images
@@ -183,24 +193,24 @@ def checkLinks(offline=False):
           for img in imgs:
             num_links_checked += 1
             if "src" not in img.attrs or not img["src"].strip():
-              logging.warning("Broken image with no src in %s" % fullPath)
+              logger.warning("Broken image with no src in %s" % fullPath)
               broken_links.append( (fullPath, img["src"]) )
               continue
 
             src = img["src"]
             if "://" in src:
               if offline:
-                logging.info("Offline - Skipping remote image %s"%(endpoint))
+                logger.info("Offline - Skipping remote image %s"%(endpoint))
                 continue
 
               check_remote_url(src, fullPath, broken_links, externalCache, isImg=True)
 
             else:
-              logging.info("Checking local image %s in %s" % (src, fullPath))
+              logger.info("Checking local image %s in %s" % (src, fullPath))
               if os.path.exists(os.path.join(dirpath, src)):
-                logging.info("...success")
+                logger.info("...success")
               else:
-                logging.warning("Broken local image %s in %s" % (src, fullPath))
+                logger.warning("Broken local image %s in %s" % (src, fullPath))
                 broken_links.append( (fullPath, src) )
     return broken_links, num_links_checked
 
@@ -210,10 +220,10 @@ def final_retry_links(broken_links):
     broken_remote_links = [ (page,link) for page,link in broken_links
                            if re.match(r"^https?://", link) ]
     if not broken_remote_links:
-        logging.info("(no http/https broken links to retry)")
+        logger.info("(no http/https broken links to retry)")
         return
 
-    logging.info("Waiting %d seconds to retry broken %d remote links..."
+    print("Waiting %d seconds to retry broken %d remote links..."
                 % (FINAL_RETRY_DELAY, len(broken_remote_links)))
     start_wait = time()
     elapsed = 0
@@ -227,25 +237,40 @@ def final_retry_links(broken_links):
     for page, link in broken_remote_links:
         link_works = check_remote_url(link, page, retry_broken, retry_cache)
         if link_works:
-            logging.info("Link %s in page %s is back online" % (link, page))
+            logger.info("Link %s in page %s is back online" % (link, page))
             broken_links.remove( (page,link) )
         else:
-            logging.info("Link %s in page %s is still down." % (link, page))
+            logger.info("Link %s in page %s is still down." % (link, page))
 
+
+config = yaml.load(resource_stream(__name__, "default-config.yml"))
 
 def load_config(config_file=DEFAULT_CONFIG_FILE):
     """Reload config from a YAML file."""
     global config
-    logging.info("loading config file %s..." % config_file)
-    with open(config_file, "r") as f:
-        config = yaml.load(f)
-        assert(config["out_path"])
-        assert(type(config["known_broken_links"]) == list)
+    logger.info("loading config file %s..." % config_file)
+    try:
+        with open(config_file, "r") as f:
+            loaded_config = yaml.load(f)
+    except FileNotFoundError as e:
+        if config_file == DEFAULT_CONFIG_FILE:
+            logger.warning("Couldn't read a config file; using generic config")
+            loaded_config = {}
+        else:
+            traceback.print_tb(e.__traceback__)
+            exit("Fatal: Config file '%s' not found"%config_file)
+    except yaml.parser.ParserError as e:
+        traceback.print_tb(e.__traceback__)
+        exit("Fatal: Error parsing config file: %s"%e)
+
+    config.update(loaded_config)
+    assert(config["out_path"])
+    assert(type(config["known_broken_links"]) == list)
 
 
 def main(args):
     if not args.quiet:
-        logging.basicConfig(level=logging.INFO)
+        logger.setLevel(logging.INFO)
 
     if args.config:
         load_config(args.config)

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html {% if currentpage.language %}lang="{{currentpage.language}}"{% else %}lang="en"{% endif %}>
+<head>
+    <meta charset="utf-8">
+    <title>{{ currentpage.name }} - {{ target.display_name }}</title>
+    <style type="text/css">
+    .dactyl-sidebar {
+        float: right;
+        margin: 20px;
+        padding: 20px;
+        border: 1px dashed black;
+    }
+    .dactyl-sidebar ul {
+        padding-left: 20px;
+        margin-left: 0;
+    }
+    .dactyl-sidebar h4 {
+        margin-top: 0;
+    }
+
+    @media screen {
+        footer {
+            position: fixed;
+            bottom: 0;
+            font-size: 10px;
+            background: white;
+        }
+
+        main {
+            padding-bottom: 20px;
+        }
+    }
+
+    @media print {
+
+      @page {
+        @bottom-left {
+          content: flow(footer);
+        }
+
+        @bottom-right {
+          content: counter(page);
+          font-size: 10px;
+        }
+      }
+
+      footer {
+        flow: static(footer);
+        font-size: 10px;
+      }
+    }
+    </style>
+</head>
+<body>
+    <footer>(Exported {{ current_time }})</footer>
+    <aside class="dactyl-sidebar">
+        <h4>Contents</h4>
+        <ul class="dactyl-page-toc">
+            {{ sidebar_content }}
+        </ul>
+    </aside>
+    <main class="dactyl-main">{{content}}</main>
+</body>
+</html>

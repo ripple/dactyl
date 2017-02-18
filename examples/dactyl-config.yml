@@ -1,0 +1,63 @@
+content_path: .
+
+targets:
+    -   name: everything
+        display_name: Target with ALL THE EXAMPLES™
+
+    -   name: filterdemos
+        display_name: Target with just the filter example pages
+
+    -   name: conditionals
+        display_name: Conditional Text Target
+        condition: tests-2
+
+pages:
+    -   md: includes.md
+        html: test-includes.html
+        category: Tests
+        targets:
+            - everything
+
+    -   name: Conditionals Test
+        category: Tests
+        md: conditionals.md
+        html: test-conditionals.html
+        targets:
+            - everything
+            - conditionals
+
+    -   name: Lists and Code Blocks Demo
+        category: Tests
+        md: lists-and-codeblocks.md
+        html: test-lists-and-codeblocks.html
+        targets:
+            - everything
+
+    -   name: GitHub Markdown Compatibility
+        category: Tests
+        md: gfm-compat.md
+        html: tests-gfm-compat.html
+        targets:
+            - everything
+
+    -   md: filter-examples/callouts-demo.md
+        html: tests-callouts-demo.html
+        category: Tests
+        targets:
+            - everything
+            - filterdemos
+        filters:
+            - callouts
+
+    -   md: filter-examples/xrefs.md
+        html: tests-xrefs.html
+        category: Tests
+        targets:
+            - everything
+            - filterdemos
+        filters:
+            - xrefs
+
+# -------------------- Style Checker Rules ------------------------
+word_substitutions_file: plainlanguage_words.yaml
+phrase_substitutions_file: plainlanguage_phrases.yaml

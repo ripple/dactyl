@@ -17,7 +17,10 @@ import logging
 import traceback
 
 # Necessary to copy static files to the output dir
-from distutils.dir_util import copy_tree
+from distutils.dir_util import copy_tree, remove_tree
+
+# Used for pulling in the default config file
+from pkg_resources import resource_stream
 
 # Used to import filters.
 from importlib import import_module
@@ -29,7 +32,7 @@ import subprocess
 import requests
 
 # Various content and template processing stuff
-from jinja2 import Environment, FileSystemLoader, TemplateError
+import jinja2
 from markdown import markdown
 from bs4 import BeautifulSoup
 
@@ -39,7 +42,8 @@ from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
 # The log level is configurable at runtime (see __main__ below)
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler())
 
 # These fields are special, and pages don't inherit them directly
 RESERVED_KEYS_TARGET = [
@@ -53,57 +57,53 @@ ADHOC_TARGET = "__ADHOC__"
 DEFAULT_PDF_FILE = "__DEFAULT_FILENAME__"
 NO_PDF = "__NO_PDF__"
 
+config = yaml.load(resource_stream(__name__, "default-config.yml"))
+
+
 filters = {}
 def load_config(config_file=DEFAULT_CONFIG_FILE):
     """Reload config from a YAML file."""
     global config, filters
-    logger.info("loading config file %s..." % config_file)
-    with open(config_file, "r") as f:
-        config = yaml.load(f)
-        assert(config["targets"])
-        assert(config["pages"])
-        assert(config["pdf_template"])
-        assert(config["default_template"])
-        assert(config["content_path"])
-        assert(config["out_path"])
-        assert(config["temporary_files_path"])
-        assert(config["template_static_path"])
-        assert(config["content_static_path"])
-        if "prince_executable" not in config or not config["prince_executable"]:
-            config["prince_executable"] = "prince" # A reasonable default
-        if "default_filters" not in config:
-            config["default_filters"] = []
-        if "skip_preprocessor" not in config:
-            config["skip_preprocessor"] = False
-        if "pdf_filename_fields" not in config:
-            config["pdf_filename_fields"] = "display_name"
-        if "pdf_filename_separator" not in config:
-            config["pdf_filename_separator"] = "-"
+    logger.debug("loading config file %s..." % config_file)
+    try:
+        with open(config_file, "r") as f:
+            loaded_config = yaml.load(f)
+    except FileNotFoundError as e:
+        if config_file == DEFAULT_CONFIG_FILE:
+            logger.warning("Couldn't read a config file; using generic config")
+            loaded_config = {}
+        else:
+            traceback.print_tb(e.__traceback__)
+            exit("Fatal: Config file '%s' not found"%config_file)
+    except yaml.parser.ParserError as e:
+        traceback.print_tb(e.__traceback__)
+        exit("Fatal: Error parsing config file: %s"%e)
 
+    config.update(loaded_config)
 
-        # Warn if any pages aren't part of a target
-        for page in config["pages"]:
-            if "targets" not in page:
-                if "name" in page:
-                    logging.warn("Page %s is not part of any targets." %
-                                 page["name"])
-                else:
-                    logging.warn("Page %s is not part of any targets." % page)
-            if "md" in page and "name" not in page:
-                logging.debug("Guessing page name for page %s" % page)
-                page_path = os.path.join(config["content_path"], page["md"])
-                page["name"] = guess_title_from_md_file(page_path)
+    # Warn if any pages aren't part of a target
+    for page in config["pages"]:
+        if "targets" not in page:
+            if "name" in page:
+                logger.warning("Page %s is not part of any targets." %
+                             page["name"])
+            else:
+                logger.warning("Page %s is not part of any targets." % page)
+        if "md" in page and "name" not in page:
+            logger.debug("Guessing page name for page %s" % page)
+            page_path = os.path.join(config["content_path"], page["md"])
+            page["name"] = guess_title_from_md_file(page_path)
 
-        # Figure out which filters we need and import them
-        filternames = set(config["default_filters"])
-        for target in config["targets"]:
-            if "filters" in target:
-                filternames.update(target["filters"])
-        for page in config["pages"]:
-            if "filters" in page:
-                filternames.update(page["filters"])
-        for filter_name in filternames:
-            filters[filter_name] = import_module("dactyl.filter_"+filter_name)
+    # Figure out which filters we need and import them
+    filternames = set(config["default_filters"])
+    for target in config["targets"]:
+        if "filters" in target:
+            filternames.update(target["filters"])
+    for page in config["pages"]:
+        if "filters" in page:
+            filternames.update(page["filters"])
+    for filter_name in filternames:
+        filters[filter_name] = import_module("dactyl.filter_"+filter_name)
 
 
 def default_pdf_name(target):
@@ -141,6 +141,14 @@ def slugify(s):
         s = "_"
     return s
 
+# Generate a unique nonce per-run to be used for tempdir folder names
+nonce = str(time.time()).replace(".","")
+def temp_dir():
+    run_dir = os.path.join(config["temporary_files_path"],
+                      "dactyl-"+nonce)
+    if not os.path.isdir(run_dir):
+        os.makedirs(run_dir)
+    return run_dir
 
 def substitute_links_for_target(soup, target):
     """Replaces local-html-links with appropriate substitutions
@@ -198,7 +206,7 @@ def substitute_parameter_links(link_parameter, currentpage, target):
             currentpage[link_parameter] = linked_page[target["name"]]
         ## We could warn here, but it would frequently be a false alarm
         # else:
-        #     logging.warning("No substitution for %s[%s] for this target" %
+        #     logger.warning("No substitution for %s[%s] for this target" %
         #                     (currentpage["html"],link_parameter))
 
 def get_target(target):
@@ -206,6 +214,9 @@ def get_target(target):
        We can't use default args in function defs because the default is
        set at runtime based on config"""
     if target == None:
+        logger.debug("get_target: using target #0")
+        if len(config["targets"]) == 0:
+            exit("No targets found. Either specify a config file or --pages")
         return config["targets"][0]
 
     if type(target) == str:
@@ -220,16 +231,11 @@ def get_target(target):
         return target
 
 
-def make_adhoc_target(inpages, no_cover):
+def make_adhoc_target(inpages):
     t = {
         "name": ADHOC_TARGET,
         "display_name": "(Untitled)",
     }
-
-    if not no_cover:
-        indexpage = next(p for p in config["pages"]
-            if p["html"] == "index.html")
-        indexpage["targets"].append(ADHOC_TARGET)
 
     if len(inpages) == 1:
         t["display_name"] = guess_title_from_md_file(inpages[0])
@@ -307,7 +313,7 @@ def parse_markdown(page, target=None, pages=None, bypass_errors=False):
     # if "pages" not in target:
     #     target["pages"] = get_pages(target)
 
-    logging.info("Preparing page %s" % page["name"])
+    logger.info("Preparing page %s" % page["name"])
 
     # Preprocess Markdown using this Jinja environment
     pp_env = setup_pp_env(page)
@@ -321,7 +327,7 @@ def parse_markdown(page, target=None, pages=None, bypass_errors=False):
     # Apply markdown-based filters here
     for filter_name in page_filters:
         if "filter_markdown" in dir(filters[filter_name]):
-            logging.info("... applying markdown filter %s" % filter_name)
+            logger.info("... applying markdown filter %s" % filter_name)
             md = filters[filter_name].filter_markdown(md, target=target,
                             page=page, config=config)
 
@@ -334,7 +340,7 @@ def parse_markdown(page, target=None, pages=None, bypass_errors=False):
     # Apply raw-HTML-string-based filters here
     for filter_name in page_filters:
         if "filter_html" in dir(filters[filter_name]):
-            logging.info("... applying HTML filter %s" % filter_name)
+            logger.info("... applying HTML filter %s" % filter_name)
             html = filters[filter_name].filter_html(html, target=target,
                             page=page, config=config)
 
@@ -345,7 +351,7 @@ def parse_markdown(page, target=None, pages=None, bypass_errors=False):
     # Apply soup-based filters here
     for filter_name in page_filters:
         if "filter_soup" in dir(filters[filter_name]):
-            logging.info("... applying soup filter %s" % filter_name)
+            logger.info("... applying soup filter %s" % filter_name)
             filters[filter_name].filter_soup(soup, target=target,
                             page=page, config=config)
             # ^ the soup filters apply to the same object, passed by reference
@@ -354,7 +360,7 @@ def parse_markdown(page, target=None, pages=None, bypass_errors=False):
     if target["name"] != config["targets"][0]["name"]:
         substitute_links_for_target(soup, target)
 
-    logging.info("... re-rendering HTML from soup...")
+    logger.info("... re-rendering HTML from soup...")
     html2 = str(soup)
     return html2
 
@@ -450,7 +456,7 @@ def read_markdown_local(filename, pp_env, target=None, bypass_errors=False, curr
        returning the parsed contents."""
     target = get_target(target)
     pages = get_pages(target)
-    logging.info("reading markdown from file: %s" % filename)
+    logger.info("reading markdown from file: %s" % filename)
 
     if config["skip_preprocessor"]:
         fpath = pp_env.loader.searchpath[0]
@@ -460,10 +466,10 @@ def read_markdown_local(filename, pp_env, target=None, bypass_errors=False, curr
         try:
             md_raw = pp_env.get_template(filename)
             md_out = md_raw.render(target=target, pages=pages, currentpage=currentpage)
-        except TemplateError as e:
+        except jinja2.TemplateError as e:
             traceback.print_tb(e.__traceback__)
             if bypass_errors:
-                logging.warn("Error pre-processing page %s; trying to load it raw"
+                logger.warning("Error pre-processing page %s; trying to load it raw"
                              % filename)
                 fpath = pp_env.loader.searchpath[0]
                 with open(os.path.join(fpath,filename), "r") as f:
@@ -507,33 +513,51 @@ def copy_static_files(template_static=True, content_static=True, out_path=None):
 
     if template_static:
         template_static_src = config["template_static_path"]
-        template_static_dst = os.path.join(out_path,
+
+        if os.path.isdir(template_static_src):
+            template_static_dst = os.path.join(out_path,
                                        os.path.basename(template_static_src))
-        copy_tree(template_static_src, template_static_dst)
+            copy_tree(template_static_src, template_static_dst)
+        else:
+            logger.warning(("Template` static path '%s' doesn't exist; "+
+                            "skipping.") % template_static_src)
 
     if content_static:
         content_static_src = config["content_static_path"]
-        content_static_dst = os.path.join(out_path,
+
+        if os.path.isdir(content_static_src):
+            content_static_dst = os.path.join(out_path,
                                            os.path.basename(content_static_src))
-        copy_tree(content_static_src, content_static_dst)
+            copy_tree(content_static_src, content_static_dst)
+        else:
+            logger.warning("Content static path '%s' doesn't exist; skipping." %
+                            content_static_src)
 
 
 def setup_pp_env(page=None):
     if not page or "pp_dir" not in page:
-        pp_env = Environment(loader=FileSystemLoader(config["content_path"]))
+        pp_env = jinja2.Environment(loader=jinja2.FileSystemLoader(config["content_path"]))
     else:
-        pp_env = Environment(loader=FileSystemLoader(page["pp_dir"]))
+        pp_env = jinja2.Environment(loader=jinja2.FileSystemLoader(page["pp_dir"]))
     #Example: if we want to add custom functions to the md files
     #pp_env.globals['foo'] = lambda x: "FOO %s"%x
     return pp_env
 
 
 def setup_html_env():
-    env = Environment(loader=FileSystemLoader(config["template_path"]))
+    if "template_path" in config:
+        env = jinja2.Environment(loader=jinja2.FileSystemLoader(config["template_path"]))
+    else:
+        env = setup_fallback_env()
     env.lstrip_blocks = True
     env.trim_blocks = True
     return env
 
+def setup_fallback_env():
+    env = jinja2.Environment(loader=jinja2.PackageLoader(__name__))
+    env.lstrip_blocks = True
+    env.trim_blocks = True
+    return env
 
 def toc_from_headers(html_string):
     """make a table of contents from headers"""
@@ -570,21 +594,30 @@ def render_pages(target=None, for_pdf=False, bypass_errors=False):
 
     # Insert generated HTML into templates using this Jinja environment
     env = setup_html_env()
+    fallback_env = setup_fallback_env()
 
     if for_pdf:
-        if "pdf_template" in target:
-            logging.debug("reading pdf template %s from target..." % target["pdf_template"])
-            default_template = env.get_template(target["pdf_template"])
-        else:
-            logging.debug("reading default pdf template %s..." % config["pdf_template"])
-            default_template = env.get_template(config["pdf_template"])
+        try:
+            if "pdf_template" in target:
+                logger.debug("reading pdf template %s from target..." % target["pdf_template"])
+                default_template = env.get_template(target["pdf_template"])
+            else:
+                logger.debug("reading default pdf template %s..." % config["pdf_template"])
+                default_template = env.get_template(config["pdf_template"])
+        except jinja2.exceptions.TemplateNotFound:
+            logger.warning("falling back to Dactyl built-in PDF template")
+            default_template = fallback_env.get_template(config["pdf_template"])
     else:
-        if "template" in target:
-            logging.debug("reading HTML template %s from target..." % target["template"])
-            default_template = env.get_template(target["template"])
-        else:
-            logging.debug("reading default HTML template %s..." % config["default_template"])
-            default_template = env.get_template(config["default_template"])
+        try:
+            if "template" in target:
+                logger.debug("reading HTML template %s from target..." % target["template"])
+                default_template = env.get_template(target["template"])
+            else:
+                logger.debug("reading default HTML template %s..." % config["default_template"])
+                default_template = env.get_template(config["default_template"])
+        except jinja2.exceptions.TemplateNotFound:
+            logger.warning("falling back to Dactyl built-in HTML template")
+            default_template = fallback_env.get_template(config["default_template"])
 
     for currentpage in pages:
         if "md" in currentpage:
@@ -597,7 +630,7 @@ def render_pages(target=None, for_pdf=False, bypass_errors=False):
             except Exception as e:
                 if bypass_errors:
                     traceback.print_tb(e.__traceback__)
-                    logging.warning( ("Skipping page %s " +
+                    logger.warning( ("Skipping page %s " +
                           "due to error fetching contents: %s") %
                            (currentpage["name"], e) )
                     continue
@@ -622,10 +655,10 @@ def render_pages(target=None, for_pdf=False, bypass_errors=False):
 
         # Figure out which template to use
         if "template" in currentpage and not for_pdf:
-            logging.info("using template %s from page" % currentpage["template"])
+            logger.info("using template %s from page" % currentpage["template"])
             use_template = env.get_template(currentpage["template"])
         elif "pdf_template" in currentpage and for_pdf:
-            logging.info("using pdf_template %s from page" % currentpage["pdf_template"])
+            logger.info("using pdf_template %s from page" % currentpage["pdf_template"])
             use_template = env.get_template(currentpage["pdf_template"])
         else:
             use_template = default_template
@@ -641,15 +674,16 @@ def render_pages(target=None, for_pdf=False, bypass_errors=False):
 
 
         if for_pdf:
-            out_path = config["temporary_files_path"]
+            #out_path = config["temporary_files_path"]
+            out_path = temp_dir()
         else:
             out_path = config["out_path"]
         fileout = os.path.join(out_path, currentpage["html"])
         if not os.path.isdir(out_path):
-            logging.info("creating build folder %s" % out_path)
+            logger.info("creating build folder %s" % out_path)
             os.makedirs(out_path)
         with open(fileout, "w") as f:
-            logging.info("writing to file: %s..." % fileout)
+            logger.info("writing to file: %s..." % fileout)
             f.write(out_html)
 
 
@@ -661,14 +695,14 @@ def watch(pdf_file, target):
     class UpdaterHandler(PatternMatchingEventHandler):
         """Updates to pattern-matched files means rendering."""
         def on_any_event(self, event):
-            logging.info("got event!")
+            logger.info("got event!")
             # bypass_errors=True because Watch shouldn't
             #  just die if a file is temporarily not found
             if pdf_file:
                 make_pdf(pdf_file, target=target, bypass_errors=True)
             else:
                 render_pages(target, bypass_errors=True)
-            logging.info("done rendering")
+            logger.info("done rendering")
 
     patterns = ["*template-*.html",
                 "*.md",
@@ -689,20 +723,20 @@ def watch(pdf_file, target):
     observer.join()
 
 
-def make_pdf(outfile, target=None, bypass_errors=False):
+def make_pdf(outfile, target=None, bypass_errors=False, remove_tmp=True):
     """Use prince to convert several HTML files into a PDF"""
-    logging.info("rendering PDF-able versions of pages...")
+    logger.info("rendering PDF-able versions of pages...")
     target = get_target(target)
     render_pages(target=target, for_pdf=True, bypass_errors=bypass_errors)
 
-    temp_files_path = config["temporary_files_path"]
+    temp_files_path = temp_dir()
 
     # Prince will need the static files, so copy them over
     copy_static_files(out_path=temp_files_path)
 
     # Make sure the path we're going to write the PDF to exists
     if not os.path.isdir(config["out_path"]):
-        logging.info("creating build folder %s" % config["out_path"])
+        logger.info("creating build folder %s" % config["out_path"])
         os.makedirs(config["out_path"])
 
     # Start preparing the prince command
@@ -715,33 +749,37 @@ def make_pdf(outfile, target=None, bypass_errors=False):
     prince_resp = subprocess.check_output(args, universal_newlines=True)
     print(prince_resp)
 
+    # Clean up the tempdir now that we're done using it
+    if remove_tmp:
+        remove_tree(temp_files_path)
+
 
 def githubify(md_file_name, target=None):
     """Wrapper - make the markdown resemble GitHub flavor"""
     target = get_target(target)
 
     pages = get_pages()
-    logging.info("getting markdown for page %s" % md_file_name)
+    logger.info("getting markdown for page %s" % md_file_name)
     md = get_markdown_for_page(md_file_name,
                                pp_env=setup_pp_env(),
                                target=target)
 
-    logging.info("githubifying markdown...")
+    logger.info("githubifying markdown...")
     rendered_md = githubify_markdown(md, target=target, pages=pages)
 
     if not os.path.isdir(config["out_path"]):
-        logging.info("creating build folder %s" % config["out_path"])
+        logger.info("creating build folder %s" % config["out_path"])
         os.makedirs(config["out_path"])
 
     fileout = os.path.join(config["out_path"], md_file_name)
-    logging.info("writing generated file to path: %s"%fileout)
+    logger.info("writing generated file to path: %s"%fileout)
     with open(fileout, "w") as f:
         f.write(rendered_md)
 
 
 def main(cli_args):
     if not cli_args.quiet:
-        logging.basicConfig(level=logging.INFO)
+        logger.setLevel(logging.INFO)
 
     if cli_args.config:
         load_config(cli_args.config)
@@ -767,11 +805,12 @@ def main(cli_args):
     config["skip_preprocessor"] = cli_args.skip_preprocessor
 
     if cli_args.pages:
-        make_adhoc_target(cli_args.pages, cli_args.no_cover)
+        make_adhoc_target(cli_args.pages)
         cli_args.target = ADHOC_TARGET
 
+    target = get_target(cli_args.target)
+
     if cli_args.title:
-        target = get_target(cli_args.target)
         target["display_name"] = cli_args.title
 
     if cli_args.githubify:
@@ -779,6 +818,12 @@ def main(cli_args):
         if cli_args.copy_static:
             copy_static(template_static=False, content_static=True)
         exit(0)
+
+    if not cli_args.no_cover and not target.get("no_cover", False):
+        # Add the default cover as the first page of the target
+        coverpage = config["cover_page"]
+        coverpage["targets"] = [target["name"]]
+        config["pages"].insert(0, coverpage)
 
     if cli_args.pdf != NO_PDF:
         if cli_args.pdf == DEFAULT_PDF_FILE:
@@ -788,23 +833,24 @@ def main(cli_args):
             exit("PDF filename must end in .pdf")
         else:
             pdf_path = os.path.join(config["out_path"], cli_args.pdf)
-        logging.info("making a pdf...")
+        logger.info("making a pdf...")
         make_pdf(pdf_path, target=cli_args.target,
-                 bypass_errors=cli_args.bypass_errors)
-        logging.info("pdf done")
+                 bypass_errors=cli_args.bypass_errors,
+                 remove_tmp=(not cli_args.leave_temp_files))
+        logger.info("pdf done")
 
     else:
-        logging.info("rendering pages...")
+        logger.info("rendering pages...")
         render_pages(target=cli_args.target,
                      bypass_errors=cli_args.bypass_errors)
-        logging.info("done rendering")
+        logger.info("done rendering")
 
         if cli_args.copy_static:
-            logging.info("copying static pages...")
+            logger.info("copying static pages...")
             copy_static_files()
 
     if cli_args.watch:
-        logging.info("watching for changes...")
+        logger.info("watching for changes...")
         if cli_args.pdf:
             pdf_path = os.path.join(config["out_path"], cli_args.pdf)
             watch(pdf_path, cli_args.target)
@@ -839,8 +885,7 @@ def dispatch_main():
     parser.add_argument("--pages", type=str, help="Build markdown page(s) "+\
                         "that aren't described in the config.", nargs="+")
     parser.add_argument("--no_cover", "-n", action="store_true",
-                        help="(with --pages only) Don't automatically add a "+\
-                        "cover page / index.html file.")
+                        help="Don't automatically add a cover / index file.")
     parser.add_argument("--skip_preprocessor", action="store_true", default=False,
                         help="Don't pre-process Jinja syntax in markdown files")
     parser.add_argument("--title", type=str, help="Override target display "+\
@@ -848,6 +893,10 @@ def dispatch_main():
     parser.add_argument("--list_targets_only", "-l", action="store_true",
                         help="Don't build anything, just display list of "+
                         "known targets from the config file.")
+    parser.add_argument("--leave_temp_files", action="store_true",
+                        help="Leave temp files in place (for debugging or "+
+                        "manual PDF generation). Ignored when using --watch",
+                        default=False)
     cli_args = parser.parse_args()
     main(cli_args)
 

@@ -1,0 +1,44 @@
+## File paths
+content_path: content
+content_static_path: content/static
+## If no template path is provided, use the ones built into Dactyl
+#template_path: templates
+out_path: out
+
+template_static_path: assets
+temporary_files_path: /tmp/
+
+## Filters include "badges", "buttonize", "callouts", and more
+default_filters: []
+
+## If a PDF filename isn't provided, slugify and merge the pdf_filename_fields
+##  of the target together, connected by the pdf_filename_separator.
+pdf_filename_fields:
+    - display_name
+pdf_filename_separator: '-'
+
+prince_executable: prince
+
+## If this is true, parses the files as Markdown without Jinja syntax
+skip_preprocessor: false
+
+## Default templates. If you provide a real
+default_template: template-default.html
+pdf_template: template-default.html
+
+## Default cover page / index page
+cover_page:
+    html: index.html
+    name: Index
+    pdf_template: template-pdf_cover.html
+    template: template-index.html
+
+## List of targets you can build. Each target corresponds to a single PDF file
+targets: []
+
+## List of pages. Each page corresponds to a single output HTML file.
+pages: []
+
+## Link Checker Config
+known_broken_links: []
+ignore_anchors_in: []
