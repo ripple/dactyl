@@ -851,7 +851,7 @@ def main(cli_args):
 
     if cli_args.watch:
         logger.info("watching for changes...")
-        if cli_args.pdf:
+        if cli_args.pdf != NO_PDF:
             pdf_path = os.path.join(config["out_path"], cli_args.pdf)
             watch(pdf_path, cli_args.target)
         else:

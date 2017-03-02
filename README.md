@@ -6,16 +6,16 @@ Documentation tools for enterprise-quality documentation from Markdown source. D
 
 ## Installation
 
-Dactyl requires [Python 3](https://python.org/). Installation is easy with [pip](https://pip.pypa.io/en/stable/):
+Dactyl requires [Python 3](https://python.org/). Install with [pip](https://pip.pypa.io/en/stable/):
 
 ```
 sudo pip3 install dactyl
 ```
 
-Or a local install:
+Or a local install in a virtualenv:
 
 ```sh
-# Optionally create & activate a virtualenv for the package and its dependencies
+# Create an activate a virtualenv so the package and dependencies are localized
 virtualenv -p `which python3` venv_dactyl
 source venv_dactyl/bin/activate
 
@@ -23,7 +23,7 @@ source venv_dactyl/bin/activate
 git clone https://github.com/ripple/dactyl
 
 # Install
-sudo pip3 install dactyl/
+pip3 install dactyl/
 
 # Where 'dactyl/' is the top level directory of the repo, containing setup.py.
 # And note the trailing '/' which tells pip to use a local directory to install it.
@@ -41,13 +41,19 @@ By default, the resulting HTML pages are written to a folder called `out/` in th
 
 ### Building PDF
 
-Dactyl generates PDFs by making temporary HTML files and running [Prince][]. Use the `--pdf` command or
+Dactyl generates PDFs by making temporary HTML files and running [Prince][]. Use the `--pdf` command to generate a PDF. Dactyl tries to come up with a sensible output filename by default, or you can provide one (which must end in `.pdf`):
+
+```sh
+$ dactyl_build --pages input1.md input2.md --pdf MyGuide.pdf
+```
 
 ### Advanced Usage
 
-Dactyl is intended to be used with a config file containing a list of pages to parse. Pages are grouped into "targets" that represent a group of documents to be built together; a page can belong to multiple targets, and can even contain conditional syntax so that it builds slightly different depending on the target in question. Targets can also use different templates from each other, and pages can inherit semi-arbitrary key/value pairs from the targets.
+Dactyl is intended to be used with a config file containing a list of pages to parse. Pages are grouped into "targets" that represent a group of documents to be built together; a page can belong to multiple targets, and can even contain conditional syntax so that it builds slightly different depending on the target in question. Targets and pages can also use different templates from each other, and pages can inherit semi-arbitrary key/value pairs from the targets.
 
-The input pages in the config file should be specified relative to the `content_path`, which is `content/` by default. You can also specify a URL to pull in a markdown file from a remote source, but if you do Dactyl won't run any pre-processing on it.
+For more information on configuration, see the `default-config.yml` and the [examples](examples/) folder.
+
+The input pages in the config file should be specified relative to the `content_path`, which is `content/` by default. You can also specify a URL to pull in a markdown file from a remote source, but if you do, Dactyl won't run any pre-processing on it.
 
 For a full list of Dactyl options, use the `-h` parameter.
 
