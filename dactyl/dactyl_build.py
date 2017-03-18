@@ -41,6 +41,8 @@ import time
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
+from dactyl.version import __version__
+
 # The log level is configurable at runtime (see __main__ below)
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
@@ -356,9 +358,8 @@ def parse_markdown(page, target=None, pages=None, bypass_errors=False):
                             page=page, config=config)
             # ^ the soup filters apply to the same object, passed by reference
 
-    # Replace links for any non-default target
-    if target["name"] != config["targets"][0]["name"]:
-        substitute_links_for_target(soup, target)
+    # Replace links and images based on the target
+    substitute_links_for_target(soup, target)
 
     logger.info("... re-rendering HTML from soup...")
     html2 = str(soup)
@@ -786,6 +787,10 @@ def main(cli_args):
     else:
         load_config()
 
+    if cli_args.version:
+        print("Dactyl version %s" % __version__)
+        exit(0)
+
     if cli_args.list_targets_only:
         for t in config["targets"]:
             if "display_name" in t:
@@ -897,6 +902,8 @@ def dispatch_main():
                         help="Leave temp files in place (for debugging or "+
                         "manual PDF generation). Ignored when using --watch",
                         default=False)
+    parser.add_argument("--version", "-v", action="store_true",
+                        help="Print version information and exit.")
     cli_args = parser.parse_args()
     main(cli_args)
 

@@ -9,9 +9,12 @@ try:
 except ImportError:
     long_description = open('README.md').read()
 
+with open("dactyl/version.py") as versionfile:
+    exec(versionfile.read())
+
 setup(
     name='dactyl',
-    version='0.2.2',
+    version=__version__,
     description='Tools to generate documentation.',
     long_description=long_description,
     url='https://github.com/ripple/dactyl',
