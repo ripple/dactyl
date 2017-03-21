@@ -18,6 +18,7 @@ import traceback
 
 # Necessary to copy static files to the output dir
 from distutils.dir_util import copy_tree, remove_tree
+from shutil import copy as copy_file
 
 # Used for pulling in the default config file
 from pkg_resources import resource_stream
@@ -53,6 +54,7 @@ RESERVED_KEYS_TARGET = [
     "display_name",
     "filters",
     "image_subs",
+    "image_re_subs",
     "pages",
 ]
 ADHOC_TARGET = "__ADHOC__"
@@ -191,6 +193,31 @@ def substitute_links_for_target(soup, target):
                             (local_path, target["image_subs"][local_path]))
                 img_link["href"] = target["image_subs"][local_path]
 
+    if "image_re_subs" in target:
+        images = soup.find_all("img")
+        for img in images:
+            local_path = img["src"]
+            for regex,replace_pattern in target["image_re_subs"].items():
+                m = re.match(regex, local_path)
+                if m:
+                    logging.debug("... matched pattern '%s' for image src '%s'" %
+                            (m, local_path))
+                    new_path = re.sub(regex, replace_pattern, local_path)
+                    logging.debug("... ... replacing with '%s'" % new_path)
+                    img["src"] = new_path
+
+        image_links = soup.find_all("a",
+                href=re.compile(r"^[^.]+\.(png|jpg|jpeg|gif|svg)"))
+        for img_link in image_links:
+            local_path = img_link["href"]
+            for regex,replace_pattern in target["image_re_subs"].items():
+                m = re.match(regex, local_path)
+                if m:
+                    logging.debug("... matched pattern '%s' for image link '%s'" %
+                            (m, local_path))
+                    new_path = re.sub(regex, replace_pattern, local_path)
+                    logging.debug("... ... replacing with '%s'" % new_path)
+                    img_link["href"] = new_path
 
 def substitute_parameter_links(link_parameter, currentpage, target):
     """Some templates have links in page parameters. Do link substitution for
@@ -448,7 +475,7 @@ def get_categories(pages):
     for page in pages:
         if "category" in page and page["category"] not in categories:
             categories.append(page["category"])
-    logger.info("categories: %s" % categories)
+    logger.debug("categories: %s" % categories)
     return categories
 
 
@@ -524,15 +551,28 @@ def copy_static_files(template_static=True, content_static=True, out_path=None):
                             "skipping.") % template_static_src)
 
     if content_static:
-        content_static_src = config["content_static_path"]
+        if "content_static_path" in config:
+            if type(config["content_static_path"]) == str:
+                content_static_srcs = [config["content_static_path"]]
+            else:
+                content_static_srcs = config["content_static_path"]
 
-        if os.path.isdir(content_static_src):
-            content_static_dst = os.path.join(out_path,
-                                           os.path.basename(content_static_src))
-            copy_tree(content_static_src, content_static_dst)
-        else:
-            logger.warning("Content static path '%s' doesn't exist; skipping." %
+            for content_static_src in content_static_srcs:
+                if os.path.isdir(content_static_src):
+                    content_static_dst = os.path.join(out_path,
+                                        os.path.basename(content_static_src))
+                    copy_tree(content_static_src, content_static_dst)
+                elif os.path.isfile(content_static_src):
+                    content_static_dst = os.path.join(out_path,
+                                        os.path.dirname(content_static_src))
+                    logger.debug("Copying single content_static_path file '%s'." %
                             content_static_src)
+                    copy_file(content_static_src, content_static_dst)
+                else:
+                    logger.warning("Content static path '%s' doesn't exist; skipping." %
+                                    content_static_src)
+        else:
+            logger.debug("No content_static_path in conf; skipping copy")
 
 
 def setup_pp_env(page=None):
@@ -656,10 +696,10 @@ def render_pages(target=None, for_pdf=False, bypass_errors=False):
 
         # Figure out which template to use
         if "template" in currentpage and not for_pdf:
-            logger.info("using template %s from page" % currentpage["template"])
+            logger.debug("using template %s from page" % currentpage["template"])
             use_template = env.get_template(currentpage["template"])
         elif "pdf_template" in currentpage and for_pdf:
-            logger.info("using pdf_template %s from page" % currentpage["pdf_template"])
+            logger.debug("using pdf_template %s from page" % currentpage["pdf_template"])
             use_template = env.get_template(currentpage["pdf_template"])
         else:
             use_template = default_template
@@ -732,25 +772,34 @@ def make_pdf(outfile, target=None, bypass_errors=False, remove_tmp=True):
 
     temp_files_path = temp_dir()
 
+    # Choose a reasonable default filename if one wasn't provided yet
+    if outfile == DEFAULT_PDF_FILE:
+        outfile = default_pdf_name(target)
+
     # Prince will need the static files, so copy them over
     copy_static_files(out_path=temp_files_path)
 
     # Make sure the path we're going to write the PDF to exists
     if not os.path.isdir(config["out_path"]):
-        logger.info("creating build folder %s" % config["out_path"])
+        logger.info("creating output folder %s" % config["out_path"])
         os.makedirs(config["out_path"])
+    abs_pdf_path = os.path.abspath(os.path.join(config["out_path"], outfile))
 
     # Start preparing the prince command
-    args = [config["prince_executable"], '--javascript', '-o', outfile]
+    args = [config["prince_executable"], '--javascript', '-o', abs_pdf_path]
+    # Change dir to the tempfiles path; this may avoid a bug in Prince
+    old_cwd = os.getcwd()
+    os.chdir(temp_files_path)
     # Each HTML output file in the target is another arg to prince
     pages = get_pages(target)
-    args += [os.path.join(temp_files_path, p["html"]) for p in pages]
+    args += [p["html"] for p in pages]
 
     logger.info("generating PDF: running %s..." % " ".join(args))
     prince_resp = subprocess.check_output(args, universal_newlines=True)
     print(prince_resp)
 
     # Clean up the tempdir now that we're done using it
+    os.chdir(old_cwd)
     if remove_tmp:
         remove_tree(temp_files_path)
 
@@ -779,7 +828,9 @@ def githubify(md_file_name, target=None):
 
 
 def main(cli_args):
-    if not cli_args.quiet:
+    if cli_args.debug:
+        logger.setLevel(logging.DEBUG)
+    elif not cli_args.quiet:
         logger.setLevel(logging.INFO)
 
     if cli_args.config:
@@ -815,11 +866,28 @@ def main(cli_args):
 
     target = get_target(cli_args.target)
 
+    if cli_args.vars:
+        try:
+            if cli_args.vars[-5:] in (".json",".yaml"):
+                with open(cli_args.vars, "r") as f:
+                    custom_keys = yaml.load(f)
+            else:
+                custom_keys = yaml.load(cli_args.vars)
+            for k,v in custom_keys.items():
+                if k not in RESERVED_KEYS_TARGET:
+                    logger.debug("setting var '%s'='%s'" %(k,v))
+                    target[k] = v
+                else:
+                    raise KeyError("Vars can't include reserved key '%s'" % k)
+        except Exception as e:
+            traceback.print_tb(e.__traceback__)
+            exit("FATAL: --vars value was improperly formatted: %s" % e)
+
     if cli_args.title:
         target["display_name"] = cli_args.title
 
     if cli_args.githubify:
-        githubify(cli_args.githubify, cli_args.target)
+        githubify(cli_args.githubify, target)
         if cli_args.copy_static:
             copy_static(template_static=False, content_static=True)
         exit(0)
@@ -831,15 +899,8 @@ def main(cli_args):
         config["pages"].insert(0, coverpage)
 
     if cli_args.pdf != NO_PDF:
-        if cli_args.pdf == DEFAULT_PDF_FILE:
-            pdf_path = os.path.join(config["out_path"],
-                                    default_pdf_name(cli_args.target))
-        elif cli_args.pdf[-4:] != ".pdf":
-            exit("PDF filename must end in .pdf")
-        else:
-            pdf_path = os.path.join(config["out_path"], cli_args.pdf)
         logger.info("making a pdf...")
-        make_pdf(pdf_path, target=cli_args.target,
+        make_pdf(cli_args.pdf, target=target,
                  bypass_errors=cli_args.bypass_errors,
                  remove_tmp=(not cli_args.leave_temp_files))
         logger.info("pdf done")
@@ -857,10 +918,10 @@ def main(cli_args):
     if cli_args.watch:
         logger.info("watching for changes...")
         if cli_args.pdf != NO_PDF:
-            pdf_path = os.path.join(config["out_path"], cli_args.pdf)
-            watch(pdf_path, cli_args.target)
+            # pdf_path = os.path.join(config["out_path"], cli_args.pdf)
+            watch(cli_args.pdf, target)
         else:
-            watch(None, cli_args.target)
+            watch(None, target)
 
 
 def dispatch_main():
@@ -880,6 +941,8 @@ def dispatch_main():
                         help="Output to this folder (overrides config file)")
     parser.add_argument("--quiet", "-q", action="store_true",
                         help="Suppress status messages")
+    parser.add_argument("--debug", action="store_true",
+                        help="Print debug-level log messages (overrides -q)")
     parser.add_argument("--bypass_errors", "-b", action="store_true",
                         help="Continue building if some contents not found")
     parser.add_argument("--config", "-c", type=str,
@@ -902,6 +965,9 @@ def dispatch_main():
                         help="Leave temp files in place (for debugging or "+
                         "manual PDF generation). Ignored when using --watch",
                         default=False)
+    parser.add_argument("--vars", type=str, help="A YAML or JSON file with vars "+
+                        "to add to the target so the preprocessor and "+
+                        "templates can reference them.")
     parser.add_argument("--version", "-v", action="store_true",
                         help="Print version information and exit.")
     cli_args = parser.parse_args()

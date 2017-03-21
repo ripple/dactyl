@@ -1,11 +1,27 @@
-## File paths
+## Paths to markdown files are relative to this folder
 content_path: content
-content_static_path: content/static
+
+## Files or folders of images/etc. used in your documents, to be copied to the
+##  output directory when you use `-s` and to the temp dir when you make pdfs.
+##  Can be a single path:
+#content_static_path: content/static
+##  ...or an array of paths (files or folders to be copied to the out):
+#content_static_path:
+#    - content/images
+#    - content/video
+#    - flow-diagram.png
+## If you omit the content_static_path, then no files are copied over.
+
 ## If no template path is provided, use the ones built into Dactyl
 #template_path: templates
+
+## Path where the Dactyl output should be written.
 out_path: out
 
+## Static files used in your templates, to be copied to the output directory.
 template_static_path: assets
+
+## Temporary folder. Dactyl puts temp files in a timestamped subfolder of this.
 temporary_files_path: /tmp/
 
 ## Filters include "badges", "buttonize", "callouts", and more

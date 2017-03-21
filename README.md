@@ -184,11 +184,12 @@ targets:
 
 In addition to `name` and `display_name`, a target definition can contain the following fields:
 
-| Field        | Type       | Description                                      |
-|:-------------|:-----------|:-------------------------------------------------|
-| `filters`    | Array      | Names of filters to apply to all pages in this target. |
-| `image_subs` | Dictionary | Mapping of image paths to replacement paths that should be used when building this target. (Use this, for example, to provide absolute paths to images uploaded to a CDN or CMS.) |
-| ...          | (Various)  | Arbitrary key-values to be inherited by all pages in this target. (You can use this for pre-processing or in templates.) The following field names cannot be used: `name`, `display_name`, `image_subs`, `filters`, and `pages`. |
+| Field           | Type       | Description                                   |
+|:----------------|:-----------|:----------------------------------------------|
+| `filters`       | Array      | Names of filters to apply to all pages in this target. |
+| `image_subs`    | Dictionary | Mapping of image paths to replacement paths that should be used when building this target. (Use this, for example, to provide absolute paths to images uploaded to a CDN or CMS.) |
+| `image_re_subs` | Dictionary | Same as `image_subs`, but the keys are regular expressions and the patterns can contain backreferences to matched subgroups (e.g. `\\1` for the first parenthetical group). |
+| ...             | (Various)  | Arbitrary key-values to be inherited by all pages in this target. (You can use this for pre-processing or in templates.) The following field names cannot be used: `name`, `display_name`, `image_subs`, `filters`, and `pages`. |
 
 ### Pages
 
@@ -249,6 +250,43 @@ Dactyl pre-processes Markdown files by treating them as [Jinja][] Templates, so 
 | `target`          | The [target](#targets) definition of the current target. |
 | `pages`           | The [array of page definitions](#pages) in the current target. |
 | `currentpage`     | The definition of the page currently being rendered.     |
+
+
+### Adding Variables from the Commandline
+
+You can pass in a JSON or YAML-formatted list of variables using `--vars` commandline switch. Any such variables get added as fields of `target` and inherited by `currentpage` in any case where `currentpage` does not already have the same variable name set. For example:
+
+```sh
+$ cat md/vartest.md
+Myvar is: '{{ target.myvar }}'
+
+$ dactyl_build --vars '{"myvar":"foo"}'
+rendering pages...
+writing to file: out/index.html...
+Preparing page vartest.md
+reading markdown from file: vartest.md
+... parsing markdown...
+... modifying links for target: default
+... re-rendering HTML from soup...
+writing to file: out/test_vars.html...
+done rendering
+copying static pages...
+
+$ cat out/test_vars.html | grep Myvar
+<p>Myvar is: 'foo'</p></main>
+```
+
+If argument to `--vars` ends in `.yaml` or `.json`, Dactyl treats the argument as a filename and opens it as a YAML file. (YAML is a superset of JSON, so this works for JSON files.) Otherwise, Dactyl treats the argument as a YAML/JSON object directly. Be sure that the argument is quoted and escaped as necessary based on the commandline shell you use.
+
+You cannot set the following reserved keys:
+
+- `name`
+- `display_name` (Instead, use the `--title` argument to set the display name of the target on the commandline.)
+- `filters`
+- `image_subs`
+- `image_re_subs`
+- `pages`
+
 
 ### Filters
 
