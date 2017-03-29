@@ -11,6 +11,9 @@ filter_paths:
 targets:
     -   name: everything
         display_name: Target with ALL THE EXAMPLES™
+        filters:
+            - demote_headers
+        demote_headers_pdf_only: true
 
     -   name: filterdemos
         display_name: Target with just the filter example pages
@@ -20,6 +23,12 @@ targets:
         condition: tests-2
 
 pages:
+    -   html: tests-index.html
+        category: Tests
+        section_header: true
+        targets:
+            - everything
+
     -   md: includes.md
         html: test-includes.html
         category: Tests
@@ -45,6 +54,12 @@ pages:
         category: Tests
         md: gfm-compat.md
         html: test-gfm-compat.html
+        targets:
+            - everything
+
+    -   html: filters-index.html
+        category: Filters
+        section_header: true
         targets:
             - everything
 

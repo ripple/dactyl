@@ -13,10 +13,28 @@
         max-width: 650px;
     }
     .dactyl-pdf-cover h1,
-    .dactyl-pdf-cover h2,
-    .dactyl-pdf-cover h3 {
+    .dactyl-pdf-cover p {
         padding: 0;
         margin: 10px 0 0 0;
+    }
+
+    .dactyl-toc-cat a {
+        font-size: 18pt;
+        text-decoration: none;
+        color: black;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .dactyl-section-cover {
+        page-break-before: always;
+    }
+
+    .dactyl-section-cover h1 {
+        font-size: 90pt;
+        margin-top: 40%;
+        padding-bottom: 10px;
+        border-bottom: 4px dashed black;
     }
 
     @page {

@@ -11,15 +11,17 @@
     <div class="dactyl-pdf-cover">
         <section class="dactyl-pdf-title-area">
             <h1>{{ target.display_name }}</h1>
-            <h2>{{ current_time }}</h2>
+            <p>{{ current_time }}</p>
         </section>
     </div>
     <div class="dactyl-pdf-toc">
         {% for cat in categories %}
-        <h3>{{ cat }}</h3>
+        <div class="dactyl-toc-cat">
+          <a href="{{ (pages|selectattr('category', 'equalto', cat)|first).html }}">{{ cat }}</a>
+        </div>
         <ul>
             {% for page in pages %}
-                {% if page.category == cat %}
+                {% if page.category == cat and not page.section_header %}
             <li><a href="{{ page.html }}">{{ page.name }}</a></li>
                 {% endif %}
             {% endfor %}

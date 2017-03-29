@@ -9,6 +9,11 @@
 </head>
 <body>
     <footer>(Exported {{ current_time }})</footer>
+    {% if currentpage.section_header %}
+    <div class="dactyl-section-cover">
+      <h1>{{ currentpage.category }}</h1>
+    </div>
+    {% endif %}
     <main class="dactyl-main">{{content}}</main>
 </body>
 </html>
