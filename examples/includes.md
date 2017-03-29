@@ -6,7 +6,7 @@ This page demonstrates including a file using the preprocessor syntax. The path 
 
 If you include a page that relies on a filter, you might get weird results if the current page / target don't run the filter. For example...
 
-{% include 'filter-examples/callouts-demo.md' %}
+{% include 'filter-examples/callouts.md' %}
 
 # Other Stuff
 

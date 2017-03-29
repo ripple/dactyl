@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html {% if currentpage.language %}lang="{{currentpage.language}}"{% else %}lang="en"{% endif %}>
+<head>
+    <meta charset="utf-8">
+    <title>{{ currentpage.name }} - {{ target.display_name }}</title>
+    {% include 'filter-css-includes.html' %}
+</head>
+<body>
+    <main class="dactyl-main dactyl-toc">
+        {% for cat in categories %}
+        <h3 class="dactyl-category-header">{{ cat }}</h3>
+        <ul>
+            {% for page in pages %}
+              {% if page.category == cat %}
+            <li class="dactyl-toc-entry"><a href="{{ page.html }}">{{ page.name }}</a></li>
+              {% endif %}
+            {% endfor %}
+        </ul>
+        {% endfor %}
+    </main>
+    <footer>(Exported {{ current_time }})</footer>
+</body>
+</html>

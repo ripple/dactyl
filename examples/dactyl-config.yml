@@ -1,5 +1,13 @@
 content_path: .
 
+template_path: templates
+template_static_path: template_assets
+default_template: template-web.html
+default_pdf_template: template-pdf.html
+filter_paths:
+    - custom_filters
+    - more_custom_filters
+
 targets:
     -   name: everything
         display_name: Target with ALL THE EXAMPLES™
@@ -36,13 +44,13 @@ pages:
     -   name: GitHub Markdown Compatibility
         category: Tests
         md: gfm-compat.md
-        html: tests-gfm-compat.html
+        html: test-gfm-compat.html
         targets:
             - everything
 
-    -   md: filter-examples/callouts-demo.md
-        html: tests-callouts-demo.html
-        category: Tests
+    -   md: filter-examples/callouts.md
+        html: filter-callouts.html
+        category: Filters
         targets:
             - everything
             - filterdemos
@@ -50,13 +58,50 @@ pages:
             - callouts
 
     -   md: filter-examples/xrefs.md
-        html: tests-xrefs.html
-        category: Tests
+        html: filter-xrefs.html
+        category: Filters
         targets:
             - everything
             - filterdemos
         filters:
             - xrefs
+
+    -   md: filter-examples/buttonize.md
+        html: filter-buttonize.html
+        category: Filters
+        targets:
+            - everything
+            - filterdemos
+        filters:
+            - buttonize
+
+    -   md: filter-examples/patriots.md
+        html: filter-patriots.html
+        category: Filters
+        targets:
+            - everything
+            - filterdemos
+        filters:
+            - patriots
+
+    -   md: filter-examples/patriots.md
+        name: Custom Filter 2
+        html: filter-patriots2.html
+        category: Filters
+        targets:
+            - everything
+            - filterdemos
+        filters:
+            - patriots2
+
+    -   md: filter-examples/badges.md
+        html: filter-badges.html
+        category: Filters
+        targets:
+            - everything
+            - filterdemos
+        filters:
+            - badges
 
 # -------------------- Style Checker Rules ------------------------
 word_substitutions_file: plainlanguage_words.yaml

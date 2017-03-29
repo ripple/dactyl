@@ -25,6 +25,7 @@ from pkg_resources import resource_stream
 
 # Used to import filters.
 from importlib import import_module
+import importlib.util
 
 # Necessary for prince
 import subprocess
@@ -85,6 +86,16 @@ def load_config(config_file=DEFAULT_CONFIG_FILE):
 
     config.update(loaded_config)
 
+    # Migrate legacy config fields
+    if "pdf_template" in config:
+        if "default_pdf_template" in config:
+            logger.warning("Ignoring redundant global config option "+
+                           "pdf_template in favor of default_pdf_template")
+        else:
+            config["default_pdf_template"] = config["pdf_template"]
+            logger.warning("Deprecation warning: Global field pdf_template has "
+                          +"been renamed default_pdf_template")
+
     # Warn if any pages aren't part of a target
     for page in config["pages"]:
         if "targets" not in page:
@@ -98,7 +109,7 @@ def load_config(config_file=DEFAULT_CONFIG_FILE):
             page_path = os.path.join(config["content_path"], page["md"])
             page["name"] = guess_title_from_md_file(page_path)
 
-    # Figure out which filters we need and import them
+    # Figure out which filters we need
     filternames = set(config["default_filters"])
     for target in config["targets"]:
         if "filters" in target:
@@ -106,9 +117,30 @@ def load_config(config_file=DEFAULT_CONFIG_FILE):
     for page in config["pages"]:
         if "filters" in page:
             filternames.update(page["filters"])
-    for filter_name in filternames:
-        filters[filter_name] = import_module("dactyl.filter_"+filter_name)
 
+    load_filters(filternames)
+
+def load_filters(filternames):
+    global filters
+    for filter_name in filternames:
+        filter_loaded = False
+        if "filter_paths" in config:
+            for filter_path in config["filter_paths"]:
+                try:
+                    f_filepath = os.path.join(filter_path, "filter_"+filter_name+".py")
+                    spec = importlib.util.spec_from_file_location(
+                                "dactyl_filters."+filter_name, f_filepath)
+                    filters[filter_name] = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(filters[filter_name])
+                    filter_loaded = True
+                    break
+                except Exception as e:
+                    logger.debug("Filter %s isn't in path %s\nErr:%s" %
+                                (filter_name, filter_path, e))
+
+        if not filter_loaded:
+            # Load from the Dactyl module
+            filters[filter_name] = import_module("dactyl.filter_"+filter_name)
 
 def default_pdf_name(target):
     target = get_target(target)
@@ -335,7 +367,8 @@ def get_filters_for_page(page, target=None):
     return ffp
 
 
-def parse_markdown(page, target=None, pages=None, bypass_errors=False):
+def parse_markdown(page, target=None, pages=None, bypass_errors=False,
+        categories=[], mode="html", current_time="TIME_UNKNOWN"):
     """Take a markdown string and output HTML for that content"""
     target = get_target(target)
 
@@ -350,15 +383,31 @@ def parse_markdown(page, target=None, pages=None, bypass_errors=False):
     # We'll apply these filters to the page
     page_filters = get_filters_for_page(page, target)
 
-    md = get_markdown_for_page(page["md"], pp_env=pp_env, target=target,
-                            bypass_errors=bypass_errors, currentpage=page)
+    md = get_markdown_for_page(
+        page["md"],
+        pp_env=pp_env,
+        target=target,
+        bypass_errors=bypass_errors,
+        currentpage=page,
+        categories=categories,
+        mode=mode,
+        current_time=current_time,
+    )
 
     # Apply markdown-based filters here
     for filter_name in page_filters:
         if "filter_markdown" in dir(filters[filter_name]):
             logger.info("... applying markdown filter %s" % filter_name)
-            md = filters[filter_name].filter_markdown(md, target=target,
-                            page=page, config=config)
+            md = filters[filter_name].filter_markdown(
+                    md,
+                    currentpage=page,
+                    categories=categories,
+                    pages=pages,
+                    target=target,
+                    current_time=current_time,
+                    mode=mode,
+                    config=config,
+            )
 
     # Actually parse the markdown
     logger.info("... parsing markdown...")
@@ -370,8 +419,16 @@ def parse_markdown(page, target=None, pages=None, bypass_errors=False):
     for filter_name in page_filters:
         if "filter_html" in dir(filters[filter_name]):
             logger.info("... applying HTML filter %s" % filter_name)
-            html = filters[filter_name].filter_html(html, target=target,
-                            page=page, config=config)
+            html = filters[filter_name].filter_html(
+                    html,
+                    currentpage=page,
+                    categories=categories,
+                    pages=pages,
+                    target=target,
+                    current_time=current_time,
+                    mode=mode,
+                    config=config,
+            )
 
     # Some filters would rather operate on a soup than a string.
     # May as well parse once and re-serialize once.
@@ -381,8 +438,16 @@ def parse_markdown(page, target=None, pages=None, bypass_errors=False):
     for filter_name in page_filters:
         if "filter_soup" in dir(filters[filter_name]):
             logger.info("... applying soup filter %s" % filter_name)
-            filters[filter_name].filter_soup(soup, target=target,
-                            page=page, config=config)
+            filters[filter_name].filter_soup(
+                    soup,
+                    currentpage=page,
+                    categories=categories,
+                    pages=pages,
+                    target=target,
+                    current_time=current_time,
+                    mode=mode,
+                    config=config,
+            )
             # ^ the soup filters apply to the same object, passed by reference
 
     # Replace links and images based on the target
@@ -479,7 +544,8 @@ def get_categories(pages):
     return categories
 
 
-def read_markdown_local(filename, pp_env, target=None, bypass_errors=False, currentpage={}):
+def read_markdown_local(filename, pp_env, target=None, bypass_errors=False,
+        currentpage={}, categories=[], mode="html", current_time="TIME_UNKNOWN"):
     """Read in a markdown file and pre-process any templating lang in it,
        returning the parsed contents."""
     target = get_target(target)
@@ -492,8 +558,17 @@ def read_markdown_local(filename, pp_env, target=None, bypass_errors=False, curr
             md_out = f.read()
     else:
         try:
+            #TODO: current_time, mode, categories
             md_raw = pp_env.get_template(filename)
-            md_out = md_raw.render(target=target, pages=pages, currentpage=currentpage)
+            md_out = md_raw.render(
+                currentpage=currentpage,
+                categories=categories,
+                pages=pages,
+                target=target,
+                current_time=current_time,
+                mode=mode,
+                config=config
+            )
         except jinja2.TemplateError as e:
             traceback.print_tb(e.__traceback__)
             if bypass_errors:
@@ -516,7 +591,9 @@ def read_markdown_remote(url):
         raise requests.RequestException("Status code for page was not 200")
 
 
-def get_markdown_for_page(md_where, pp_env=None, target=None, bypass_errors=False, currentpage={}):
+def get_markdown_for_page(md_where, pp_env=None, target=None,
+        bypass_errors=False, currentpage={}, categories=[], mode="html",
+        current_time="TIME_UNKNOWN"):
     """Read/Fetch and pre-process markdown file"""
     target = get_target(target)
     if "http:" in md_where or "https:" in md_where:
@@ -530,7 +607,9 @@ def get_markdown_for_page(md_where, pp_env=None, target=None, bypass_errors=Fals
                 exit("Error fetching page %s: %s" % (md_where, e))
         return mdr
     else:
-        return read_markdown_local(md_where, pp_env, target, bypass_errors, currentpage=currentpage)
+        return read_markdown_local(md_where, pp_env, target, bypass_errors,
+                currentpage=currentpage, categories=categories, mode=mode,
+                current_time=current_time)
 
 
 def copy_static_files(template_static=True, content_static=True, out_path=None):
@@ -627,46 +706,55 @@ def toc_from_headers(html_string):
     return str(toc_s)
 
 
+def safe_get_template(template_name, env, fallback_env):
+    """
+    Gets the named Jinja template from the specified template path if it exists,
+    and falls back to the Dactyl built-in templates if it doesn't.
+    """
+    try:
+        t = env.get_template(template_name)
+    except jinja2.exceptions.TemplateNotFound:
+        logger.warning("falling back to Dactyl built-ins for template %s" % template_name)
+        t = fallback_env.get_template(template_name)
+    return t
+
 def render_pages(target=None, for_pdf=False, bypass_errors=False):
     """Parse and render all pages in target, writing files to out_path."""
     target = get_target(target)
     pages = get_pages(target)
     categories = get_categories(pages)
+    mode = "pdf" if for_pdf else "html"
+    current_time = time.strftime(config["time_format"]) # Get time once only
 
     # Insert generated HTML into templates using this Jinja environment
     env = setup_html_env()
     fallback_env = setup_fallback_env()
 
     if for_pdf:
-        try:
-            if "pdf_template" in target:
-                logger.debug("reading pdf template %s from target..." % target["pdf_template"])
-                default_template = env.get_template(target["pdf_template"])
-            else:
-                logger.debug("reading default pdf template %s..." % config["pdf_template"])
-                default_template = env.get_template(config["pdf_template"])
-        except jinja2.exceptions.TemplateNotFound:
-            logger.warning("falling back to Dactyl built-in PDF template")
-            default_template = fallback_env.get_template(config["pdf_template"])
+        if "pdf_template" in target:
+            default_template = safe_get_template(target["pdf_template"], env, fallback_env)
+        else:
+            default_template = safe_get_template(config["default_pdf_template"], env, fallback_env)
     else:
-        try:
-            if "template" in target:
-                logger.debug("reading HTML template %s from target..." % target["template"])
-                default_template = env.get_template(target["template"])
-            else:
-                logger.debug("reading default HTML template %s..." % config["default_template"])
-                default_template = env.get_template(config["default_template"])
-        except jinja2.exceptions.TemplateNotFound:
-            logger.warning("falling back to Dactyl built-in HTML template")
-            default_template = fallback_env.get_template(config["default_template"])
+        if "template" in target:
+            default_template = safe_get_template(target["template"], env, fallback_env)
+        else:
+            default_template = safe_get_template(config["default_template"], env, fallback_env)
 
     for currentpage in pages:
         if "md" in currentpage:
             # Read and parse the markdown
 
             try:
-                html_content = parse_markdown(currentpage, target=target,
-                                      pages=pages, bypass_errors=bypass_errors)
+                html_content = parse_markdown(
+                    currentpage,
+                    target=target,
+                    pages=pages,
+                    bypass_errors=bypass_errors,
+                    mode=mode,
+                    current_time=current_time,
+                    categories=categories
+                )
 
             except Exception as e:
                 if bypass_errors:
@@ -682,36 +770,34 @@ def render_pages(target=None, for_pdf=False, bypass_errors=False):
         else:
             html_content = ""
 
-        # default to a table-of-contents sidebar...
-        if "sidebar" not in currentpage:
-            currentpage["sidebar"] = "toc"
-        if currentpage["sidebar"] == "toc":
-            sidebar_content = toc_from_headers(html_content)
-        else:
-            sidebar_content = None
 
         # Prepare some parameters for rendering
         substitute_parameter_links("doc_page", currentpage, target)
-        current_time = time.strftime("%B %d, %Y")
+        page_toc = toc_from_headers(html_content)
 
         # Figure out which template to use
         if "template" in currentpage and not for_pdf:
             logger.debug("using template %s from page" % currentpage["template"])
-            use_template = env.get_template(currentpage["template"])
+            use_template = safe_get_template(currentpage["template"], env, fallback_env)
         elif "pdf_template" in currentpage and for_pdf:
             logger.debug("using pdf_template %s from page" % currentpage["pdf_template"])
-            use_template = env.get_template(currentpage["pdf_template"])
+            use_template = safe_get_template(currentpage["pdf_template"], env, fallback_env)
         else:
             use_template = default_template
 
         # Render the content into the appropriate template
-        out_html = use_template.render(currentpage=currentpage,
-                                           categories=categories,
-                                           pages=pages,
-                                           content=html_content,
-                                           target=target,
-                                           current_time=current_time,
-                                           sidebar_content=sidebar_content)
+        out_html = use_template.render(
+            currentpage=currentpage,
+            categories=categories,
+            pages=pages,
+            content=html_content,
+            target=target,
+            current_time=current_time,
+            sidebar_content=page_toc, # legacy
+            page_toc=page_toc,
+            mode=mode,
+            config=config
+        )
 
 
         if for_pdf:
@@ -807,12 +893,18 @@ def make_pdf(outfile, target=None, bypass_errors=False, remove_tmp=True):
 def githubify(md_file_name, target=None):
     """Wrapper - make the markdown resemble GitHub flavor"""
     target = get_target(target)
-
     pages = get_pages()
+
+    current_time = time.strftime(config["time_format"]) # Get time once only
     logger.info("getting markdown for page %s" % md_file_name)
-    md = get_markdown_for_page(md_file_name,
-                               pp_env=setup_pp_env(),
-                               target=target)
+    md = get_markdown_for_page(
+            md_file_name,
+            pp_env=setup_pp_env(),
+            target=target,
+            categories=[],
+            mode="md",
+            current_time=current_time,
+    )
 
     logger.info("githubifying markdown...")
     rendered_md = githubify_markdown(md, target=target, pages=pages)

@@ -93,7 +93,8 @@ def lookup_display_name(targetname, config):
         warning("Target not found: %s" % targetname)
         return targetname
 
-def filter_soup(soup, target={"name":""}, page=None, config={"pages":[]}):
+def filter_soup(soup, target={"name":""}, currentpage={},
+        config={"pages":[]}, **kwargs):
     """Look for cross-references and replace them with not-hyperlinks if they
        don't exist in the current target."""
 
@@ -111,7 +112,12 @@ def filter_soup(soup, target={"name":""}, page=None, config={"pages":[]}):
             # Cross-referenced page isn't part of this target
             xref_page = find_file_in_any_target(xref_file, config)
             if not xref_page:
-                raise KeyError(("xref to missing file: '%s'. Maybe it's not in the Dactyl config file?")%xref_file)
+                if currentpage and "md" in currentpage:
+                    page_name = currentpage["md"]
+                else:
+                    page_name = currentpage
+                raise KeyError(("xref to missing file: '%s' in page '%s'. "+
+                "Maybe it's not in the Dactyl config file?")%(xref_file, page_name))
             xref_target_shortname = xref_page["targets"][0]
 
             ref_target = lookup_display_name(xref_target_shortname, config)

@@ -38,9 +38,11 @@ prince_executable: prince
 ## If this is true, parses the files as Markdown without Jinja syntax
 skip_preprocessor: false
 
-## Default templates. If you provide a real
+## Default templates.
 default_template: template-default.html
-pdf_template: template-default.html
+default_pdf_template: template-default.html
+
+time_format: "%Y-%m-%d" # Used to be "%B %d, %Y"
 
 ## Default cover page / index page
 cover_page:

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html {% if currentpage.language %}lang="{{currentpage.language}}"{% else %}lang="en"{% endif %}>
+<head>
+    <meta charset="utf-8">
+    <title>{{ currentpage.name }} - {{ target.display_name }}</title>
+    <link rel="stylesheet" href="template_assets/dactyl-toc.css" type="text/css" />
+    <link rel="stylesheet" href="template_assets/dactyl-print.css" type="text/css" />
+    {% include 'filter-css-includes.html' %}
+</head>
+<body>
+    <div class="dactyl-pdf-cover">
+        <section class="dactyl-pdf-title-area">
+            <h1>{{ target.display_name }}</h1>
+            <h2>{{ current_time }}</h2>
+        </section>
+    </div>
+    <div class="dactyl-pdf-toc">
+        {% for cat in categories %}
+        <h3>{{ cat }}</h3>
+        <ul>
+            {% for page in pages %}
+                {% if page.category == cat %}
+            <li><a href="{{ page.html }}">{{ page.name }}</a></li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+        {% endfor %}
+    </div>
+</body>
+</html>

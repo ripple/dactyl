@@ -9,14 +9,14 @@
 import re
 import logging
 
-def filter_markdown(md, target=None, page=None, config=None):
+def filter_markdown(md, currentpage=currentpage, **kwargs):
     """Finds the version number and adds it to the start of the page."""
     version_regex = r"https://raw.githubusercontent.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)/([A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+)/.+\.md"
 
     try:
-        version_match = re.match(version_regex, page["md"])
+        version_match = re.match(version_regex, currentpage["md"])
     except (TypeError, KeyError):
-        logging.warning("couldn't get MD path from page %s" % page)
+        logging.warning("couldn't get MD path from page %s" % currentpage)
         return md
 
     try:

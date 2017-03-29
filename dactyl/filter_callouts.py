@@ -9,13 +9,13 @@
 import re
 
 CALLOUT_CLASS_MAPPING = {
-    "note": "devportal-callout note",
-    "warning": "devportal-callout warning",
-    "caution": "devportal-callout caution",
-    "tip": "devportal-callout tip",
+    "note": "dactyl-callout note",
+    "warning": "dactyl-callout warning",
+    "caution": "dactyl-callout caution",
+    "tip": "dactyl-callout tip",
 }
 
-def filter_soup(soup, target=None, page=None, config=None):
+def filter_soup(soup, **kwargs):
     """replace underscores with dashes in h1,h2,etc. for backwards compatibility"""
     callout_intro = re.compile(r"(Note|Warning|Tip|Caution):?$", re.I)
     callouts = soup.find_all(name=["strong","em"], string=callout_intro)

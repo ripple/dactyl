@@ -8,10 +8,11 @@
 ################################################################################
 import re
 
-def filter_soup(soup, target=None, page=None, config=None):
+def filter_soup(soup, **kwargs):
     """make links ending in > render like buttons"""
     buttonlinks = soup.find_all("a", string=re.compile(">$"))
     for link in buttonlinks:
+        link.string=link.string[:-1].strip()
         if "class" in link.attrs:
             link["class"].append("button")
         else:
