@@ -1,6 +1,6 @@
 # Intelligent Cross-References
 
-Here's some examples for testing. See how they get rendered based on whether the linked page is part of the same target.
+Intelligent cross-references are a feature designed to be a link when they can be, and text directing people to a different target (guide) if not. Here's some examples for testing:
 
 [This should link to the callouts demo page.](XREF: filter-callouts.html)
 

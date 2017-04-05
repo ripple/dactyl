@@ -9,7 +9,7 @@
 import re
 import logging
 
-def filter_markdown(md, currentpage=currentpage, **kwargs):
+def filter_markdown(md, currentpage={}, **kwargs):
     """Finds the version number and adds it to the start of the page."""
     version_regex = r"https://raw.githubusercontent.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)/([A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+)/.+\.md"
 

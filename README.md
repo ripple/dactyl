@@ -96,13 +96,43 @@ rc-release-notes
 kc-rt-faq		Ripple Trade Migration FAQ
 ```
 
-#### Githubify Mode
+#### Building Markdown
 
-This mode runs the preprocessor only, so you can generate Markdown files that are more likely to display properly in conventional Markdown parsers (like the one built into GitHub). Use the `-g` flag followed by a doc page (relative to the configured content dir):
+This mode runs the pre-processor only, so you can generate Markdown files that are more likely to display properly in conventional Markdown parsers (like the one built into GitHub). Use the `--md` flag to output Markdown files, skipping the HTML/PDF templates entirely.
 
 ```sh
-$ dactyl_build -g page_with_dactyl_syntax.md
+$ dactyl_build --md
 ```
+
+In Markdown mode, the `-s` option does not copy static files from the `template_static_path`.
+
+#### Building Only One Page
+
+If you only want to build a single page, you can use the `--only` flag, followed by the filename you want to build (either the input filename ending in `.md` or the output filename ending in `.html`):
+
+```sh
+dactyl_build --only index.html --pdf
+```
+
+This command can be combined with the `--pdf` or `--md` flags. You can also use it with the `--target` setting (in case you want the context from the target even though you're only building one page.)
+
+#### Watch Mode
+
+You can use the `-w` flag to make Dactyl run continuously, watching for changes to its input templates or markdown files. Whenever it detects that a file has changed, Dactyl automatically rebuilds the output in whatever the current mode is, (HTML, PDF, or Markdown).
+
+To be detected as a change, the file has to match one of the following patterns:
+
+```
+*.md
+*/code_samples/*
+template-*.html
+```
+
+Beware: some configurations can lead to an infinite loop. (For example, if your output directory is a subdirectory of your content directory and you use Dactyl in `--md` mode.)
+
+**Limitations:** Watch mode can be combined with `--only`, but re-builds the page even when it detects changes to unrelated pages. Watch mode doesn't detect changes to the config file, static files, or filters.
+
+To stop watching, interrupt the Dactyl process (Ctrl-C in most terminals).
 
 ### Link Checking
 
@@ -182,14 +212,11 @@ targets:
         display_name: Ripple Trade Migration FAQ
 ```
 
-In addition to `name` and `display_name`, a target definition can contain the following fields:
+In addition to `name` and `display_name`, a target definition can contain arbitrary key-values to be inherited by all pages in this target. Dictionary values are inherited such that keys that aren't set in the page are carried over from the target, recursively. The rest of the time, fields that appear in a page definition take precedence over fields that appear in a target definition.
 
-| Field           | Type       | Description                                   |
-|:----------------|:-----------|:----------------------------------------------|
-| `filters`       | Array      | Names of filters to apply to all pages in this target. |
-| `image_subs`    | Dictionary | Mapping of image paths to replacement paths that should be used when building this target. (Use this, for example, to provide absolute paths to images uploaded to a CDN or CMS.) |
-| `image_re_subs` | Dictionary | Same as `image_subs`, but the keys are regular expressions and the patterns can contain backreferences to matched subgroups (e.g. `\\1` for the first parenthetical group). |
-| ...             | (Various)  | Arbitrary key-values to be inherited by all pages in this target. (You can use this for pre-processing or in templates.) The following field names cannot be used: `name`, `display_name`, `image_subs`, `filters`, and `pages`. |
+Some things you may want to set at the target level include `filters` (an array of filters to apply to pages in this target), `template` (template to use when building HTML), and `pdf_template` (template to use when building PDF). You can also use the custom values in templates and preprocessing. Some filters define additional fields that affect the filter's behavior.
+
+The following field names cannot be inherited: `name`, `display_name`, and `pages`.
 
 ### Pages
 
@@ -203,7 +230,6 @@ pages:
         category: References
         html: reference-rippleapi.html
         md: https://raw.githubusercontent.com/ripple/ripple-lib/0.17.2/docs/index.md
-        ripple.com: https://ripple.com/build/rippleapi/
         filters:
             - remove_doctoc
             - add_version
@@ -215,7 +241,6 @@ pages:
         category: References
         html: reference-rippled.html
         md: reference-rippled.md
-        ripple.com: https://ripple.com/build/rippled-apis/
         targets:
             - local
             - ripple.com
@@ -232,7 +257,6 @@ Each individual page definition can have the following fields:
 | `category` | String | _(Optional)_ The name of a category to group this page into. This is used by Dactyl's built-in templates to organize the table of contents. |
 | `template`               | String    | _(Optional)_ The filename of a custom [Jinja][] HTML template to use when building this page for HTML, relative to the **template_path** in your config. |
 | `pdf_template`           | String    | _(Optional)_ The filename of a custom [Jinja][] HTML template to use when building this page for PDF, relative to the **template_path** in your config. |
-| (Short names of targets) | String    | _(Optional)_ If provided, use these values to replace links that would go to this file when building the specified targets. Use this if the page can't be accessed via its normal .html filename in some situations. |
 | ...                      | (Various) | Additional arbitrary key-value pairs as desired. These values can be used by templates or pre-processing. |
 
 [Jinja]: http://jinja.pocoo.org/
@@ -248,8 +272,13 @@ Dactyl pre-processes Markdown files by treating them as [Jinja][] Templates, so 
 | Field             | Value                                                    |
 |:------------------|:---------------------------------------------------------|
 | `target`          | The [target](#targets) definition of the current target. |
-| `pages`           | The [array of page definitions](#pages) in the current target. |
+| `pages`           | The [array of page definitions](#pages) in the current target. Use this to generate navigation across pages. (The default templates don't do this, but you should.) |
 | `currentpage`     | The definition of the page currently being rendered.     |
+| `categories`      | A de-duplicated array of categories that are used by at least one page in this target, sorted in the order they first appear. |
+| `config`          | The global Dactyl config object. |
+| `content`         | The parsed HTML content of the page currently being rendered. |
+| `current_time`    | The current date as of rendering. The format is YYYY-MM-DD by default; you can also set the `time_format` field to a custom [stftime format string](http://strftime.org/). |
+| `mode`            | The output format: either `html` (default), `pdf`, or `md`. |
 
 
 ### Adding Variables from the Commandline
@@ -282,15 +311,14 @@ You cannot set the following reserved keys:
 
 - `name`
 - `display_name` (Instead, use the `--title` argument to set the display name of the target on the commandline.)
-- `filters`
-- `image_subs`
-- `image_re_subs`
 - `pages`
 
 
 ### Filters
 
-Furthermore, Dactyl supports additional custom post-processing through the use of filters. Filters can operate on the markdown (after it's been pre-processed), on the raw HTML (after it's been parsed), or on a BeautifulSoup object representing the output HTML. Dactyl comes with several filters, which you can enable in your config file. Support for user-defined filters is planned but not yet implemented.
+Furthermore, Dactyl supports additional custom post-processing through the use of filters. Filters can operate on the markdown (after it's been pre-processed), on the raw HTML (after it's been parsed), or on a BeautifulSoup object representing the output HTML. Dactyl comes with several filters, which you can enable in your config file.
+
+You can also write your own filters. If you do, you must specify the paths to the folder(s) containing your filter files in the `filter_paths` array of the config file.
 
 See the [examples](examples/) for examples of how to do many of these things.
 
@@ -303,7 +331,10 @@ Dactyl provides the following information to templates, which you can access wit
 | `target`          | The [target](#targets) definition of the current target. |
 | `pages`           | The [array of page definitions](#pages) in the current target. Use this to generate navigation across pages. (The default templates don't do this, but you should.) |
 | `currentpage`     | The definition of the page currently being rendered.     |
-| `categories`      | An array of categories that are used by at least one page in this target. |
+| `categories`      | A de-duplicated array of categories that are used by at least one page in this target, sorted in the order they first appear. |
+| `config`          | The global Dactyl config object. |
 | `content`         | The parsed HTML content of the page currently being rendered. |
-| `current_time`    | The current date as of rendering, in the format "Monthname Day, Year" |
-| `sidebar_content` | A table of contents generated from the current page's headers. Wrap this in a `<ul>` element. |
+| `current_time`    | The current date as of rendering. The format is YYYY-MM-DD by default; you can also set the `time_format` field to a custom [stftime format string](http://strftime.org/). |
+| `mode`            | The output format: either `html` (default), `pdf`, or `md`. |
+| `page_toc`        | A table of contents generated from the current page's headers. Wrap this in a `<ul>` element. |
+| `sidebar_content` | (Deprecated alias for `page_toc`.) |

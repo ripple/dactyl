@@ -1,4 +1,6 @@
 content_path: .
+# Setting content_path to . is actually a bad idea because it makes watch mode
+# go into an infinite loop.
 
 template_path: templates
 template_static_path: template_assets

@@ -8,10 +8,12 @@
 <body>
     <main class="dactyl-main dactyl-toc">
         {% for cat in categories %}
-        <h3 class="dactyl-category-header">{{ cat }}</h3>
+        <div class="dactyl-toc-cat">
+          <a href="{{ (pages|selectattr('category', 'equalto', cat)|first).html }}">{{ cat }}</a>
+        </div>
         <ul>
             {% for page in pages %}
-              {% if page.category == cat %}
+              {% if page.category == cat and not page.section_header %}
             <li class="dactyl-toc-entry"><a href="{{ page.html }}">{{ page.name }}</a></li>
               {% endif %}
             {% endfor %}
