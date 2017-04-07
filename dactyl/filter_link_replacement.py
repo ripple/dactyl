@@ -102,10 +102,10 @@ def re_sub_links(soup, link_re_subs):
     links = soup.find_all("a", href=True)
     for link in links:
         for regex,replace_pattern in link_re_subs.items():
-            m = re.match(regex, a["href"])
+            m = re.match(regex, link["href"])
             if m:
                 new_path = re.sub(regex, replace_pattern, link["href"])
-                logger.info("... replacing image link '%s' with '%s'" %
+                logger.info("... replacing link '%s' with '%s'" %
                             (link["href"], new_path) )
                 link["href"] = new_path
 
