@@ -1,0 +1,7 @@
+{"line one": "here",
+"second line": true,
+"third line": 3,
+    "4th line": [1,2,3,4],
+    "line 5": "FIVE",
+"six": 6
+}

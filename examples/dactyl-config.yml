@@ -1,7 +1,4 @@
-content_path: .
-# Setting content_path to . is actually a bad idea because it makes watch mode
-# go into an infinite loop.
-
+content_path: content
 template_path: templates
 template_static_path: template_assets
 default_template: template-web.html
@@ -119,6 +116,15 @@ pages:
             - filterdemos
         filters:
             - badges
+
+    -   md: filter-examples/include_code.md
+        html: include-code.html
+        category: Filters
+        targets:
+            - everything
+            - filterdemos
+        filters:
+            - include_code
 
 # -------------------- Style Checker Rules ------------------------
 word_substitutions_file: plainlanguage_words.yaml
