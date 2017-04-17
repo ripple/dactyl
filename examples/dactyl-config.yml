@@ -126,6 +126,15 @@ pages:
         filters:
             - include_code
 
+    -   md: filter-examples/multicode_tabs.md
+        html: filter-multicode_tabs.html
+        category: Filters
+        targets:
+            - everything
+            - filterdemos
+        filters:
+            - multicode_tabs
+
 # -------------------- Style Checker Rules ------------------------
 word_substitutions_file: plainlanguage_words.yaml
 phrase_substitutions_file: plainlanguage_phrases.yaml

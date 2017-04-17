@@ -1,0 +1,29 @@
+.multicode .codetabs {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.multicode .codetabs li {
+    display: inline-block;
+    margin-right: 4px;
+}
+.multicode .codetabs a {
+    display: block;
+    padding: 1em;
+    background-color: white;
+    border: 2px solid black;
+    position: relative;
+    top: 2px;
+}
+
+.multicode .codetabs a.current {
+    font-weight: bold;
+    text-decoration: none;
+    border-bottom-color: white;
+}
+
+.code_sample {
+    border: 2px solid black;
+    padding: 5px;
+}

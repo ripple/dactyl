@@ -4,3 +4,13 @@
 {% if "buttonize" in currentpage.filters %}
   <link rel="stylesheet" href="template_assets/dactyl-buttonize.css" type="text/css" />
 {% endif %}
+{% if "multicode_tabs" in currentpage.filters and mode=="html" %}
+  <link rel="stylesheet" href="template_assets/dactyl-multicode_tabs.css" type="text/css" />
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+  <script src="template_assets/multicode_tabs.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function() {
+      $(".multicode").minitabs();
+    });
+  </script>
+{% endif %}
