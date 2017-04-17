@@ -9,17 +9,29 @@
 import re
 import logging
 
-def filter_html(html, **kwargs):
-    """Turn multicode comments into a div (after markdown inside is parsed)"""
-    MC_START_REGEX = re.compile(r"<!--\s*MULTICODE_BLOCK_START\s*-->")
-    MC_END_REGEX = re.compile(r"<!--\s*MULTICODE_BLOCK_END\s*-->")
+MC_START_REGEX = re.compile(r"<!--\s*MULTICODE_BLOCK_START\s*-->")
+MC_END_REGEX = re.compile(r"<!--\s*MULTICODE_BLOCK_END\s*-->")
+
+def filter_html(html, mode="html", **kwargs):
+    """
+    Turn multicode comments into a div (after markdown inside is parsed). You
+    can use this div for styling even in PDF format. Doesn't apply to Markdown
+    since most parsers won't parse markdown inside HTML blocks.
+    """
+
+    if mode == "md":
+        return html
 
     html = re.sub(MC_START_REGEX, "<div class='multicode'>", html)
     html = re.sub(MC_END_REGEX, "</div>", html)
     return html
 
-def filter_soup(soup, **kwargs):
-    """Turn a multicode block into the correct syntax for minitabs"""
+def filter_soup(soup, mode="html", **kwargs):
+    """Turn a multicode block into the correct syntax for minitabs, but only
+       in the HTML version."""
+    if mode != "html":
+        return
+
     multicodes = soup.find_all(class_="multicode")
     index1 = 0
     for cb_area in multicodes:

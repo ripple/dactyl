@@ -409,7 +409,7 @@ def preprocess_markdown(page, target=None, categories=[], page_filters=[],
                 md = f.read()
 
     else:
-        pp_env = setup_pp_env(page)
+        pp_env = setup_pp_env(page, page_filters=page_filters)
         md_raw = pp_env.get_template(page["md"])
         md = md_raw.render(
             currentpage=page,
@@ -562,7 +562,7 @@ def get_page_where(page=None):
         return False, config["content_path"]
 
 
-def setup_pp_env(page=None):
+def setup_pp_env(page=None, page_filters=[]):
     remote, path = get_page_where(page)
     if remote:
         logger.debug("Using remote template loader for page %s" % page)
@@ -571,8 +571,12 @@ def setup_pp_env(page=None):
         logger.debug("Using FileSystemLoader for page %s" % page)
         pp_env = jinja2.Environment(loader=jinja2.FileSystemLoader(path))
 
-    #Example: if we want to add custom functions to the md files
-    #pp_env.globals['foo'] = lambda x: "FOO %s"%x
+    # Pull exported values (& functions) from page filters into the pp_env
+    for filter_name in page_filters:
+        if "export" in dir(filters[filter_name]):
+            for key,val in filters[filter_name].export.items():
+                logger.debug("... pulling in filter_%s's exported key '%s'" % (filter_name, key))
+                pp_env.globals[key] = val
     return pp_env
 
 
