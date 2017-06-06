@@ -39,7 +39,7 @@ But watch out -- some editors (like [Atom](https://atom.io/docs)) tend to strip 
 
 ## Preprocessing ##
 
-Dactyl does preprocessing with Jinja, so you can do [conditional text](test-conditionals.html) and [includes](test-includes.html). GitHub doesn't have stuff like that.
+Dactyl does preprocessing with Jinja, so you can do [conditional text](conditionals.html) and [includes](includes.html). GitHub doesn't have stuff like that.
 
 **Suggestion:** For docs that are meant to be viewed on GitHub, use Dactyl's "Githubify mode" (TODO: better docs on that) to do pre-processing only and export a markdown file you can push elsewhere. Be careful not to overwrite the original (with the prepropessing directives) with the processed export version.
 
@@ -84,7 +84,7 @@ Dactyl strips most such characters from the IDs. GitHub preserves them.
 
 You can do code blocks either by the "indented" syntax or with code fences.
 
-Generally, we recommend using code fences. [Code blocks inside lists](test-lists-and-codeblocks.html) are an exception where you should use indentation to demarcate code blocks.
+Generally, we recommend using code fences. [Code blocks inside lists](lists-and-codeblocks.html) are an exception where you should use indentation to demarcate code blocks.
 
 ```
 backtick code fence

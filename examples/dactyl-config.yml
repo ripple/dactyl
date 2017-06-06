@@ -29,7 +29,6 @@ pages:
             - everything
 
     -   md: includes.md
-        html: test-includes.html
         category: Tests
         targets:
             - everything
@@ -37,7 +36,6 @@ pages:
     -   name: Conditionals Test
         category: Tests
         md: conditionals.md
-        html: test-conditionals.html
         targets:
             - everything
             - conditionals
@@ -45,14 +43,12 @@ pages:
     -   name: Lists and Code Blocks Demo
         category: Tests
         md: lists-and-codeblocks.md
-        html: test-lists-and-codeblocks.html
         targets:
             - everything
 
     -   name: GitHub Markdown Compatibility
         category: Tests
         md: gfm-compat.md
-        html: test-gfm-compat.html
         targets:
             - everything
 
@@ -63,7 +59,6 @@ pages:
             - everything
 
     -   md: filter-examples/callouts.md
-        html: filter-callouts.html
         category: Filters
         targets:
             - everything
@@ -72,7 +67,6 @@ pages:
             - callouts
 
     -   md: filter-examples/xrefs.md
-        html: filter-xrefs.html
         category: Filters
         targets:
             - everything
@@ -81,7 +75,6 @@ pages:
             - xrefs
 
     -   md: filter-examples/buttonize.md
-        html: filter-buttonize.html
         category: Filters
         targets:
             - everything
@@ -90,7 +83,7 @@ pages:
             - buttonize
 
     -   md: filter-examples/patriots.md
-        html: filter-patriots.html
+        html: filter-examples-patriots.html
         category: Filters
         targets:
             - everything
@@ -100,7 +93,7 @@ pages:
 
     -   md: filter-examples/patriots.md
         name: Custom Filter 2
-        html: filter-patriots2.html
+        html: filter-examples-patriots2.html
         category: Filters
         targets:
             - everything
@@ -109,7 +102,6 @@ pages:
             - patriots2
 
     -   md: filter-examples/badges.md
-        html: filter-badges.html
         category: Filters
         targets:
             - everything
@@ -118,7 +110,6 @@ pages:
             - badges
 
     -   md: filter-examples/include_code.md
-        html: include-code.html
         category: Filters
         targets:
             - everything
@@ -127,7 +118,6 @@ pages:
             - include_code
 
     -   md: filter-examples/multicode_tabs.md
-        html: filter-multicode_tabs.html
         category: Filters
         targets:
             - everything

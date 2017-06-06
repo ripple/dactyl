@@ -65,7 +65,7 @@ config = yaml.load(resource_stream(__name__, "default-config.yml"))
 
 
 filters = {}
-def load_config(config_file=DEFAULT_CONFIG_FILE):
+def load_config(config_file=DEFAULT_CONFIG_FILE, bypass_errors=False):
     """Reload config from a YAML file."""
     global config, filters
     logger.debug("loading config file %s..." % config_file)
@@ -74,7 +74,7 @@ def load_config(config_file=DEFAULT_CONFIG_FILE):
             loaded_config = yaml.load(f)
     except FileNotFoundError as e:
         if config_file == DEFAULT_CONFIG_FILE:
-            logger.warning("Couldn't read a config file; using generic config")
+            logger.info("Couldn't read a config file; using generic config")
             loaded_config = {}
         else:
             traceback.print_tb(e.__traceback__)
@@ -86,8 +86,9 @@ def load_config(config_file=DEFAULT_CONFIG_FILE):
     # Migrate legacy config fields
     if "pdf_template" in loaded_config:
         if "default_pdf_template" in loaded_config:
-            logger.warning("Ignoring redundant global config option "+
-                           "pdf_template in favor of default_pdf_template")
+            recoverable_error("Ignoring redundant global config option "+
+                           "pdf_template in favor of default_pdf_template",
+                           bypass_errors)
         else:
             loaded_config["default_pdf_template"] = loaded_config["pdf_template"]
             logger.warning("Deprecation warning: Global field pdf_template has "
@@ -95,7 +96,9 @@ def load_config(config_file=DEFAULT_CONFIG_FILE):
 
     config.update(loaded_config)
 
-    # Warn if any pages aren't part of a target
+    # Check page list for consistency and provide default values
+    #TODO: this is not the right place for html_outs_in_target, move it to get_pages again?
+    html_outs_in_target = []
     for page in config["pages"]:
         if "targets" not in page:
             if "name" in page:
@@ -103,10 +106,23 @@ def load_config(config_file=DEFAULT_CONFIG_FILE):
                              page["name"])
             else:
                 logger.warning("Page %s is not part of any targets." % page)
+        elif type(page["targets"]) != list:
+            recoverable_error(("targets parameter specified incorrectly; "+
+                              "must be a list. Page: %s") % page, bypass_errors)
         if "md" in page and "name" not in page:
             logger.debug("Guessing page name for page %s" % page)
             page_path = os.path.join(config["content_path"], page["md"])
             page["name"] = guess_title_from_md_file(page_path)
+
+        if "html" not in page:
+            logger.debug("Using default html output filename for page %s" % page)
+            page["html"] = html_filename_from(page)
+        if page["html"] in html_outs_in_target:
+            recoverable_error("Warning: two pages with the same HTML filename; "+
+                    "%s will overwrite an earlier page." % page, bypass_errors)
+
+        html_outs_in_target.append(page["html"])
+
 
     # Figure out which filters we need
     filternames = set(config["default_filters"])
@@ -153,6 +169,12 @@ def default_pdf_name(target):
     else:
         return slugify(target["name"])+".pdf"
 
+
+def recoverable_error(msg, bypass_errors):
+    """Logs a warning/error message and exits if bypass_errors==False"""
+    logger.error(msg)
+    if not bypass_errors:
+        exit(1)
 
 # Note: this regex means non-ascii characters get stripped from filenames,
 #  which is not preferable when making non-English filenames.
@@ -339,6 +361,21 @@ def parse_markdown(page, target=None, pages=None, categories=[], mode="html",
     return html2
 
 
+def html_filename_from(page):
+    """Takes a page definition and makes up a reasonable HTML filename for it to use."""
+    if "md" in page:
+        new_filename = re.sub(r"[.]md$", ".html", page["md"])
+        # TODO: take an option to not flatten directory structure
+        return new_filename.replace("/", "-")
+        #return new_filename
+    elif "name" in page:
+        return slugify(page["name"])
+    else:
+        new_filename = str(time.time()).replace(".", "-")+".html"
+        logger.debug("Generated filename '%s' for page: %s" % (new_filename, page))
+        return new_filename
+
+
 def get_pages(target=None):
     """Read pages from config and return an object, optionally filtered
        to just the pages that this target cares about"""
@@ -348,13 +385,6 @@ def get_pages(target=None):
 
     if target["name"]:
         #filter pages that aren't part of this target
-        def should_include(page, target_name):
-            if "targets" not in page:
-                return False
-            if target_name in page["targets"]:
-                return True
-            else:
-                return False
         pages = [page for page in pages
                  if should_include(page, target["name"])]
 
@@ -363,6 +393,15 @@ def get_pages(target=None):
         merge_dicts(target, p, RESERVED_KEYS_TARGET)
 
     return pages
+
+def should_include(page, target_name):
+    """Report whether a given page should be part of the given target"""
+    if "targets" not in page:
+        return False
+    if target_name in page["targets"]:
+        return True
+    else:
+        return False
 
 def merge_dicts(default_d, specific_d, reserved_keys_top=[]):
     """
@@ -440,42 +479,6 @@ def preprocess_markdown(page, target=None, categories=[], page_filters=[],
 
     logger.info("... markdown is ready")
     return md
-
-# def read_markdown_local(filename, pp_env, target=None, bypass_errors=False,
-#         currentpage={}, categories=[], mode="html", current_time="TIME_UNKNOWN"):
-#     """Read in a markdown file and pre-process any templating lang in it,
-#        returning the parsed contents."""
-#     target = get_target(target)
-#     pages = get_pages(target)
-#     logger.info("reading markdown from file: %s" % filename)
-#
-#     if config["skip_preprocessor"]:
-#         fpath = pp_env.loader.searchpath[0]
-#         with open(os.path.join(fpath,filename), "r") as f:
-#             md_out = f.read()
-#     else:
-#         try:
-#             md_raw = pp_env.get_template(filename)
-#             md_out = md_raw.render(
-#                 currentpage=currentpage,
-#                 categories=categories,
-#                 pages=pages,
-#                 target=target,
-#                 current_time=current_time,
-#                 mode=mode,
-#                 config=config
-#             )
-#         except jinja2.TemplateError as e:
-#             traceback.print_tb(e.__traceback__)
-#             if bypass_errors:
-#                 logger.warning("Error pre-processing page %s; trying to load it raw"
-#                              % filename)
-#                 fpath = pp_env.loader.searchpath[0]
-#                 with open(os.path.join(fpath,filename), "r") as f:
-#                     md_out = f.read()
-#             else:
-#                 exit("Error pre-processing page %s: %s" % (filename, e))
-#     return md_out
 
 
 def read_markdown_remote(url):
@@ -666,14 +669,10 @@ def render_page(currentpage, target, pages, mode, current_time, categories,
 
         except Exception as e:
             traceback.print_tb(e.__traceback__)
-            if bypass_errors:
-                logger.warning( ("Skipping page %s " +
-                      "due to error fetching contents: %s") %
-                       (currentpage["name"], e) )
-                html_content = ""
-            else:
-                exit("Error when fetching page %s: %s" %
-                     (currentpage["name"], e) )
+            recoverable_error("Error when fetching page %s: %s" %
+                 (currentpage["name"], e), bypass_errors)
+            html_content=""
+
     else:
         html_content = ""
 
@@ -767,14 +766,11 @@ def render_pages(target=None, mode="html", bypass_errors=False,
                 )
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
-                if bypass_errors:
-                    logger.warning( ("Skipping page %s " +
+                recoverable_error( ("Skipping page %s " +
                           "due to error fetching contents: %s") %
-                           (currentpage["name"], e) )
-                    continue
-                else:
-                    exit("Error when fetching page %s: %s" %
-                         (currentpage["name"], e) )
+                           (currentpage["name"], e), bypass_errors)
+                continue
+
         else:
             exit("render_pages error: unknown mode: %s" % mode)
 
@@ -863,11 +859,9 @@ def make_pdf(outfile, target=None, bypass_errors=False, remove_tmp=True, only_pa
     if only_page:
         pages = [p for p in pages if match_only_page(only_page, p)][:1]
         if not len(pages):
-            if bypass_errors:
-                logger.warning("Couldn't find 'only' page %s" % only_page)
-                return
-            else:
-                exit("Error: couldn't find only page %s" % only_page)
+            recoverable_error("Couldn't find 'only' page %s" % only_page,
+                bypass_errors)
+            return
     # Each HTML output file in the target is another arg to prince
     args += [p["html"] for p in pages]
 
@@ -888,9 +882,9 @@ def main(cli_args):
         logger.setLevel(logging.INFO)
 
     if cli_args.config:
-        load_config(cli_args.config)
+        load_config(cli_args.config, bypass_errors=cli_args.bypass_errors)
     else:
-        load_config()
+        load_config(bypass_errors=cli_args.bypass_errors)
 
     if cli_args.version:
         print("Dactyl version %s" % __version__)
