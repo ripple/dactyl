@@ -7,12 +7,23 @@
     {% include 'filter-css-includes.html' %}
 </head>
 <body>
+  {% if currentpage.section_header %}
+  <h1>{{ currentpage.name }}</h1>
+  <ul>
+      {% for page in pages %}
+        {% if page.category == currentpage.category and page != currentpage %}
+      <li><a href="{{ page.html }}">{{ page.name }}</a></li>
+        {% endif %}
+      {% endfor %}
+  </ul>
+  {% else %}
     <aside class="dactyl-sidebar">
         <h4>Contents</h4>
         <ul class="dactyl-page-toc">
             {{ sidebar_content }}
         </ul>
     </aside>
+    {% endif %}
     <main class="dactyl-main">{{content}}</main>
     <footer>(Exported {{ current_time }})</footer>
 </body>

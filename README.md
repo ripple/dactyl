@@ -250,8 +250,8 @@ Each individual page definition can have the following fields:
 
 | Field                    | Type      | Description                           |
 |:-------------------------|:----------|:--------------------------------------|
-| `html`                   | String    | The filename where this file should be written in the output directory. |
 | `targets`                | Array     | The short names of the targets that should include this page. |
+| `html`                   | String    | _(Optional)_ The filename where this file should be written in the output directory. If omitted, Dactyl chooses a filename based on the `md` field (if provided), the `name` field (if provided), or the current time (as a last resort). By default, generated filenames flatten the folder structure of the md files. To instead replicate the folder structure of the source documents in auto-generated filenames, add `flatten_default_html_paths: true` to the top level of your Dactyl config file. |
 | `name`                   | String    | _(Optional)_ Human-readable display name for this page. If omitted but `md` is provided, Dactyl tries to guess the right file name by looking at the first two lines of the `md` source file. |
 | `md`                     | String    | _(Optional)_ The markdown filename to parse to generate this page, relative to the **content_path** in your config. If this is not provided, the source file is assumed to be empty. (You might do that if you use a nonstandard `template` for this page.) |
 | `category` | String | _(Optional)_ The name of a category to group this page into. This is used by Dactyl's built-in templates to organize the table of contents. |

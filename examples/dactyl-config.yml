@@ -22,7 +22,8 @@ targets:
         condition: tests-2
 
 pages:
-    -   html: tests-index.html
+    -   name: Tests
+        html: tests-index.html
         category: Tests
         section_header: true
         targets:
@@ -52,7 +53,8 @@ pages:
         targets:
             - everything
 
-    -   html: filters-index.html
+    -   name: Filters
+        html: filters-index.html
         category: Filters
         section_header: true
         targets:

@@ -97,8 +97,6 @@ def load_config(config_file=DEFAULT_CONFIG_FILE, bypass_errors=False):
     config.update(loaded_config)
 
     # Check page list for consistency and provide default values
-    #TODO: this is not the right place for html_outs_in_target, move it to get_pages again?
-    html_outs_in_target = []
     for page in config["pages"]:
         if "targets" not in page:
             if "name" in page:
@@ -115,13 +113,8 @@ def load_config(config_file=DEFAULT_CONFIG_FILE, bypass_errors=False):
             page["name"] = guess_title_from_md_file(page_path)
 
         if "html" not in page:
-            logger.debug("Using default html output filename for page %s" % page)
             page["html"] = html_filename_from(page)
-        if page["html"] in html_outs_in_target:
-            recoverable_error("Warning: two pages with the same HTML filename; "+
-                    "%s will overwrite an earlier page." % page, bypass_errors)
 
-        html_outs_in_target.append(page["html"])
 
 
     # Figure out which filters we need
@@ -294,7 +287,7 @@ def get_filters_for_page(page, target=None):
 
 
 def parse_markdown(page, target=None, pages=None, categories=[], mode="html",
-                    current_time=""):
+                    current_time="", bypass_errors=False):
     """Takes a page object (must contain "md" attribute) and returns parsed
     and filtered HTML."""
     target = get_target(target)
@@ -311,6 +304,7 @@ def parse_markdown(page, target=None, pages=None, categories=[], mode="html",
         mode=mode,
         current_time=current_time,
         page_filters=page_filters,
+        bypass_errors=bypass_errors,
     )
 
     # Actually parse the markdown
@@ -365,9 +359,10 @@ def html_filename_from(page):
     """Takes a page definition and makes up a reasonable HTML filename for it to use."""
     if "md" in page:
         new_filename = re.sub(r"[.]md$", ".html", page["md"])
-        # TODO: take an option to not flatten directory structure
-        return new_filename.replace("/", "-")
-        #return new_filename
+        if config.get("flatten_default_html_paths", True):
+            return new_filename.replace(os.sep, "-")
+        else:
+            return new_filename
     elif "name" in page:
         return slugify(page["name"])
     else:
@@ -376,7 +371,7 @@ def html_filename_from(page):
         return new_filename
 
 
-def get_pages(target=None):
+def get_pages(target=None, bypass_errors=False):
     """Read pages from config and return an object, optionally filtered
        to just the pages that this target cares about"""
 
@@ -387,6 +382,15 @@ def get_pages(target=None):
         #filter pages that aren't part of this target
         pages = [page for page in pages
                  if should_include(page, target["name"])]
+
+    # Check for pages that would overwrite each other
+    html_outs_in_target = []
+    for p in pages:
+        if p["html"] in html_outs_in_target:
+            recoverable_error(("Repeated output filename '%s': "+
+                "the earlier instances will be overwritten") % p["html"],
+                bypass_errors)
+        html_outs_in_target.append(p["html"])
 
     # Pages should inherit non-reserved keys from the target
     for p in pages:
@@ -431,11 +435,12 @@ def get_categories(pages):
     return categories
 
 def preprocess_markdown(page, target=None, categories=[], page_filters=[],
-                        mode="html", current_time="TIME_UNKNOWN"):
+                        mode="html", current_time="TIME_UNKNOWN",
+                        bypass_errors=False):
     """Read a markdown file, local or remote, and preprocess it, returning the
     preprocessed text."""
     target=get_target(target)
-    pages=get_pages(target)
+    pages=get_pages(target, bypass_errors)
 
     if config["skip_preprocessor"]:
         remote, basepath = get_page_where(page)
@@ -664,7 +669,8 @@ def render_page(currentpage, target, pages, mode, current_time, categories,
                 pages=pages,
                 mode=mode,
                 current_time=current_time,
-                categories=categories
+                categories=categories,
+                bypass_errors=bypass_errors,
             )
 
         except Exception as e:
@@ -698,7 +704,7 @@ def render_pages(target=None, mode="html", bypass_errors=False,
                 only_page=False, temp_files_path=None):
     """Parse and render all pages in target, writing files to out_path."""
     target = get_target(target)
-    pages = get_pages(target)
+    pages = get_pages(target, bypass_errors)
     categories = get_categories(pages)
     current_time = time.strftime(config["time_format"]) # Get time once only
 
@@ -763,6 +769,7 @@ def render_pages(target=None, mode="html", bypass_errors=False,
                     mode=mode,
                     current_time=current_time,
                     page_filters=get_filters_for_page(currentpage, target),
+                    bypass_errors=bypass_errors,
                 )
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
@@ -855,7 +862,7 @@ def make_pdf(outfile, target=None, bypass_errors=False, remove_tmp=True, only_pa
     old_cwd = os.getcwd()
     os.chdir(temp_files_path)
 
-    pages = get_pages(target)
+    pages = get_pages(target, bypass_errors)
     if only_page:
         pages = [p for p in pages if match_only_page(only_page, p)][:1]
         if not len(pages):
