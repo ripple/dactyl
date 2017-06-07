@@ -43,7 +43,7 @@ def find_file_in_target(fname, targetname, config):
             continue
         elif page["html"] != fname:
             continue
-        if targetname in page["targets"]:
+        if targetname in page.get("targets", []):
             return page
     else:
         return False
@@ -68,7 +68,7 @@ def find_file_in_any_target(fname, config):
     for page in config["pages"]:
         if "html" not in page:
             continue
-        elif page["html"] == fname and page["targets"]:
+        elif page["html"] == fname and page.get("targets", []):
             #page has to have "some" target(s) for it to be worthwhile
             return page
     else:

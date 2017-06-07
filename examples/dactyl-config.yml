@@ -54,7 +54,6 @@ pages:
             - everything
 
     -   name: Filters
-        html: filters-index.html
         category: Filters
         section_header: true
         targets:

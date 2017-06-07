@@ -96,6 +96,10 @@ def load_config(config_file=DEFAULT_CONFIG_FILE, bypass_errors=False):
 
     config.update(loaded_config)
 
+    targetnames = set([t["name"] for t in config["targets"]])
+    if len(targetnames) != len(config["targets"]):
+        recoverable_error("Duplicate or missing target name in config file",
+                bypass_errors)
     # Check page list for consistency and provide default values
     for page in config["pages"]:
         if "targets" not in page:
@@ -107,6 +111,10 @@ def load_config(config_file=DEFAULT_CONFIG_FILE, bypass_errors=False):
         elif type(page["targets"]) != list:
             recoverable_error(("targets parameter specified incorrectly; "+
                               "must be a list. Page: %s") % page, bypass_errors)
+        elif set(page["targets"]).difference(targetnames):
+            recoverable_error("Page '%s' contains undefined targets: %s" %
+                        (page, set(page["targets"]).difference(targetnames)),
+                        bypass_errors)
         if "md" in page and "name" not in page:
             logger.debug("Guessing page name for page %s" % page)
             page_path = os.path.join(config["content_path"], page["md"])
@@ -356,7 +364,7 @@ def parse_markdown(page, target=None, pages=None, categories=[], mode="html",
 
 
 def html_filename_from(page):
-    """Takes a page definition and makes up a reasonable HTML filename for it to use."""
+    """Take a page definition and choose a reasonable HTML filename for it."""
     if "md" in page:
         new_filename = re.sub(r"[.]md$", ".html", page["md"])
         if config.get("flatten_default_html_paths", True):
@@ -364,10 +372,11 @@ def html_filename_from(page):
         else:
             return new_filename
     elif "name" in page:
-        return slugify(page["name"])
+        return slugify(page["name"]).lower()+".html"
     else:
         new_filename = str(time.time()).replace(".", "-")+".html"
-        logger.debug("Generated filename '%s' for page: %s" % (new_filename, page))
+        logger.debug("Generated filename '%s' for page: %s" %
+                    (new_filename, page))
         return new_filename
 
 
