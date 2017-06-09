@@ -96,10 +96,16 @@ def load_config(config_file=DEFAULT_CONFIG_FILE, bypass_errors=False):
 
     config.update(loaded_config)
 
-    targetnames = set([t["name"] for t in config["targets"]])
-    if len(targetnames) != len(config["targets"]):
-        recoverable_error("Duplicate or missing target name in config file",
-                bypass_errors)
+    targetnames = set()
+    for t in config["targets"]:
+        if "name" not in t:
+            logger.error("Target does not have required 'name' field: %s" % t)
+            exit(1)
+        elif t["name"] in targetnames:
+            recoverable_error("Duplicate target name in config file: '%s'" %
+                t["name"], bypass_errors)
+        targetnames.add(t["name"])
+    
     # Check page list for consistency and provide default values
     for page in config["pages"]:
         if "targets" not in page:
