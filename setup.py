@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """setuptools based setup module"""
 
 from setuptools import setup

@@ -7,14 +7,9 @@
 # along the way.
 ################################################################################
 
-DEFAULT_CONFIG_FILE = "dactyl-config.yml"
+from dactyl.common import *
 
-import os
-import re
-import yaml
 import argparse
-import logging
-import traceback
 
 # Necessary to copy static files to the output dir
 from distutils.dir_util import copy_tree, remove_tree
@@ -22,10 +17,6 @@ from shutil import copy as copy_file
 
 # Used for pulling in the default config file
 from pkg_resources import resource_stream
-
-# Used to import filters.
-from importlib import import_module
-import importlib.util
 
 # Necessary for prince
 import subprocess
@@ -40,11 +31,11 @@ from markdown import markdown
 from bs4 import BeautifulSoup
 
 # Watchdog stuff
-import time
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
 from dactyl.version import __version__
+from dactyl.config import DactylConfig
 
 # The log level is configurable at runtime (see __main__ below)
 logger = logging.getLogger(__name__)
@@ -61,108 +52,6 @@ ADHOC_TARGET = "__ADHOC__"
 DEFAULT_PDF_FILE = "__DEFAULT_FILENAME__"
 NO_PDF = "__NO_PDF__"
 
-config = yaml.load(resource_stream(__name__, "default-config.yml"))
-
-
-filters = {}
-def load_config(config_file=DEFAULT_CONFIG_FILE, bypass_errors=False):
-    """Reload config from a YAML file."""
-    global config, filters
-    logger.debug("loading config file %s..." % config_file)
-    try:
-        with open(config_file, "r") as f:
-            loaded_config = yaml.load(f)
-    except FileNotFoundError as e:
-        if config_file == DEFAULT_CONFIG_FILE:
-            logger.info("Couldn't read a config file; using generic config")
-            loaded_config = {}
-        else:
-            traceback.print_tb(e.__traceback__)
-            exit("Fatal: Config file '%s' not found"%config_file)
-    except yaml.parser.ParserError as e:
-        traceback.print_tb(e.__traceback__)
-        exit("Fatal: Error parsing config file: %s"%e)
-
-    # Migrate legacy config fields
-    if "pdf_template" in loaded_config:
-        if "default_pdf_template" in loaded_config:
-            recoverable_error("Ignoring redundant global config option "+
-                           "pdf_template in favor of default_pdf_template",
-                           bypass_errors)
-        else:
-            loaded_config["default_pdf_template"] = loaded_config["pdf_template"]
-            logger.warning("Deprecation warning: Global field pdf_template has "
-                          +"been renamed default_pdf_template")
-
-    config.update(loaded_config)
-
-    targetnames = set()
-    for t in config["targets"]:
-        if "name" not in t:
-            logger.error("Target does not have required 'name' field: %s" % t)
-            exit(1)
-        elif t["name"] in targetnames:
-            recoverable_error("Duplicate target name in config file: '%s'" %
-                t["name"], bypass_errors)
-        targetnames.add(t["name"])
-    
-    # Check page list for consistency and provide default values
-    for page in config["pages"]:
-        if "targets" not in page:
-            if "name" in page:
-                logger.warning("Page %s is not part of any targets." %
-                             page["name"])
-            else:
-                logger.warning("Page %s is not part of any targets." % page)
-        elif type(page["targets"]) != list:
-            recoverable_error(("targets parameter specified incorrectly; "+
-                              "must be a list. Page: %s") % page, bypass_errors)
-        elif set(page["targets"]).difference(targetnames):
-            recoverable_error("Page '%s' contains undefined targets: %s" %
-                        (page, set(page["targets"]).difference(targetnames)),
-                        bypass_errors)
-        if "md" in page and "name" not in page:
-            logger.debug("Guessing page name for page %s" % page)
-            page_path = os.path.join(config["content_path"], page["md"])
-            page["name"] = guess_title_from_md_file(page_path)
-
-        if "html" not in page:
-            page["html"] = html_filename_from(page)
-
-
-
-    # Figure out which filters we need
-    filternames = set(config["default_filters"])
-    for target in config["targets"]:
-        if "filters" in target:
-            filternames.update(target["filters"])
-    for page in config["pages"]:
-        if "filters" in page:
-            filternames.update(page["filters"])
-
-    load_filters(filternames)
-
-def load_filters(filternames):
-    global filters
-    for filter_name in filternames:
-        filter_loaded = False
-        if "filter_paths" in config:
-            for filter_path in config["filter_paths"]:
-                try:
-                    f_filepath = os.path.join(filter_path, "filter_"+filter_name+".py")
-                    spec = importlib.util.spec_from_file_location(
-                                "dactyl_filters."+filter_name, f_filepath)
-                    filters[filter_name] = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(filters[filter_name])
-                    filter_loaded = True
-                    break
-                except Exception as e:
-                    logger.debug("Filter %s isn't in path %s\nErr:%s" %
-                                (filter_name, filter_path, e))
-
-        if not filter_loaded:
-            # Load from the Dactyl module
-            filters[filter_name] = import_module("dactyl.filter_"+filter_name)
 
 def default_pdf_name(target):
     target = get_target(target)
@@ -176,12 +65,6 @@ def default_pdf_name(target):
     else:
         return slugify(target["name"])+".pdf"
 
-
-def recoverable_error(msg, bypass_errors):
-    """Logs a warning/error message and exits if bypass_errors==False"""
-    logger.error(msg)
-    if not bypass_errors:
-        exit(1)
 
 # Note: this regex means non-ascii characters get stripped from filenames,
 #  which is not preferable when making non-English filenames.
@@ -264,32 +147,6 @@ def make_adhoc_target(inpages):
 
     return t
 
-
-def guess_title_from_md_file(filepath):
-    with open(filepath, "r") as f:
-        line1 = f.readline()
-        line2 = f.readline()
-
-        # look for headers in the "followed by ----- or ===== format"
-        ALT_HEADER_REGEX = re.compile("^[=-]{3,}$")
-        if ALT_HEADER_REGEX.match(line2):
-            possible_header = line1
-            if possible_header.strip():
-                return possible_header.strip()
-
-        # look for headers in the "## abc ## format"
-        HEADER_REGEX = re.compile("^#+\s*(.+[^#\s])\s*#*$")
-        m = HEADER_REGEX.match(line1)
-        if m:
-            possible_header = m.group(1)
-            if possible_header.strip():
-                return possible_header.strip()
-
-    #basically if the first line's not a markdown header, we give up and use
-    # the filename instead
-    return os.path.basename(filepath)
-
-
 def get_filters_for_page(page, target=None):
     ffp = set(config["default_filters"])
     target = get_target(target)
@@ -329,9 +186,9 @@ def parse_markdown(page, target=None, pages=None, categories=[], mode="html",
 
     # Apply raw-HTML-string-based filters here
     for filter_name in page_filters:
-        if "filter_html" in dir(filters[filter_name]):
+        if "filter_html" in dir(config.filters[filter_name]):
             logger.info("... applying HTML filter %s" % filter_name)
-            html = filters[filter_name].filter_html(
+            html = config.filters[filter_name].filter_html(
                     html,
                     currentpage=page,
                     categories=categories,
@@ -349,9 +206,9 @@ def parse_markdown(page, target=None, pages=None, categories=[], mode="html",
 
     # Apply soup-based filters here
     for filter_name in page_filters:
-        if "filter_soup" in dir(filters[filter_name]):
+        if "filter_soup" in dir(config.filters[filter_name]):
             logger.info("... applying soup filter %s" % filter_name)
-            filters[filter_name].filter_soup(
+            config.filters[filter_name].filter_soup(
                     soup,
                     currentpage=page,
                     categories=categories,
@@ -367,23 +224,6 @@ def parse_markdown(page, target=None, pages=None, categories=[], mode="html",
     logger.info("... re-rendering HTML from soup...")
     html2 = str(soup)
     return html2
-
-
-def html_filename_from(page):
-    """Take a page definition and choose a reasonable HTML filename for it."""
-    if "md" in page:
-        new_filename = re.sub(r"[.]md$", ".html", page["md"])
-        if config.get("flatten_default_html_paths", True):
-            return new_filename.replace(os.sep, "-")
-        else:
-            return new_filename
-    elif "name" in page:
-        return slugify(page["name"]).lower()+".html"
-    else:
-        new_filename = str(time.time()).replace(".", "-")+".html"
-        logger.debug("Generated filename '%s' for page: %s" %
-                    (new_filename, page))
-        return new_filename
 
 
 def get_pages(target=None, bypass_errors=False):
@@ -483,9 +323,9 @@ def preprocess_markdown(page, target=None, categories=[], page_filters=[],
 
     # Apply markdown-based filters here
     for filter_name in page_filters:
-        if "filter_markdown" in dir(filters[filter_name]):
+        if "filter_markdown" in dir(config.filters[filter_name]):
             logger.info("... applying markdown filter %s" % filter_name)
-            md = filters[filter_name].filter_markdown(
+            md = config.filters[filter_name].filter_markdown(
                 md,
                 currentpage=page,
                 categories=categories,
@@ -596,8 +436,8 @@ def setup_pp_env(page=None, page_filters=[]):
 
     # Pull exported values (& functions) from page filters into the pp_env
     for filter_name in page_filters:
-        if "export" in dir(filters[filter_name]):
-            for key,val in filters[filter_name].export.items():
+        if "export" in dir(config.filters[filter_name]):
+            for key,val in config.filters[filter_name].export.items():
                 logger.debug("... pulling in filter_%s's exported key '%s'" % (filter_name, key))
                 pp_env.globals[key] = val
     return pp_env
@@ -903,14 +743,15 @@ def main(cli_args):
     elif not cli_args.quiet:
         logger.setLevel(logging.INFO)
 
-    if cli_args.config:
-        load_config(cli_args.config, bypass_errors=cli_args.bypass_errors)
-    else:
-        load_config(bypass_errors=cli_args.bypass_errors)
-
     if cli_args.version:
         print("Dactyl version %s" % __version__)
         exit(0)
+
+    global config
+    if cli_args.config:
+        config = DactylConfig(cli_args.config, bypass_errors=cli_args.bypass_errors)
+    else:
+        config = DactylConfig(bypass_errors=cli_args.bypass_errors)
 
     if cli_args.list_targets_only:
         for t in config["targets"]:
