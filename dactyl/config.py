@@ -2,6 +2,7 @@
 # Dactyl config-loading module
 ################################################################################
 from dactyl.common import *
+from dactyl.version import __version__
 
 # Used to import filters.
 from importlib import import_module
@@ -15,16 +16,37 @@ from pkg_resources import resource_stream
 DEFAULT_CONFIG_FILE = "dactyl-config.yml"
 
 class DactylConfig:
-    def __init__(self, config_file=DEFAULT_CONFIG_FILE, bypass_errors=False):
-        """Reload config from a YAML file."""
+    def __init__(self, cli_args):
+        """Load config from commandline arguments"""
+        self.cli_args = cli_args
+        self.set_logging()
+
+        # Don't even bother loading the config file if it's just a version query
+        if cli_args.version:
+            print("Dactyl version %s" % __version__)
+            exit(0)
+
+        self.bypass_errors = cli_args.bypass_errors
 
         # Start with the default config, then overwrite later
         self.config = yaml.load(resource_stream(__name__, "default-config.yml"))
         self.filters = {}
-        self.load_config_from_file(config_file, bypass_errors)
+        if cli_args.config:
+            self.load_config_from_file(cli_args.config)
+        else:
+            logger.debug("No config file specified, trying ./dactyl-config.yml")
+            self.load_config_from_file(DEFAULT_CONFIG_FILE)
         self.load_filters()
 
-    def load_config_from_file(self, config_file, bypass_errors=False):
+
+    def set_logging(self):
+        if self.cli_args.debug:
+            logger.setLevel(logging.DEBUG)
+        elif not self.cli_args.quiet:
+            logger.setLevel(logging.INFO)
+
+
+    def load_config_from_file(self, config_file):
         logger.debug("loading config file %s..." % config_file)
         try:
             with open(config_file, "r") as f:
@@ -45,7 +67,7 @@ class DactylConfig:
             if "default_pdf_template" in loaded_config:
                 recoverable_error("Ignoring redundant global config option "+
                                "pdf_template in favor of default_pdf_template",
-                               bypass_errors)
+                               self.bypass_errors)
             else:
                 loaded_config["default_pdf_template"] = loaded_config["pdf_template"]
                 logger.warning("Deprecation warning: Global field pdf_template has "
@@ -60,7 +82,7 @@ class DactylConfig:
                 exit(1)
             elif t["name"] in targetnames:
                 recoverable_error("Duplicate target name in config file: '%s'" %
-                    t["name"], bypass_errors)
+                    t["name"], self.bypass_errors)
             targetnames.add(t["name"])
 
         # Check page list for consistency and provide default values
@@ -73,11 +95,12 @@ class DactylConfig:
                     logger.warning("Page %s is not part of any targets." % page)
             elif type(page["targets"]) != list:
                 recoverable_error(("targets parameter specified incorrectly; "+
-                                  "must be a list. Page: %s") % page, bypass_errors)
+                                  "must be a list. Page: %s") % page,
+                                  self.bypass_errors)
             elif set(page["targets"]).difference(targetnames):
                 recoverable_error("Page '%s' contains undefined targets: %s" %
                             (page, set(page["targets"]).difference(targetnames)),
-                            bypass_errors)
+                            self.bypass_errors)
             if "md" in page and "name" not in page:
                 logger.debug("Guessing page name for page %s" % page)
                 page_path = os.path.join(self.config["content_path"], page["md"])
@@ -131,6 +154,22 @@ class DactylConfig:
                     loading_errors.append(e)
                     logger.debug("Failed to load filter %s. Errors: %s" %
                         (filter_name, loading_errors))
+
+    def load_style_rules(self):
+        """Reads word and phrase substitution files into the config"""
+        if "word_substitutions_file" in self.config:
+            with open(self.config["word_substitutions_file"], "r") as f:
+                self.config["disallowed_words"] = yaml.load(f)
+        else:
+            logger.warning("No 'word_substitutions_file' found in config.")
+            self.config["disallowed_words"] = {}
+
+        if "phrase_substitutions_file" in self.config:
+            with open(self.config["phrase_substitutions_file"], "r") as f:
+                self.config["disallowed_phrases"] = yaml.load(f)
+        else:
+            logger.warning("No 'phrase_substitutions_file' found in config.")
+            self.config["disallowed_phrases"] = {}
 
 
     def html_filename_from(self, page):

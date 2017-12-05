@@ -1,3 +1,9 @@
+################################################################################
+# Dactyl common code
+#
+# Imports and utilities shared across multiple pieces of Dactyl
+################################################################################
+
 import logging
 import os
 import re
@@ -6,6 +12,10 @@ import traceback
 import yaml
 
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler())
+
+DEFAULT_PDF_FILE = "__DEFAULT_FILENAME__"
+NO_PDF = "__NO_PDF__"
 
 def recoverable_error(msg, bypass_errors):
     """Logs a warning/error message and exits if bypass_errors==False"""

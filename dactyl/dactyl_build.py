@@ -9,14 +9,9 @@
 
 from dactyl.common import *
 
-import argparse
-
 # Necessary to copy static files to the output dir
 from distutils.dir_util import copy_tree, remove_tree
 from shutil import copy as copy_file
-
-# Used for pulling in the default config file
-from pkg_resources import resource_stream
 
 # Necessary for prince
 import subprocess
@@ -34,23 +29,16 @@ from bs4 import BeautifulSoup
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-from dactyl.version import __version__
 from dactyl.config import DactylConfig
-
-# The log level is configurable at runtime (see __main__ below)
-logger = logging.getLogger(__name__)
-logger.addHandler(logging.StreamHandler())
+from dactyl.cli import DactylCLIParser
 
 # These fields are special, and pages don't inherit them directly
 RESERVED_KEYS_TARGET = [
     "name",
     "display_name",
-    # "filters",
     "pages",
 ]
 ADHOC_TARGET = "__ADHOC__"
-DEFAULT_PDF_FILE = "__DEFAULT_FILENAME__"
-NO_PDF = "__NO_PDF__"
 
 
 def default_pdf_name(target):
@@ -738,21 +726,6 @@ def make_pdf(outfile, target=None, bypass_errors=False, remove_tmp=True, only_pa
 
 
 def main(cli_args):
-    if cli_args.debug:
-        logger.setLevel(logging.DEBUG)
-    elif not cli_args.quiet:
-        logger.setLevel(logging.INFO)
-
-    if cli_args.version:
-        print("Dactyl version %s" % __version__)
-        exit(0)
-
-    global config
-    if cli_args.config:
-        config = DactylConfig(cli_args.config, bypass_errors=cli_args.bypass_errors)
-    else:
-        config = DactylConfig(bypass_errors=cli_args.bypass_errors)
-
     if cli_args.list_targets_only:
         for t in config["targets"]:
             if "display_name" in t:
@@ -846,64 +819,10 @@ def main(cli_args):
 
 
 def dispatch_main():
-    parser = argparse.ArgumentParser(
-        description='Generate static site from markdown and templates.')
-
-    build_mode = parser.add_mutually_exclusive_group(required=False)
-    build_mode.add_argument("--pdf", nargs="?", type=str,
-                        const=DEFAULT_PDF_FILE, default=NO_PDF,
-                        help="Output a PDF to this file. Requires Prince.")
-    build_mode.add_argument("--md", action="store_true",
-                        help="Output markdown only")
-    # HTML is the default mode
-
-    noisiness = parser.add_mutually_exclusive_group(required=False)
-    noisiness.add_argument("--quiet", "-q", action="store_true",
-                        help="Suppress status messages")
-    noisiness.add_argument("--debug", action="store_true",
-                        help="Print debug-level log messages")
-
-    parser.add_argument("--watch", "-w", action="store_true",
-                        help="Watch for changes and re-generate output. "+\
-                         "This runs until force-quit.")
-    parser.add_argument("--target", "-t", type=str,
-                        help="Build for the specified target.")
-    parser.add_argument("--out_dir", "-o", type=str,
-                        help="Output to this folder (overrides config file)")
-    parser.add_argument("--bypass_errors", "-b", action="store_true",
-                        help="Continue building if some contents not found")
-    parser.add_argument("--config", "-c", type=str,
-                        help="Specify path to an alternate config file.")
-    parser.add_argument("--copy_static", "-s", action="store_true",
-                        help="Copy static files to the out dir",
-                        default=False)
-    parser.add_argument("--only", type=str, help=".md or .html filename of a "+
-                        "single page in the config to build alone.")
-    parser.add_argument("--pages", type=str, help="Markdown file(s) to build "+\
-                        "that aren't described in the config.", nargs="+")
-    parser.add_argument("--no_cover", "-n", action="store_true",
-                        help="Don't automatically add a cover / index file.")
-    parser.add_argument("--skip_preprocessor", action="store_true", default=False,
-                        help="Don't pre-process Jinja syntax in markdown files")
-    parser.add_argument("--title", type=str, help="Override target display "+\
-                        "name. Useful when passing multiple args to --pages.")
-    parser.add_argument("--leave_temp_files", action="store_true",
-                        help="Leave temp files in place (for debugging or "+
-                        "manual PDF generation). Ignored when using --watch",
-                        default=False)
-    parser.add_argument("--vars", type=str, help="A YAML or JSON file with vars "+
-                        "to add to the target so the preprocessor and "+
-                        "templates can reference them.")
-
-    # The following options cause Dactyl to ignore basically everything else
-    parser.add_argument("--version", "-v", action="store_true",
-                        help="Print version information and exit.")
-    parser.add_argument("--list_targets_only", "-l", action="store_true",
-                        help="Don't build anything, just display list of "+
-                        "known targets from the config file.")
-
-    cli_args = parser.parse_args()
-    main(cli_args)
+    cli = DactylCLIParser(DactylCLIParser.UTIL_BUILD)
+    global config
+    config = DactylConfig(cli.cli_args)
+    main(cli.cli_args)
 
 
 if __name__ == "__main__":

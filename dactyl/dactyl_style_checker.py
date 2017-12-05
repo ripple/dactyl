@@ -8,48 +8,20 @@
 ## Reads the markdown files to try and enforce elements of good style.       ##
 ###############################################################################
 
-import logging
-import argparse
+from dactyl.common import *
+
 #import nltk
-import re
 import collections
-import yaml
 
 from bs4 import BeautifulSoup
 from bs4 import Comment
 from bs4 import NavigableString
 
-# Used for pulling in the default config file
-from pkg_resources import resource_stream
-
 from dactyl import dactyl_build
+from dactyl.config import DactylConfig
+from dactyl.cli import DactylCLIParser
 
-DEFAULT_CONFIG_FILE = "dactyl-config.yml"
 OVERRIDE_COMMENT_REGEX = r" *STYLE_OVERRIDE: *([\w, -]+)"
-
-logger = logging.getLogger()
-
-config = dactyl_build.config
-def load_config(config_file=DEFAULT_CONFIG_FILE):
-    global config
-    dactyl_build.load_config(config_file)
-
-    if len(config["targets"]) == 0:
-        exit("No target found; maybe you need to specify a Dactyl config file?")
-
-    if "word_substitutions_file" in config:
-        with open(config["word_substitutions_file"], "r") as f:
-            config["disallowed_words"] = yaml.load(f)
-    else:
-        logger.warning("No 'word_substitutions_file' found in config.")
-        config["disallowed_words"] = {}
-
-    if "phrase_substitutions_file" in config:
-        with open(config["phrase_substitutions_file"], "r") as f:
-            config["disallowed_phrases"] = yaml.load(f)
-    else:
-        logger.warning("No 'phrase_substitutions_file' found in config.")
-        config["disallowed_phrases"] = {}
 
 def tokenize(passage):
     words = re.split(r"[\s,.;()!'\"]+", passage)
@@ -137,15 +109,9 @@ def check_passage(passage, overrides):
 
     return issues
 
-
 def main(cli_args):
-    if cli_args.verbose:
-        logging.basicConfig(level=logging.INFO)
-
-    if cli_args.config:
-        load_config(cli_args.config)
-    else:
-        load_config()
+    if len(config["targets"]) == 0:
+        exit("No target found; maybe you need to specify a Dactyl config file?")
 
     issues = check_all_pages(target=cli_args.target)
     if issues:
@@ -170,15 +136,10 @@ def main(cli_args):
 
 
 def dispatch_main():
-    parser = argparse.ArgumentParser(
-        description="Check content files for style issues.")
-    parser.add_argument("--config", "-c", type=str,
-        help="Specify path to an alternate config file.")
-    parser.add_argument("--verbose", "-v", action="store_true",
-                        help="Show status messages")
-    parser.add_argument("--target", "-t", type=str,
-                        help="Check the specified target.")
-    cli_args = parser.parse_args()
+    cli_args = dactyl.cli.parse_cli(dactyl.cli.UTIL_BUILD)
+    global config
+    config = DactylConfig(cli_args)
+    config.load_style_rules()
     main(cli_args)
 
 

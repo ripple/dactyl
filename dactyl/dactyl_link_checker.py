@@ -1,34 +1,26 @@
 #!/usr/bin/env python3
+from dactyl.common import *
+
 import requests
-import os
-import yaml
-import argparse
-import logging
-import re
 from bs4 import BeautifulSoup
 from time import time, sleep
 
-# Used for pulling in the default config file
-from pkg_resources import resource_stream
+from dactyl.config import DactylConfig
+from dactyl.cli import DactylCLIParser
 
-DEFAULT_CONFIG_FILE = "dactyl-config.yml"
 TIMEOUT_SECS = 9.1
 CHECK_IN_INTERVAL = 30
 FINAL_RETRY_DELAY = 4 * CHECK_IN_INTERVAL
 
-# The log level is configurable at runtime (see __main__ below)
-logger = logging.getLogger(__name__)
-logger.addHandler(logging.StreamHandler())
-
 soupsCache = {}
 def getSoup(fullPath):
-  if fullPath in soupsCache.keys():
-    soup = soupsCache[fullPath]
-  else:
-    with open(fullPath, 'r') as f:
-      soup = BeautifulSoup(f.read(), "html.parser")
-      soupsCache[fullPath] = soup
-  return soup
+    if fullPath in soupsCache.keys():
+        soup = soupsCache[fullPath]
+    else:
+        with open(fullPath, 'r') as f:
+            soup = BeautifulSoup(f.read(), "html.parser")
+            soupsCache[fullPath] = soup
+    return soup
 
 
 def check_for_unparsed_reference_links(soup):
@@ -243,43 +235,11 @@ def final_retry_links(broken_links):
             logger.info("Link %s in page %s is still down." % (link, page))
 
 
-config = yaml.load(resource_stream(__name__, "default-config.yml"))
 
-def load_config(config_file=DEFAULT_CONFIG_FILE):
-    """Reload config from a YAML file."""
-    global config
-    logger.info("loading config file %s..." % config_file)
-    try:
-        with open(config_file, "r") as f:
-            loaded_config = yaml.load(f)
-    except FileNotFoundError as e:
-        if config_file == DEFAULT_CONFIG_FILE:
-            logger.warning("Couldn't read a config file; using generic config")
-            loaded_config = {}
-        else:
-            traceback.print_tb(e.__traceback__)
-            exit("Fatal: Config file '%s' not found"%config_file)
-    except yaml.parser.ParserError as e:
-        traceback.print_tb(e.__traceback__)
-        exit("Fatal: Error parsing config file: %s"%e)
+def main(cli_args):
+    broken_links, num_links_checked = checkLinks(cli_args.offline)
 
-    config.update(loaded_config)
-    assert(config["out_path"])
-    assert(type(config["known_broken_links"]) == list)
-
-
-def main(args):
-    if not args.quiet:
-        logger.setLevel(logging.INFO)
-
-    if args.config:
-        load_config(args.config)
-    else:
-        load_config()
-
-    broken_links, num_links_checked = checkLinks(args.offline)
-
-    if not args.no_final_retry and not args.offline:
+    if not cli_args.no_final_retry and not cli_args.offline:
         final_retry_links(broken_links)
         #^ sleeps for FINAL_RETRY_DELAY and then retries remote links
         # Automatically removes from broken_links if they work now
@@ -287,38 +247,27 @@ def main(args):
     print("---------------------------------------")
     print("Link check report. %d links checked."%num_links_checked)
 
-    if not args.strict:
-      unknown_broken_links = [ (page,link) for page,link in broken_links
+    if not cli_args.strict:
+        unknown_broken_links = [ (page,link) for page,link in broken_links
                         if link not in config["known_broken_links"] ]
 
     if not broken_links:
-      print("Success! No broken links found.")
+        print("Success! No broken links found.")
     else:
-      print("%d broken links found:"%(len(broken_links)))
-      [print("File:",fname,"Link:",link) for fname,link in broken_links]
+        print("%d broken links found:"%(len(broken_links)))
+        [print("File:",fname,"Link:",link) for fname,link in broken_links]
 
-      if args.strict or unknown_broken_links:
-          exit(1)
+        if cli_args.strict or unknown_broken_links:
+            exit(1)
 
-      print("Success - all broken links are known problems.")
+        print("Success - all broken links are known problems.")
 
 
 def dispatch_main():
-    parser = argparse.ArgumentParser(
-            description='Check files in this repository for broken links.')
-    parser.add_argument("-o", "--offline", action="store_true",
-                       help="Check local anchors only")
-    parser.add_argument("-s", "--strict", action="store_true",
-                        help="Exit with error even on known problems")
-    parser.add_argument("--config", "-c", type=str,
-                        help="Specify path to an alternate config file.")
-    parser.add_argument("-n", "--no_final_retry", action="store_true",
-                        help="Don't wait and retry failed remote links at the end.")
-    parser.add_argument("--quiet", "-q", action="store_true",
-                        help="Reduce output to just failures and final report")
-    args = parser.parse_args()
-    main(args)
-
+    cli = DactylCLIParser(DactylCLIParser.UTIL_BUILD)
+    global config
+    config = DactylConfig(cli.cli_args)
+    main(cli.cli_args)
 
 if __name__ == "__main__":
     dispatch_main()
