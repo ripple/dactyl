@@ -864,7 +864,7 @@ def list_targets():
                     f in config["pdf_filename_fields"]
                     if f in t.keys()]
             display_name = " ".join(filename_field_vals)
-        row.append((t["name"], display_name))
+        rows.append((t["name"], display_name))
 
     col1_width = max([len(i) for i,j in rows]) + 3
     for row in rows:
