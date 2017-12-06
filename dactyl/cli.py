@@ -35,6 +35,8 @@ class DactylCLIParser:
                                 help="Output a PDF to this file. Requires Prince.")
             build_mode.add_argument("--md", action="store_true",
                                 help="Output markdown only")
+            build_mode.add_argument("--es", action="store_true",
+                                help="Output JSON for ElasticSearch upload")
             # HTML is the default mode
 
             parser.add_argument("--copy_static", "-s", action="store_true",

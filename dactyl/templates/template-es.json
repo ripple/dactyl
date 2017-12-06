@@ -1,0 +1,13 @@
+{
+    "title": "{{currentpage.name}}",
+    "text": "{{currentpage.plaintext}}",
+    "category": "{{currentpage.category}}",
+    "keywords": {
+      "__dactyl_eval__": "currentpage.get(\"keywords\",[])"
+    },
+    "subheadings": {
+      "__dactyl_eval__": "currentpage[\"headermap\"]"
+    },
+    "blurb": "{{currentpage.blurb}}",
+    "path": "{{currentpage.html}}"
+}

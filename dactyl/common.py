@@ -4,6 +4,8 @@
 # Imports and utilities shared across multiple pieces of Dactyl
 ################################################################################
 
+# The ElasticSearch templates need to write *actual* JSON and not YAML
+import json
 import logging
 import os
 import re

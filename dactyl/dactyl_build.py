@@ -39,7 +39,7 @@ RESERVED_KEYS_TARGET = [
     "pages",
 ]
 ADHOC_TARGET = "__ADHOC__"
-
+ES_EVAL_KEY = "__dactyl_eval__"
 
 def default_pdf_name(target):
     target = get_target(target)
@@ -413,11 +413,14 @@ def get_page_where(page=None):
         return False, config["content_path"]
 
 
-def setup_pp_env(page=None, page_filters=[]):
+def setup_pp_env(page=None, page_filters=[], no_loader=False):
     remote, path = get_page_where(page)
     if remote:
         logger.debug("Using remote template loader for page %s" % page)
         pp_env = jinja2.Environment(loader=jinja2.FunctionLoader(read_markdown_remote))
+    elif no_loader:
+        logger.debug("Using a no-loader Jinja environment")
+        pp_env = jinja2.Environment()
     else:
         logger.debug("Using FileSystemLoader for page %s" % page)
         pp_env = jinja2.Environment(loader=jinja2.FileSystemLoader(path))
@@ -543,6 +546,99 @@ def render_page(currentpage, target, pages, mode, current_time, categories,
     )
     return out_html
 
+def add_bonus_fields(currentpage, target=None, pages=None, categories=[],
+        mode="html", current_time="", bypass_errors=False):
+    """Adds several metadata fields to a page based on the process of rendering
+    it into HTML, including plaintext, blurb, and headermap"""
+    body_html = parse_markdown(
+        currentpage,
+        target=target,
+        pages=pages,
+        mode=mode,
+        current_time=current_time,
+        categories=categories,
+        bypass_errors=bypass_errors,
+    )
+    soup = BeautifulSoup(body_html, "html.parser")
+
+    # Get "true" plaintext of the page
+    currentpage["plaintext"] = soup.get_text()
+
+    # Get a map of all headers
+    headermap = {}
+    headers = soup.find_all(re.compile("h[1-6]"), id=True)
+    currentpage["headermap"] = {h.get_text(): "#" + h["id"] for h in headers}
+
+    # Make a blurb from the first non-empty paragraph if no blurb is defined
+    if "blurb" not in currentpage:
+        p = soup.find("p")
+        while p:
+            if p.get_text().strip():
+                break
+            else:
+                p = p.find_next_sibling("p")
+        currentpage["blurb"] = p.get_text()
+
+def eval_es_string(expr, context):
+    try:
+        result = eval(expr, {}, context)
+    except Exception as e:
+        recoverable_error("__dactyl_eval__ failed on expression '%s': %s" %
+            (expr, e), context["bypass_errors"])
+        result = expr
+    return result
+
+def render_es_json(currentpage, es_template, pages=[], target=None, categories=[],
+                    page_filters=[], mode="es", current_time="TIME_UNKNOWN",
+                    bypass_errors=False):
+    """Returns stringified JSON representing the currentpage"""
+
+    # This method modifies the currentpage dictionary inline:
+    add_bonus_fields(
+        currentpage,
+        target=target,
+        mode=mode,
+        current_time=current_time,
+        categories=categories,
+        bypass_errors=bypass_errors,
+    )
+
+    context = {
+        "currentpage": currentpage,
+        "target": target,
+        "categories": categories,
+        "page_filters": page_filters,
+        "mode": mode,
+        "current_time": current_time,
+        "bypass_errors": bypass_errors,
+    }
+
+    es_env = setup_pp_env(no_loader=True)
+
+    def render_es_field(value, context):
+        if type(value) == str: # jinja-render strings
+            field_templ = es_env.from_string(value)
+            try:
+                parsed_field = field_templ.render(context)
+            except jinja2.exceptions.TemplateSyntaxError as e:
+                recoverable_error("Couldn't parse value '%s' in ES template: %s" %
+                    (value, e), bypass_errors)
+            return parsed_field
+        elif type(value) in (type(None), int, float, bool): # preserve literals
+            return value
+        elif type(value) == dict and ES_EVAL_KEY in value.keys():
+            return eval_es_string(value[ES_EVAL_KEY], context)
+        elif type(value) == dict: # recurse!
+            return {rkey: render_es_field(rval, context) for rkey,rval in value.items()}
+        elif type(value) == list: # recurse!
+            return [render_es_field(rval, context) for rval in value]
+        else:
+            recoverable_error("Unknown type in ES template: %s"%type(value))
+
+    wout = {key: render_es_field(val, context) for key,val in es_template.items()}
+    return json.dumps(wout, indent=4, separators=(',', ': '))
+
+
 def render_pages(target=None, mode="html", bypass_errors=False,
                 only_page=False, temp_files_path=None):
     """Parse and render all pages in target, writing files to out_path."""
@@ -563,6 +659,9 @@ def render_pages(target=None, mode="html", bypass_errors=False,
         default_template = safe_get_template(config["default_template"], env, fallback_env)
     elif mode == "md":
         out_path = config["out_path"]
+    elif mode == "es":
+        out_path = config["out_path"]
+        default_template = config.get_es_template(config["default_es_template"])
     else:
         exit("Unknown mode %s" % mode)
 
@@ -585,6 +684,12 @@ def render_pages(target=None, mode="html", bypass_errors=False,
             filepath = currentpage["html"] # Used in the temp dir
             if "pdf_template" in currentpage:
                 use_template = safe_get_template(currentpage["pdf_template"], env, fallback_env)
+            else:
+                use_template = default_template
+        elif mode == "es":
+            filepath = re.sub(r'(.+)\.html?$', r'\1.json', currentpage["html"], flags=re.I)
+            if "es_template" in currentpage:
+                use_template = config.get_es_template(currentpage["es_template"])
             else:
                 use_template = default_template
 
@@ -620,6 +725,26 @@ def render_pages(target=None, mode="html", bypass_errors=False,
                           "due to error fetching contents: %s") %
                            (currentpage["name"], e), bypass_errors)
                 continue
+        elif mode == "es":
+            if "md" not in currentpage:
+                logger.info("es mode: Skipping page (no md content): %s" % currentpage)
+                continue
+            try:
+                page_text = render_es_json(currentpage,
+                    use_template,
+                    target=target,
+                    pages=pages,
+                    categories=categories,
+                    mode=mode,
+                    current_time=current_time,
+                    page_filters=get_filters_for_page(currentpage, target),
+                    bypass_errors=bypass_errors,)
+            except Exception as e:
+                traceback.print_tb(e.__traceback__)
+                recoverable_error( ("Skipping page %s " +
+                          "due to error fetching contents: %s") %
+                           (currentpage["name"], e), bypass_errors)
+                continue
 
         else:
             exit("render_pages error: unknown mode: %s" % mode)
@@ -629,6 +754,11 @@ def render_pages(target=None, mode="html", bypass_errors=False,
 
     if only_page and not matched_only:
         exit("Didn't find requested 'only' page '%s'" % only_page)
+
+# def make_esj(target=target, bypass_errors=cli_args.bypass_errors,
+#             only_page=cli_args.only,):
+#     """Build .json files to be uploaded to ElasticSearch for pages in target."""
+#
 
 def write_page(page_text, filepath, out_path):
     out_folder = os.path.join(out_path, os.path.dirname(filepath))
@@ -724,25 +854,26 @@ def make_pdf(outfile, target=None, bypass_errors=False, remove_tmp=True, only_pa
     if remove_tmp:
         remove_tree(temp_files_path)
 
+def list_targets():
+    rows = []
+    for t in config["targets"]:
+        if "display_name" in t:
+            display_name = t["display_name"]
+        else:
+            filename_field_vals = [t[f] for
+                    f in config["pdf_filename_fields"]
+                    if f in t.keys()]
+            display_name = " ".join(filename_field_vals)
+        row.append((t["name"], display_name))
+
+    col1_width = max([len(i) for i,j in rows]) + 3
+    for row in rows:
+        print("{row[0]:{width}} {row[1]}".format(row=row, width=col1_width))
 
 def main(cli_args):
     if cli_args.list_targets_only:
-        for t in config["targets"]:
-            if "display_name" in t:
-                display_name = t["display_name"]
-            else:
-                filename_field_vals = [t[f] for
-                        f in config["pdf_filename_fields"]
-                        if f in t.keys()]
-                display_name = " ".join(filename_field_vals)
-            print("%s\t\t%s" % (t["name"], display_name))
-
+        list_targets()
         exit(0)
-
-    if cli_args.out_dir:
-        config["out_path"] = cli_args.out_dir
-
-    config["skip_preprocessor"] = cli_args.skip_preprocessor
 
     if cli_args.pages:
         make_adhoc_target(cli_args.pages)
@@ -779,7 +910,7 @@ def main(cli_args):
     if cli_args.md:
         mode = "md"
         logger.info("outputting markdown...")
-        render_pages(target=cli_args.target,
+        render_pages(target=target,
                      bypass_errors=cli_args.bypass_errors,
                      only_page=cli_args.only,
                      mode="md"
@@ -800,10 +931,18 @@ def main(cli_args):
         )
         logger.info("pdf done")
 
+    elif cli_args.es:
+        logger.info("making ElasticSearch JSON files...")
+        render_pages(target=target,
+                     bypass_errors=cli_args.bypass_errors,
+                     only_page=cli_args.only,
+                     mode="es")
+        logger.info("ES JSON done.")
+
     else:
         mode = "html"
         logger.info("rendering pages...")
-        render_pages(target=cli_args.target,
+        render_pages(target=target,
                      bypass_errors=cli_args.bypass_errors,
                      only_page=cli_args.only,
                      mode="html")
@@ -822,6 +961,7 @@ def dispatch_main():
     cli = DactylCLIParser(DactylCLIParser.UTIL_BUILD)
     global config
     config = DactylConfig(cli.cli_args)
+    config.load_build_options()
     main(cli.cli_args)
 
 

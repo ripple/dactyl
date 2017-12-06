@@ -46,6 +46,7 @@ flatten_default_html_paths: true
 ## Default templates.
 default_template: template-default.html
 default_pdf_template: template-default.html
+default_es_template: template-es.json
 
 time_format: "%Y-%m-%d" # Used to be "%B %d, %Y"
 
