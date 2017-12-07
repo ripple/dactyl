@@ -18,6 +18,8 @@ logger.addHandler(logging.StreamHandler())
 
 DEFAULT_PDF_FILE = "__DEFAULT_FILENAME__"
 NO_PDF = "__NO_PDF__"
+DEFAULT_ES_HOST_PORT = "__DEFAULT_ES_HOST__"
+NO_ES_UP = "__NO_ES_UP__"
 
 def recoverable_error(msg, bypass_errors):
     """Logs a warning/error message and exits if bypass_errors==False"""

@@ -42,6 +42,11 @@ class DactylCLIParser:
             parser.add_argument("--copy_static", "-s", action="store_true",
                                 help="Copy static files to the out dir",
                                 default=False)
+            parser.add_argument("--es_upload", nargs="?", type=str,
+                                const=DEFAULT_ES_HOST_PORT, default=NO_ES_UP,
+                                help="Upload documents to ElasticSearch cluster "+
+                                "at this host:port (localhost:9200 by default). "+
+                                "Ignored when making PDFs.")
             parser.add_argument("--leave_temp_files", action="store_true",
                                 help="Leave temp files in place (for debugging or "+
                                 "manual PDF generation). Ignored when using --watch",

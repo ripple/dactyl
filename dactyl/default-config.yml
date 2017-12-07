@@ -29,6 +29,7 @@ default_filters: []
 
 ## If a PDF filename isn't provided, slugify and merge the pdf_filename_fields
 ##  of the target together, connected by the pdf_filename_separator.
+## These fields are also used to generate index names for ElasticSearch uploads
 pdf_filename_fields:
     - display_name
 pdf_filename_separator: '-'
@@ -66,3 +67,6 @@ pages: []
 ## Link Checker Config
 known_broken_links: []
 ignore_anchors_in: []
+
+## ElasticSearch config
+elasticsearch: localhost:9200

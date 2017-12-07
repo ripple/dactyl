@@ -41,7 +41,9 @@ RESERVED_KEYS_TARGET = [
 ADHOC_TARGET = "__ADHOC__"
 ES_EVAL_KEY = "__dactyl_eval__"
 
-def default_pdf_name(target):
+def target_slug_name(target):
+    """Make a name for the target that's safe for use in URLs, filenames, and
+    similar places (ElasticSearch index names too) from human-readable fields"""
     target = get_target(target)
     filename_segments = []
     for fieldname in config["pdf_filename_fields"]:
@@ -49,9 +51,13 @@ def default_pdf_name(target):
             filename_segments.append(slugify(target[fieldname]))
 
     if filename_segments:
-        return config["pdf_filename_separator"].join(filename_segments) + ".pdf"
+        return config["pdf_filename_separator"].join(filename_segments)
     else:
-        return slugify(target["name"])+".pdf"
+        return slugify(target["name"])
+
+def default_pdf_name(target):
+    """Choose a reasonable name for a PDF file in case one isn't specified."""
+    return target_slug_name(target)+".pdf"
 
 
 # Note: this regex means non-ascii characters get stripped from filenames,
@@ -574,10 +580,15 @@ def add_bonus_fields(currentpage, target=None, pages=None, categories=[],
         p = soup.find("p")
         while p:
             if p.get_text().strip():
+                currentpage["blurb"] = p.get_text()
                 break
             else:
                 p = p.find_next_sibling("p")
-        currentpage["blurb"] = p.get_text()
+        else:
+            logger.debug("Couldn't find a paragraph with text in %s." % currentpage)
+            # Fall back to reusing the page name as the blurb
+            currentpage["blurb"] = currentpage["name"]
+
 
 def eval_es_string(expr, context):
     try:
@@ -638,14 +649,71 @@ def render_es_json(currentpage, es_template, pages=[], target=None, categories=[
     wout = {key: render_es_field(val, context) for key,val in es_template.items()}
     return json.dumps(wout, indent=4, separators=(',', ': '))
 
+def get_es_instance(es_host_port):
+    if es_host_port != DEFAULT_ES_HOST_PORT:
+        try:
+            es_host, es_port_s = es_host_port.split(":",1)
+            es_port = int(es_port_s)
+        except ValueError:
+            logger.debug("--es_upload didn't specify a valid port. using 9200")
+            es_host = es_host_port
+            es_port = 9200
+    else:
+        # Pull it from the config file
+        try:
+            es_host, es_port_s = config["elasticsearch"].split(":",1)
+            es_port = int(es_port_s)
+        except ValueError:
+            logger.debug("config['elasticsearch'] had no valid port. ('%s')" %
+                    config["elasticsearch"])
+            # In this case, assume they meant the default port of 9200
+            es_host = config["elasticsearch"]
+            es_port = 9200
+
+    # For actually using the ES client library:
+    # conf = [{'host': es_host, 'port': es_port}]
+    # return Elasticsearch(conf)
+
+    # For using requests instead:
+    return {'host': es_host, 'port': es_port}
+
+
+def upload_es_json(es_json, es_index, es, id, doc_type='article'):
+    #TODO: probably need to switch between HTTPS and HTTP
+    """Uploads a document to the ElasticSearch index."""
+
+    # Using requests
+    url = "https://{host}:{port}/{index}/{doc_type}/{id}".format(
+        host=es["host"],
+        port=es["port"],
+        index=es_index.lower(), # ES index names must be lowercase
+        doc_type=doc_type,
+        id=id,
+    )
+    headers = {"Content-Type": "application/json"}
+    logger.info("Uploading to ES: PUT %s" % url)
+    r = requests.put(url, headers=headers, data=es_json)
+    if r.status_code >= 400:
+        recoverable_error("ES upload failed with error: '%s'" % r.text,
+                config.bypass_errors)
+
+    # Using the actual ElasticSearch library
+    # Uses a removed function parameter
+    #es.index(es_index, doc_type, body=es_json, id=es_page_id)
+
 
 def render_pages(target=None, mode="html", bypass_errors=False,
-                only_page=False, temp_files_path=None):
+                only_page=False, temp_files_path=None, es_upload=None):
     """Parse and render all pages in target, writing files to out_path."""
     target = get_target(target)
     pages = get_pages(target, bypass_errors)
     categories = get_categories(pages)
     current_time = time.strftime(config["time_format"]) # Get time once only
+
+    if es_upload != NO_ES_UP:
+        es = get_es_instance(es_upload)
+        es_index = target_slug_name(target)
+        # TODO-maybe: delete old index
 
     if mode == "pdf" or mode == "html":
         # Insert generated HTML into templates using this Jinja environment
@@ -661,9 +729,10 @@ def render_pages(target=None, mode="html", bypass_errors=False,
         out_path = config["out_path"]
     elif mode == "es":
         out_path = config["out_path"]
-        default_template = config.get_es_template(config["default_es_template"])
     else:
         exit("Unknown mode %s" % mode)
+    if mode == "es" or es_upload != NO_ES_UP:
+        default_es_template = config.get_es_template(config["default_es_template"])
 
     matched_only = False
     for currentpage in pages:
@@ -688,10 +757,35 @@ def render_pages(target=None, mode="html", bypass_errors=False,
                 use_template = default_template
         elif mode == "es":
             filepath = re.sub(r'(.+)\.html?$', r'\1.json', currentpage["html"], flags=re.I)
+
+        if mode == "es" or es_upload != NO_ES_UP:
             if "es_template" in currentpage:
-                use_template = config.get_es_template(currentpage["es_template"])
+                es_template = config.get_es_template(currentpage["es_template"])
             else:
-                use_template = default_template
+                es_template = default_es_template
+
+        if "md" in currentpage and (mode == "es" or es_upload != NO_ES_UP):
+            # Generate the ES JSON & upload it first; save it for es mode
+            # so we don't end up having to build the JSON twice in es mode
+            try:
+                es_json_s = render_es_json(currentpage,
+                    es_template,
+                    target=target,
+                    pages=pages,
+                    categories=categories,
+                    mode=mode,
+                    current_time=current_time,
+                    page_filters=get_filters_for_page(currentpage, target),
+                    bypass_errors=bypass_errors,)
+                if es_upload != NO_ES_UP:
+                    es_page_id = target["name"]+"."+currentpage["html"]
+                    upload_es_json(es_json_s, es_index, es, es_page_id)
+            except Exception as e:
+                traceback.print_tb(e.__traceback__)
+                recoverable_error( ("Skipping ES build/upload of %s " +
+                          "due to error: %s") %
+                           (currentpage["name"], e), bypass_errors)
+                es_json_s = "{}"
 
         if mode == "html" or mode == "pdf":
             logger.debug("use_template is: %s" % use_template)
@@ -729,22 +823,7 @@ def render_pages(target=None, mode="html", bypass_errors=False,
             if "md" not in currentpage:
                 logger.info("es mode: Skipping page (no md content): %s" % currentpage)
                 continue
-            try:
-                page_text = render_es_json(currentpage,
-                    use_template,
-                    target=target,
-                    pages=pages,
-                    categories=categories,
-                    mode=mode,
-                    current_time=current_time,
-                    page_filters=get_filters_for_page(currentpage, target),
-                    bypass_errors=bypass_errors,)
-            except Exception as e:
-                traceback.print_tb(e.__traceback__)
-                recoverable_error( ("Skipping page %s " +
-                          "due to error fetching contents: %s") %
-                           (currentpage["name"], e), bypass_errors)
-                continue
+            page_text = es_json_s
 
         else:
             exit("render_pages error: unknown mode: %s" % mode)
@@ -907,20 +986,7 @@ def main(cli_args):
         coverpage["targets"] = [target["name"]]
         config["pages"].insert(0, coverpage)
 
-    if cli_args.md:
-        mode = "md"
-        logger.info("outputting markdown...")
-        render_pages(target=target,
-                     bypass_errors=cli_args.bypass_errors,
-                     only_page=cli_args.only,
-                     mode="md"
-        )
-        logger.info("done outputting md files")
-        if cli_args.copy_static:
-            logger.info("outputting static files...")
-            copy_static_files(template_static=False)
-
-    elif cli_args.pdf != NO_PDF:
+    if cli_args.pdf != NO_PDF:
         mode = "pdf"
         logger.info("making a pdf...")
         make_pdf(cli_args.pdf,
@@ -930,27 +996,27 @@ def main(cli_args):
                 only_page=cli_args.only,
         )
         logger.info("pdf done")
-
-    elif cli_args.es:
-        logger.info("making ElasticSearch JSON files...")
-        render_pages(target=target,
-                     bypass_errors=cli_args.bypass_errors,
-                     only_page=cli_args.only,
-                     mode="es")
-        logger.info("ES JSON done.")
-
     else:
-        mode = "html"
-        logger.info("rendering pages...")
+        if cli_args.md:
+            mode = "md"
+        elif cli_args.es:
+            mode = "es"
+        else:
+            mode = "html"
+        logger.info("rendering %s..." % mode)
         render_pages(target=target,
                      bypass_errors=cli_args.bypass_errors,
                      only_page=cli_args.only,
-                     mode="html")
-        logger.info("done rendering")
-
+                     mode=mode,
+                     es_upload=cli_args.es_upload,
+        )
+        logger.info("done rendering %s" % mode)
         if cli_args.copy_static:
-            logger.info("copying static pages...")
-            copy_static_files()
+            logger.info("outputting static files...")
+            if mode == "md":
+                copy_static_files(template_static=False)
+            else:
+                copy_static_files()
 
     if cli_args.watch:
         logger.info("watching for changes...")
