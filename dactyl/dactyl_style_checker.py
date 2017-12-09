@@ -136,11 +136,12 @@ def main(cli_args):
 
 
 def dispatch_main():
-    cli_args = dactyl.cli.parse_cli(dactyl.cli.UTIL_BUILD)
+    cli = DactylCLIParser(DactylCLIParser.UTIL_STYLE)
     global config
-    config = DactylConfig(cli_args)
+    config = DactylConfig(cli.cli_args)
     config.load_style_rules()
-    main(cli_args)
+    dactyl_build.config = config # consider fixing this hack with a refactor
+    main(cli.cli_args)
 
 
 if __name__ == "__main__":

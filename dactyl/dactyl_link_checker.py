@@ -264,7 +264,7 @@ def main(cli_args):
 
 
 def dispatch_main():
-    cli = DactylCLIParser(DactylCLIParser.UTIL_BUILD)
+    cli = DactylCLIParser(DactylCLIParser.UTIL_LINKS)
     global config
     config = DactylConfig(cli.cli_args)
     main(cli.cli_args)
