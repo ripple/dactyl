@@ -156,14 +156,29 @@ def parse_markdown(page, target=None, pages=None, categories=[], mode="html",
     page_filters = get_filters_for_page(page, target)
 
     # Get the markdown, preprocess, and apply md filters
-    md = preprocess_markdown(page,
-        target=target,
-        categories=categories,
-        mode=mode,
-        current_time=current_time,
-        page_filters=page_filters,
-        bypass_errors=bypass_errors,
-    )
+    try:
+        md = preprocess_markdown(page,
+            target=target,
+            categories=categories,
+            mode=mode,
+            current_time=current_time,
+            page_filters=page_filters,
+            bypass_errors=bypass_errors,
+        )
+    except Exception as e:
+        traceback.print_tb(e.__traceback__)
+        recoverable_error("Couldn't preprocess markdown for page %s: %s" %
+                (page["name"], repr(e)), bypass_errors)
+        # Just fetch the md without running the preprocessor
+        md = preprocess_markdown(page,
+            target=target,
+            categories=categories,
+            mode=mode,
+            current_time=current_time,
+            page_filters=page_filters,
+            bypass_errors=bypass_errors,
+            skip_preprocessor=True
+        )
 
     # Actually parse the markdown
     logger.info("... parsing markdown...")
@@ -278,13 +293,16 @@ def get_categories(pages):
 
 def preprocess_markdown(page, target=None, categories=[], page_filters=[],
                         mode="html", current_time="TIME_UNKNOWN",
-                        bypass_errors=False):
+                        bypass_errors=False, skip_preprocessor="NOT SPECIFIED"):
     """Read a markdown file, local or remote, and preprocess it, returning the
     preprocessed text."""
     target=get_target(target)
     pages=get_pages(target, bypass_errors)
 
-    if config["skip_preprocessor"]:
+    if skip_preprocessor=="NOT SPECIFIED":
+        skip_preprocessor = config["skip_preprocessor"]
+
+    if skip_preprocessor:
         remote, basepath = get_page_where(page)
         if remote:
             logger.info("... reading markdown from URL.")
@@ -791,10 +809,9 @@ def render_pages(target=None, mode="html", bypass_errors=False,
                 )
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
-                recoverable_error( ("Skipping page %s " +
-                          "due to error fetching contents: %s") %
+                recoverable_error( ("Preprocessing page %s failed " +
+                          "with error: %s") %
                            (currentpage["name"], repr(e)), bypass_errors)
-                continue
         elif mode == "es":
             if "md" not in currentpage:
                 logger.info("es mode: Skipping page (no md content): %s" % currentpage)
