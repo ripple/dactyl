@@ -826,9 +826,10 @@ def write_page(page_text, filepath, out_path):
         f.write(page_text)
 
 
-def watch(mode, target, only_page="", pdf_file=DEFAULT_PDF_FILE):
-    """Look for changed files and re-generate HTML (and optionally
-       PDF whenever there's an update. Runs until interrupted."""
+def watch(mode, target, only_page="", pdf_file=DEFAULT_PDF_FILE,
+          es_upload=NO_ES_UP):
+    """Look for changed files and re-run the build whenever there's an update.
+       Runs until interrupted."""
     target = get_target(target)
 
     class UpdaterHandler(PatternMatchingEventHandler):
@@ -838,9 +839,11 @@ def watch(mode, target, only_page="", pdf_file=DEFAULT_PDF_FILE):
             # bypass_errors=True because Watch shouldn't
             #  just die if a file is temporarily not found
             if mode == "pdf":
-                make_pdf(pdf_file, target=target, bypass_errors=True, only_page=only_page)
+                make_pdf(pdf_file, target=target, bypass_errors=True,
+                    only_page=only_page, es_upload=es_upload)
             else:
-                render_pages(target, mode=mode, bypass_errors=True, only_page=only_page)
+                render_pages(target, mode=mode, bypass_errors=True,
+                            only_page=only_page, es_upload=es_upload)
             logger.info("done rendering")
 
     patterns = ["*template-*.html",
@@ -862,14 +865,16 @@ def watch(mode, target, only_page="", pdf_file=DEFAULT_PDF_FILE):
     observer.join()
 
 
-def make_pdf(outfile, target=None, bypass_errors=False, remove_tmp=True, only_page=""):
+def make_pdf(outfile, target=None, bypass_errors=False, remove_tmp=True,
+        only_page="", es_upload=NO_ES_UP):
     """Use prince to convert several HTML files into a PDF"""
     logger.info("rendering PDF-able versions of pages...")
     target = get_target(target)
 
     temp_files_path = temp_dir()
     render_pages(target=target, mode="pdf", bypass_errors=bypass_errors,
-            temp_files_path=temp_files_path, only_page=only_page)
+            temp_files_path=temp_files_path, only_page=only_page,
+            es_upload=es_upload)
 
     # Choose a reasonable default filename if one wasn't provided yet
     if outfile == DEFAULT_PDF_FILE:
@@ -970,6 +975,7 @@ def main(cli_args):
                 bypass_errors=cli_args.bypass_errors,
                 remove_tmp=(not cli_args.leave_temp_files),
                 only_page=cli_args.only,
+                es_upload=cli_args.es_upload,
         )
         logger.info("pdf done")
     else:
@@ -1017,7 +1023,8 @@ def main(cli_args):
 
     if cli_args.watch:
         logger.info("watching for changes...")
-        watch(mode, target, cli_args.only, cli_args.pdf)
+        watch(mode, target, cli_args.only, cli_args.pdf,
+                es_upload=cli_args.es_upload,)
 
 
 def dispatch_main():
