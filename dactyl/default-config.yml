@@ -69,4 +69,4 @@ known_broken_links: []
 ignore_anchors_in: []
 
 ## ElasticSearch config
-elasticsearch: localhost:9200
+# elasticsearch: http://localhost:9200

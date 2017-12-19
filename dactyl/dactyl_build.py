@@ -657,6 +657,7 @@ def get_es_instance(es_base_url):
     if es_base_url[-1] == "/": # Drop trailing slash
         es_base_url = es_base_url[:-1]
 
+    logger.debug("ElasticSearch base URL is '%s'" % es_base_url)
     return es_base_url
 
 def upload_es_json(es_json, es_index, es_base, id, doc_type='article'):
@@ -678,7 +679,7 @@ def upload_es_json(es_json, es_index, es_base, id, doc_type='article'):
 
 
 def render_pages(target=None, mode="html", bypass_errors=False,
-                only_page=False, temp_files_path=None, es_upload=None):
+                only_page=False, temp_files_path=None, es_upload=NO_ES_UP):
     """Parse and render all pages in target, writing files to out_path."""
     target = get_target(target)
     pages = get_pages(target, bypass_errors)
