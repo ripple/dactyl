@@ -75,14 +75,32 @@ If your config file contains more than one **target**, Dactyl builds the first o
 $ dactyl_build -t non-default-target
 ```
 
-#### Copying Static Files
+#### Static Files
 
-If your content or templates require certain static files (e.g. JavaScript, CSS, and images) to display properly, you can add the `-s` parameter to copy the files into the output directory. By default, Dactyl assumes that templates have static files in the `assets/` folder and documents have static files in the `content/static/` folder. Both of these paths are configurable. You can combine this flag with other flags, e.g.:
+Your templates may require certain static files (such as JavaScript, CSS, and images) to display properly. Your content may have its own static files (such as diagrams and figures). By default, Dactyl assumes that templates have static files in the `assets/` folder. You can configure this path and also specify one or more paths to static files referenced by your content. When you build, Dactyl copies files from these folders to the output folder by default depending on which mode you're building:
 
-```sh
-$ dactyl_build -st non-default-target
-# Builds non-default target and copies static files to the output dir
-```
+| Build Mode         | Files copied to output folder by default                |
+|:-------------------|:--------------------------------------------------------|
+| HTML               | Both template and content static files                  |
+| PDF                | Neither template nor content static files (cannot be overridden) |
+| Markdown           | Content static files only                               |
+| ElasticSearch JSON | Neither template nor content static files               |
+
+You can use a commandline flag to explicitly specify what gets copied to the output folder, except in the case of PDF. (In PDF mode, Dactyl writes only the final PDF to the output folder.) The flags are as follows:
+
+| Flag (long version) | Short version | Meaning                                |
+|:--------------------|:--------------|:---------------------------------------|
+| `--copy_static`     | `-s`          | Copy all static files to the out dir.  |
+| `--no_static`       | `-S`          | Don't copy any static files to the out dir. |
+| `--template_static` | `-T`          | Copy only templates' static files to the out dir |
+| `--content_static`  | `-C`          | Copy only the content's static files to the out dir |
+
+The following config file parameters control what paths Dactyl checks for static content:
+
+| Field | Default | Description |
+|---|---|---|
+| `template_static_path` | `assets/` | Static files belonging to the templates. |
+| `content_static_path` | (None) | Static files belonging to content. This can be a single folder path, as a string, or an array of paths to files or folders. Dactyl copies all files and folders (regardless of whether the current target uses them). |
 
 #### Listing Available Targets
 
@@ -103,8 +121,6 @@ This mode runs the pre-processor only, so you can generate Markdown files that a
 ```sh
 $ dactyl_build --md
 ```
-
-In Markdown mode, the `-s` option does not copy static files from the `template_static_path`.
 
 #### Building Only One Page
 
@@ -133,6 +149,48 @@ Beware: some configurations can lead to an infinite loop. (For example, if your 
 **Limitations:** Watch mode can be combined with `--only`, but re-builds the page even when it detects changes to unrelated pages. Watch mode doesn't detect changes to the config file, static files, or filters.
 
 To stop watching, interrupt the Dactyl process (Ctrl-C in most terminals).
+
+#### ElasticSearch Compatibility
+
+Dactyl has the ability to build JSON formatted for upload to [ElasticSearch](https://www.elastic.co/products/elasticsearch) and even upload it directly.
+
+To build JSON files for upload to ElasticSearch, use the `--es` mode:
+
+```
+dactyl_build --es
+```
+
+This writes files to the usual output directory using an ElasticSearch JSON template. Dactyl skips any files that do not have a `md` source parameter in this mode. The output filenames are the pages' `html` filenames, except ending in `.json` instead of `.html`. You can specify a custom template for these JSON files using the top-level `default_es_template` field in the config file. This template must be a valid JSON file and has several special properties as described in [ElasticSearch JSON Templates](#elasticsearch-json-templates).
+
+Dactyl can also upload these files directly to an ElasticSearch instance, even when building for another mode. For example, to build the HTML version of a target named `filterdemos` but also upload that target's JSON-formatted data to an ElasticSearch instance:
+
+```
+dactyl_build -t filterdemos --html --es_upload https://my-es-instance.example.com:9200
+```
+
+The parameter to `--es_upload` should be the base URL of your ElasticSearch index. You can omit the parameter to use the default base URL of `http://localhost:9200`.
+
+
+#### ElasticSearch JSON Templates
+
+Dactyl has a special format for JSON templates meant for creating ElasticSearch data. These templates must be valid JSON and are processed according to the following rules:
+
+- Any strings in the fields' values are "preprocessed" in a similar context to the Jinja2-based Markdown preprocessor. For example, the string `{{currentpage.name}}` evaluates to the page's name.
+- Any object containing the key `__dactyl_eval__` is evaluated as a Python expression. The object is replaced with the results of the expression, with lists becoming JSON arrays and dictionaries becoming JSON objects.
+- The above rules apply recursively to values nested in arrays and objects. All other values are preserved literally.
+
+The context provided to the preprocessing and to the `__dactyl_eval__` expressions is the same and contains the following:
+
+| Field           | Python Type | Description                                  |
+|:----------------|:------------|:---------------------------------------------|
+| `currentpage`   | `dict`      | The current page definition (usually derived from the config file) |
+| `target`        | `dict`      | The current target definition (usually derived from the config file) |
+| `categories`    | `list`      | A list of unique `category` values used by pages in the current target, in order of appearance. |
+| `page_filters`  | `list`      | A list of the names of Dactyl filters applied to the current page. |
+| `mode`          | `str`       | Always equal to `es` in this context         |
+| `current_time`  | `str`       | The current time, in the `time_format` specified in the config. (Defaults to YYYY-MM-DD) |
+| `bypass_errors` | `bool`      | If `true`, this build is running with the option to continue through errors where possible. |
+
 
 ### Link Checking
 

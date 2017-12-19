@@ -55,14 +55,14 @@ def check_remote_url(endpoint, fullPath, broken_links, externalCache, isImg=Fals
     try:
         code = requests.head(endpoint, timeout=TIMEOUT_SECS).status_code
     except Exception as e:
-        logger.warning("Error occurred: %s" % e)
+        logger.warning("Error occurred: %s" % repr(e))
         code = 500
     if code == 405 or code == 404:
         #HEAD didn't work, maybe GET will?
         try:
             code = requests.get(endpoint, timeout=TIMEOUT_SECS).status_code
         except Exception as e:
-          logger.warning("Error occurred: %s" % e)
+          logger.warning("Error occurred: %s" % repr(e))
           code = 500
 
     if code < 200 or code >= 400:

@@ -142,19 +142,28 @@ class DactylConfig:
 
                         filter_loaded = True
                         break
-                    except Exception as e:
-                        loading_errors.append(e)
+                    except FileNotFoundError as e:
+                        loading_errors.append({"Path": filter_path, "Error": repr(e)})
                         logger.debug("Filter %s isn't in path %s\nErr:%s" %
-                                    (filter_name, filter_path, e))
+                                    (filter_name, filter_path, repr(e)))
+                    except Exception as e:
+                        loading_errors.append({"Path": filter_path, "Error": repr(e)})
+                        recoverable_error("Failed to load filter '%s', with error: %s" %
+                                (filter_name, repr(e)), self.bypass_errors)
 
             if not filter_loaded:
                 # Load from the Dactyl module
                 try:
                     self.filters[filter_name] = import_module("dactyl.filter_"+filter_name)
                 except Exception as e:
-                    loading_errors.append(e)
-                    logger.debug("Failed to load filter %s. Errors: %s" %
-                        (filter_name, loading_errors))
+                    loading_errors.append({"Path": "(Dactyl Built-ins)", "Error": repr(e)})
+                    #logger.debug("Failed to load filter %s. Errors: %s" %
+                    #    (filter_name, loading_errors))
+                    recoverable_error("Failed to load filter %s. Errors:\n%s" %
+                        (filter_name, "\n".join(
+                            ["  %s: %s" % (le["Path"], le["Error"])
+                                for le in loading_errors])
+                        ), self.bypass_errors)
 
     def load_style_rules(self):
         """Reads word and phrase substitution files into the config"""

@@ -22,6 +22,15 @@
         <ul class="dactyl-page-toc">
             {{ sidebar_content }}
         </ul>
+        <h4>Other Pages</h4>
+        <ul>
+            <li><a href="index.html">(Back to index)</a></li>
+            {% for page in pages %}
+              {% if page.category == currentpage.category and page != currentpage %}
+            <li><a href="{{ page.html }}">{{ page.name }}</a></li>
+              {% endif %}
+            {% endfor %}
+        </ul>
     </aside>
     {% endif %}
     <main class="dactyl-main">{{content}}</main>

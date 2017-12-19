@@ -18,7 +18,7 @@ logger.addHandler(logging.StreamHandler())
 
 DEFAULT_PDF_FILE = "__DEFAULT_FILENAME__"
 NO_PDF = "__NO_PDF__"
-DEFAULT_ES_HOST_PORT = "__DEFAULT_ES_HOST__"
+DEFAULT_ES_URL = "__DEFAULT_ES_HOST__"
 NO_ES_UP = "__NO_ES_UP__"
 
 def recoverable_error(msg, bypass_errors):
@@ -27,6 +27,16 @@ def recoverable_error(msg, bypass_errors):
     if not bypass_errors:
         exit(1)
 
+# Note: this regex means non-ascii characters get stripped from filenames,
+#  which is not preferable when making non-English filenames.
+unacceptable_chars = re.compile(r"[^A-Za-z0-9._ ]+")
+whitespace_regex = re.compile(r"\s+")
+def slugify(s):
+    s = re.sub(unacceptable_chars, "", s)
+    s = re.sub(whitespace_regex, "_", s)
+    if not s:
+        s = "_"
+    return s
 
 def guess_title_from_md_file(filepath):
     """Takes the path to an md file and return a suitable title.

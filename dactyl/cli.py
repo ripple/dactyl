@@ -35,17 +35,29 @@ class DactylCLIParser:
                                 help="Output a PDF to this file. Requires Prince.")
             build_mode.add_argument("--md", action="store_true",
                                 help="Output markdown only")
+            build_mode.add_argument("--html", action="store_true", default=True,
+                                help="Output HTML files (the default)")
             build_mode.add_argument("--es", action="store_true",
                                 help="Output JSON for ElasticSearch upload")
             # HTML is the default mode
 
-            parser.add_argument("--copy_static", "-s", action="store_true",
-                                help="Copy static files to the out dir",
-                                default=False)
+            static_files = parser.add_mutually_exclusive_group(required=False)
+            static_files.add_argument("--copy_static", "-s", action="store_true",
+                        help="Copy all static files to the out dir",
+                        default=False)
+            static_files.add_argument("--no_static", "-S", action="store_true",
+                        help="Don't copy any static files to the out dir",
+                        default=False)
+            static_files.add_argument("--template_static", "-T", action="store_true",
+                        help="Copy only templates' static files to the out dir",
+                        default=False)
+            static_files.add_argument("--content_static", "-C", action="store_true",
+                        help="Copy only the content's static files to the out dir",
+                        default=False)
             parser.add_argument("--es_upload", nargs="?", type=str,
-                                const=DEFAULT_ES_HOST_PORT, default=NO_ES_UP,
+                                const=DEFAULT_ES_URL, default=NO_ES_UP,
                                 help="Upload documents to ElasticSearch cluster "+
-                                "at this host:port (localhost:9200 by default). "+
+                                "at this URL (http://localhost:9200 by default). "+
                                 "Ignored when making PDFs.")
             parser.add_argument("--leave_temp_files", action="store_true",
                                 help="Leave temp files in place (for debugging or "+

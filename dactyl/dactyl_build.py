@@ -60,17 +60,6 @@ def default_pdf_name(target):
     return target_slug_name(target)+".pdf"
 
 
-# Note: this regex means non-ascii characters get stripped from filenames,
-#  which is not preferable when making non-English filenames.
-unacceptable_chars = re.compile(r"[^A-Za-z0-9._ ]+")
-whitespace_regex = re.compile(r"\s+")
-def slugify(s):
-    s = re.sub(unacceptable_chars, "", s)
-    s = re.sub(whitespace_regex, "_", s)
-    if not s:
-        s = "_"
-    return s
-
 # Generate a unique nonce per-run to be used for tempdir folder names
 nonce = str(time.time()).replace(".","")
 def temp_dir():
@@ -148,6 +137,10 @@ def get_filters_for_page(page, target=None):
         ffp.update(target["filters"])
     if "filters" in page:
         ffp.update(page["filters"])
+    loaded_filters = set(config.filters.keys())
+    # logger.debug("Removing unloaded filters from page %s...\n  Before: %s"%(page,ffp))
+    ffp &= loaded_filters
+    # logger.debug("  After: %s"%ffp)
     return ffp
 
 
@@ -433,6 +426,9 @@ def setup_pp_env(page=None, page_filters=[], no_loader=False):
 
     # Pull exported values (& functions) from page filters into the pp_env
     for filter_name in page_filters:
+        if filter_name not in config.filters.keys():
+            logger.debug("Skipping unloaded filter '%s'" % filter_name)
+            continue
         if "export" in dir(config.filters[filter_name]):
             for key,val in config.filters[filter_name].export.items():
                 logger.debug("... pulling in filter_%s's exported key '%s'" % (filter_name, key))
@@ -528,7 +524,7 @@ def render_page(currentpage, target, pages, mode, current_time, categories,
         except Exception as e:
             traceback.print_tb(e.__traceback__)
             recoverable_error("Error when fetching page %s: %s" %
-                 (currentpage["name"], e), bypass_errors)
+                 (currentpage["name"], repr(e)), bypass_errors)
             html_content=""
 
     else:
@@ -595,7 +591,7 @@ def eval_es_string(expr, context):
         result = eval(expr, {}, context)
     except Exception as e:
         recoverable_error("__dactyl_eval__ failed on expression '%s': %s" %
-            (expr, e), context["bypass_errors"])
+            (expr, repr(e)), context["bypass_errors"])
         result = expr
     return result
 
@@ -649,43 +645,26 @@ def render_es_json(currentpage, es_template, pages=[], target=None, categories=[
     wout = {key: render_es_field(val, context) for key,val in es_template.items()}
     return json.dumps(wout, indent=4, separators=(',', ': '))
 
-def get_es_instance(es_host_port):
-    if es_host_port != DEFAULT_ES_HOST_PORT:
-        try:
-            es_host, es_port_s = es_host_port.split(":",1)
-            es_port = int(es_port_s)
-        except ValueError:
-            logger.debug("--es_upload didn't specify a valid port. using 9200")
-            es_host = es_host_port
-            es_port = 9200
-    else:
+def get_es_instance(es_base_url):
+    if es_base_url == DEFAULT_ES_URL:
         # Pull it from the config file
-        try:
-            es_host, es_port_s = config["elasticsearch"].split(":",1)
-            es_port = int(es_port_s)
-        except ValueError:
-            logger.debug("config['elasticsearch'] had no valid port. ('%s')" %
-                    config["elasticsearch"])
-            # In this case, assume they meant the default port of 9200
-            es_host = config["elasticsearch"]
-            es_port = 9200
+        es_base_url = config.get("elasticsearch", "http://localhost:9200")
 
-    # For actually using the ES client library:
-    # conf = [{'host': es_host, 'port': es_port}]
-    # return Elasticsearch(conf)
+        # Make sure it has an http:// or https:// prefix
+    if es_base_url[:7] != "http://" and es_base_url[:8] != "https://":
+        es_base_url = "https://"+es_base_url
 
-    # For using requests instead:
-    return {'host': es_host, 'port': es_port}
+    if es_base_url[-1] == "/": # Drop trailing slash
+        es_base_url = es_base_url[:-1]
 
+    return es_base_url
 
-def upload_es_json(es_json, es_index, es, id, doc_type='article'):
-    #TODO: probably need to switch between HTTPS and HTTP
+def upload_es_json(es_json, es_index, es_base, id, doc_type='article'):
     """Uploads a document to the ElasticSearch index."""
 
     # Using requests
-    url = "https://{host}:{port}/{index}/{doc_type}/{id}".format(
-        host=es["host"],
-        port=es["port"],
+    url = "{es_base}/{index}/{doc_type}/{id}".format(
+        es_base=es_base,
         index=es_index.lower(), # ES index names must be lowercase
         doc_type=doc_type,
         id=id,
@@ -697,10 +676,6 @@ def upload_es_json(es_json, es_index, es, id, doc_type='article'):
         recoverable_error("ES upload failed with error: '%s'" % r.text,
                 config.bypass_errors)
 
-    # Using the actual ElasticSearch library
-    # Uses a removed function parameter
-    #es.index(es_index, doc_type, body=es_json, id=es_page_id)
-
 
 def render_pages(target=None, mode="html", bypass_errors=False,
                 only_page=False, temp_files_path=None, es_upload=None):
@@ -711,9 +686,9 @@ def render_pages(target=None, mode="html", bypass_errors=False,
     current_time = time.strftime(config["time_format"]) # Get time once only
 
     if es_upload != NO_ES_UP:
-        es = get_es_instance(es_upload)
+        es_base_url = get_es_instance(es_upload)
         es_index = target_slug_name(target)
-        # TODO-maybe: delete old index
+        # Note: this doesn't delete the old index
 
     if mode == "pdf" or mode == "html":
         # Insert generated HTML into templates using this Jinja environment
@@ -779,12 +754,12 @@ def render_pages(target=None, mode="html", bypass_errors=False,
                     bypass_errors=bypass_errors,)
                 if es_upload != NO_ES_UP:
                     es_page_id = target["name"]+"."+currentpage["html"]
-                    upload_es_json(es_json_s, es_index, es, es_page_id)
+                    upload_es_json(es_json_s, es_index, es_base_url, es_page_id)
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
                 recoverable_error( ("Skipping ES build/upload of %s " +
                           "due to error: %s") %
-                           (currentpage["name"], e), bypass_errors)
+                           (currentpage["name"], repr(e)), bypass_errors)
                 es_json_s = "{}"
 
         if mode == "html" or mode == "pdf":
@@ -817,7 +792,7 @@ def render_pages(target=None, mode="html", bypass_errors=False,
                 traceback.print_tb(e.__traceback__)
                 recoverable_error( ("Skipping page %s " +
                           "due to error fetching contents: %s") %
-                           (currentpage["name"], e), bypass_errors)
+                           (currentpage["name"], repr(e)), bypass_errors)
                 continue
         elif mode == "es":
             if "md" not in currentpage:
@@ -975,7 +950,7 @@ def main(cli_args):
                     raise KeyError("Vars can't include reserved key '%s'" % k)
         except Exception as e:
             traceback.print_tb(e.__traceback__)
-            exit("FATAL: --vars value was improperly formatted: %s" % e)
+            exit("FATAL: --vars value was improperly formatted: %s" % repr(e))
 
     if cli_args.title:
         target["display_name"] = cli_args.title
@@ -997,12 +972,35 @@ def main(cli_args):
         )
         logger.info("pdf done")
     else:
+        # Set mode and default content/template static copy settings
         if cli_args.md:
             mode = "md"
+            content_static = True
+            template_static = False
         elif cli_args.es:
             mode = "es"
+            content_static = False
+            template_static = False
         else:
             mode = "html"
+            content_static = True
+            template_static = True
+
+        # Override static files copy setting based on CLI flags, if any are used
+        if cli_args.no_static:
+            content_static = False
+            template_static = False
+        elif cli_args.template_static:
+            content_static = False
+            template_static = True
+        elif cli_args.content_static:
+            content_static = True
+            template_static = False
+        elif cli_args.copy_static:
+            content_static = True
+            template_static = True
+
+
         logger.info("rendering %s..." % mode)
         render_pages(target=target,
                      bypass_errors=cli_args.bypass_errors,
@@ -1011,12 +1009,10 @@ def main(cli_args):
                      es_upload=cli_args.es_upload,
         )
         logger.info("done rendering %s" % mode)
-        if cli_args.copy_static:
+        if content_static or template_static:
             logger.info("outputting static files...")
-            if mode == "md":
-                copy_static_files(template_static=False)
-            else:
-                copy_static_files()
+            copy_static_files(template_static=template_static,
+                              content_static=content_static)
 
     if cli_args.watch:
         logger.info("watching for changes...")

@@ -29,6 +29,9 @@
         main {
             padding-bottom: 20px;
         }
+        body {
+          background-color: white;
+        }
     }
 
     @media print {
@@ -59,6 +62,7 @@
         </ul>
     </aside>
     <main class="dactyl-main">{{content}}</main>
-    <footer>(Exported {{ current_time }})</footer>
+    <footer>
+      <p>(Exported {{ current_time }})</p></footer>
 </body>
 </html>
