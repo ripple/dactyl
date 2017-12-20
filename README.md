@@ -191,6 +191,13 @@ The context provided to the preprocessing and to the `__dactyl_eval__` expressio
 | `current_time`  | `str`       | The current time, in the `time_format` specified in the config. (Defaults to YYYY-MM-DD) |
 | `bypass_errors` | `bool`      | If `true`, this build is running with the option to continue through errors where possible. |
 
+The `currentpage` dictionary has the following special fields in this mode:
+
+| Field       | Python Type | Description                                      |
+|:------------|:------------|:-------------------------------------------------|
+| `plaintext` | `str`       | A plaintext-only version of the page's markdown content, with all Markdown and HTML syntax removed. |
+| `headermap` | `dict`      | A mapping of the page's headers to the unique IDs of those headers in the generated HTML version. |
+| `blurb`     | `str`       | An introductory blurb generated from the page's first paragraph of text. |
 
 ### Link Checking
 
