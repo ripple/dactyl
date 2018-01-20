@@ -44,7 +44,7 @@ class TestDactylBuild(unittest.TestCase):
         assert dactyl_build.get_target({"name": "runtime_target"}) == {"name": "runtime_target"}
 
     def test_get_pages(self):
-        assert dactyl_build.get_pages(dactyl_build.get_target("test_target"), False) == [{'name': 'filters_page', 'filters': ['mock_filter'], 'targets': ['test_target'], 'html': 'filters_page.html'}, {'name': 'test_page', 'html': 'test.html', 'targets': ['test_target']}]
+        assert dactyl_build.get_pages(dactyl_build.get_target("test_target"), False) == [{'name': 'filters_page', 'category': 'Filters', 'filters': ['mock_filter'], 'targets': ['test_target'], 'html': 'filters_page.html'}, {'name': 'test_page', 'category': 'Tests', 'html': 'test.html', 'targets': ['test_target']}]
     
     def test_get_filters_for_page(self):
         # Please note: due to the mock setup for unit testing, this function will always return an empty set.  Refactoring is recommended to verify the remaining functionality for this method.
@@ -64,6 +64,9 @@ class TestDactylBuild(unittest.TestCase):
 
     def test_make_adhoc_target(self):
         assert dactyl_build.make_adhoc_target(["gfm-compat.md"]) == {'name': '__ADHOC__', 'display_name': 'GitHub Markdown Compatibility'}
+
+    def test_get_categories(self):
+        assert dactyl_build.get_categories(dactyl_build.config["pages"]) == ['Filters', 'Tests', 'Markdown']
 
 if __name__ == '__main__':
     unittest.main()

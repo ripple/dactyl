@@ -14,15 +14,18 @@ targets:
 
 pages:
     -   name: filters_page
+        category: Filters
         filters:
             - mock_filter
         targets:
             - test_target
     -   name: test_page
+        category: Tests
         html: test.html
         targets:
             - test_target
     -   name: md_test
+        category: Markdown
         md: gfm-compat.md
         html: test.html
         targets:
