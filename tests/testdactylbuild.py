@@ -62,5 +62,8 @@ class TestDactylBuild(unittest.TestCase):
     def test_target_slug_name(self):
         assert dactyl_build.target_slug_name("conditionals") == "Conditional_Text_Target"
 
+    def test_make_adhoc_target(self):
+        assert dactyl_build.make_adhoc_target(["gfm-compat.md"]) == {'name': '__ADHOC__', 'display_name': 'GitHub Markdown Compatibility'}
+
 if __name__ == '__main__':
     unittest.main()
