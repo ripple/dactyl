@@ -1,0 +1,31 @@
+content_path: test_files
+pdf_filename_fields: 
+    -   display_name
+pdf_filename_separator: '-'
+skip_preprocessor: false
+targets:
+    -   name: test_target
+    -   name: filters_target
+        filters:
+            - mock_filter
+    -   name: conditionals
+        display_name: Conditional Text Target
+    -   name: markdown
+
+pages:
+    -   name: filters_page
+        filters:
+            - mock_filter
+        targets:
+            - test_target
+    -   name: test_page
+        html: test.html
+        targets:
+            - test_target
+    -   name: md_test
+        md: gfm-compat.md
+        html: test.html
+        targets:
+            - filters_target
+        filters:
+            - mock_filter
