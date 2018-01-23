@@ -69,6 +69,10 @@ class TestDactyl(unittest.TestCase):
 
     #P2 tests defined below
 
+    def test_elastic_search(self):
+        subprocess.check_call(["dactyl_build","--es","--pages","content/gfm-compat.md"])
+        assert os.path.isfile("out/gfm-compat.json")
+
     def test_generate_markdown(self):
         subprocess.check_call(["dactyl_build","--md"])
         assert os.path.isfile("out/includes.md")
