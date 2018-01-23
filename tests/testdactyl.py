@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os
 import subprocess
 import sys
@@ -19,7 +21,7 @@ class TestDactyl(unittest.TestCase):
 
     def test_list(self):
         subprocess.check_output(["dactyl_build","-l"])
-	
+
     def test_generate_html(self):
         subprocess.check_call(["dactyl_build","--pages","content/gfm-compat.md"])
         assert os.path.isfile("out/index.html")
@@ -30,7 +32,7 @@ class TestDactyl(unittest.TestCase):
         assert os.path.isfile("out/index.html")
         assert os.path.isfile("out/gfm-compat.html")
         assert os.path.isfile("out/lists-and-codeblocks.html")
-		
+
     def test_generate_html_from_config(self):
         subprocess.check_call(["dactyl_build","-c","dactyl-config.yml","--pages","content/gfm-compat.md"])
         assert os.path.isfile("out/index.html")
@@ -67,6 +69,10 @@ class TestDactyl(unittest.TestCase):
 
     #P2 tests defined below
 
+    def test_elastic_search(self):
+        subprocess.check_call(["dactyl_build","--es","--pages","content/gfm-compat.md"])
+        assert os.path.isfile("out/gfm-compat.json")
+
     def test_generate_markdown(self):
         subprocess.check_call(["dactyl_build","--md"])
         assert os.path.isfile("out/includes.md")
@@ -79,7 +85,7 @@ class TestDactyl(unittest.TestCase):
         assert os.path.isfile("out/filter-examples/badges.md")
         assert os.path.isfile("out/filter-examples/include_code.md")
         assert os.path.isfile("out/filter-examples/multicode_tabs.md")
-	
+
     def test_generate_markdown_only_one_page(self):
         subprocess.check_call(["dactyl_build","-c","dactyl-config.yml","--only","gfm-compat.md","--md"])
         assert os.path.isfile("out/gfm-compat.md")
@@ -87,7 +93,7 @@ class TestDactyl(unittest.TestCase):
     def test_generate_only_one_page_using_md_extension(self):
         subprocess.check_call(["dactyl_build","--only","gfm-compat.md"])
         assert os.path.isfile("out/gfm-compat.html")
-		
+
     def test_preprocessing_command_line(self):
         subprocess.check_call(["dactyl_build","--vars","{\"target\":\"filterdemos\"}"])
         assert os.path.isfile("out/filter-examples-callouts.html")
@@ -107,4 +113,8 @@ class TestDactyl(unittest.TestCase):
         assert os.path.isfile("out/filter-examples-multicode_tabs.html")
 
 if __name__ == '__main__':
+    if os.path.basename(os.getcwd())=="dactyl":
+        os.chdir("examples")
+    elif os.path.split(os.getcwd())=="tests":
+        os.chdir("../examples")
     unittest.main()
