@@ -31,6 +31,7 @@ from jinja2 import Template
 mocktemplate = Template("This page is {{ currentpage.name }}.")
 
 class TestDactylBuild(unittest.TestCase):
+    #IMPORTANT: Please run these tests from the "tests" directory, to ensure test config files and mocks are correctly loaded.
 
     #P1 tests listed below
 

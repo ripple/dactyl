@@ -12,7 +12,7 @@ class TestDactyl(unittest.TestCase):
     #IMPORTANT:  Please run this script from the "examples" directory.
 
     def setUp(self):
-        #Before each test is run, remonve the existing files in out subdirectory.
+        #Before each test is run, remove the existing files in out subdirectory.
         try:
 	        remove_tree("out")
         except FileNotFoundError:
@@ -21,6 +21,7 @@ class TestDactyl(unittest.TestCase):
     #P1 tests defined below
 
     def tearDown(self):
+        #After running each test, reset the working directory to "examples".
         os.chdir("../examples")
 
     def test_list(self):
@@ -143,7 +144,6 @@ class TestDactyl(unittest.TestCase):
         assert os.path.isfile("out/filter-examples-include_code.html")
         assert os.path.isfile("out/filter-examples-multicode_tabs.html")
 
-    #P3 tests defined below
 
 if __name__ == '__main__':
     if os.path.basename(os.getcwd())=="dactyl":
