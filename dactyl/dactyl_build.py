@@ -41,23 +41,26 @@ RESERVED_KEYS_TARGET = [
 ADHOC_TARGET = "__ADHOC__"
 ES_EVAL_KEY = "__dactyl_eval__"
 
-def target_slug_name(target):
-    """Make a name for the target that's safe for use in URLs, filenames, and
-    similar places (ElasticSearch index names too) from human-readable fields"""
+def target_slug_name(target, fields_to_use=[], separator="-"):
+    """Make a name for the target that's safe for use in URLs & filenames,
+    from human-readable fields"""
     target = get_target(target)
     filename_segments = []
-    for fieldname in config["pdf_filename_fields"]:
+    for fieldname in fields_to_use:
         if fieldname in target.keys():
             filename_segments.append(slugify(target[fieldname]))
 
     if filename_segments:
-        return config["pdf_filename_separator"].join(filename_segments)
+        return separator.join(filename_segments)
     else:
         return slugify(target["name"])
 
+def es_index_name(target):
+    return target_slug_name(target, config["es_index_fields"], config["es_index_separator"])
+
 def default_pdf_name(target):
     """Choose a reasonable name for a PDF file in case one isn't specified."""
-    return target_slug_name(target)+".pdf"
+    return target_slug_name(target, config["pdf_filename_fields"], config["pdf_filename_separator"])+".pdf"
 
 
 # Generate a unique nonce per-run to be used for tempdir folder names
@@ -706,7 +709,7 @@ def render_pages(target=None, mode="html", bypass_errors=False,
 
     if es_upload != NO_ES_UP:
         es_base_url = get_es_instance(es_upload)
-        es_index = target_slug_name(target)
+        es_index = es_index_name(target)
         # Note: this doesn't delete the old index
 
     if mode == "pdf" or mode == "html":

@@ -34,6 +34,10 @@ pdf_filename_fields:
     - display_name
 pdf_filename_separator: '-'
 
+es_index_fields:
+    - name
+es_index_separator: '-'
+
 prince_executable: prince
 
 ## If this is true, parses the files as Markdown without Jinja syntax

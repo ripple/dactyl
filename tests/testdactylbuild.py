@@ -33,8 +33,6 @@ mocktemplate = Template("This page is {{ currentpage.name }}.")
 class TestDactylBuild(unittest.TestCase):
     #IMPORTANT: Please run these tests from the "tests" directory, to ensure test config files and mocks are correctly loaded.
 
-    #P1 tests listed below
-
     def test_default_pdf_name(self):
         test_result = dactyl_build.default_pdf_name("conditionals")
         assert test_result == "Conditional_Text_Target.pdf"
@@ -46,11 +44,11 @@ class TestDactylBuild(unittest.TestCase):
 
     def test_get_pages(self):
         assert dactyl_build.get_pages(dactyl_build.get_target("test_target"), False) == [{'name': 'filters_page', 'category': 'Filters', 'filters': ['mock_filter'], 'targets': ['test_target'], 'html': 'filters_page.html'}, {'name': 'test_page', 'category': 'Tests', 'html': 'test.html', 'targets': ['test_target']}]
-    
+
     def test_get_filters_for_page(self):
         # Please note: due to the mock setup for unit testing, this function will always return an empty set.  Refactoring is recommended to verify the remaining functionality for this method.
         assert dactyl_build.get_filters_for_page(dactyl_build.config["pages"][0], dactyl_build.get_target("filters_target")) == set()
- 
+
     def test_parse_markdown(self):
         output = dactyl_build.parse_markdown(dactyl_build.config["pages"][2], "filters_target", dactyl_build.config["pages"], [], "html", "", False)
 
@@ -58,10 +56,17 @@ class TestDactylBuild(unittest.TestCase):
         output = dactyl_build.render_page(dactyl_build.config["pages"][2], "filters_target", dactyl_build.config["pages"], "html", "", [], mocktemplate, False)
         assert output == "This page is md_test."
 
-    #P2 tests listed below
-
     def test_target_slug_name(self):
-        assert dactyl_build.target_slug_name("conditionals") == "Conditional_Text_Target"
+        print("target_slug_name is", dactyl_build.target_slug_name("conditionals"))
+        fields_to_use = ["display_name"]
+        sep = ","
+        assert dactyl_build.target_slug_name("conditionals", fields_to_use, sep) == "Conditional_Text_Target"
+
+    def test_es_index_name(self):
+        test_target = dactyl_build.get_target("es_index_test_target")
+        dactyl_build.config["es_index_fields"] = ["foo1", "foo2"]
+        dactyl_build.config["es_index_separator"] = "--"
+        assert dactyl_build.es_index_name(test_target) == "Foo_Value_1--Foo_Value_TWOOOO"
 
     def test_make_adhoc_target(self):
         assert dactyl_build.make_adhoc_target(["gfm-compat.md"]) == {'name': '__ADHOC__', 'display_name': 'GitHub Markdown Compatibility'}

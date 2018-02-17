@@ -1,5 +1,5 @@
 content_path: test_files
-pdf_filename_fields: 
+pdf_filename_fields:
     -   display_name
 pdf_filename_separator: '-'
 skip_preprocessor: false
@@ -11,6 +11,9 @@ targets:
     -   name: conditionals
         display_name: Conditional Text Target
     -   name: markdown
+    -   name: es_index_test_target
+        foo1: "Foo Value #1"
+        foo2: Foo Value TWOOOO
 
 pages:
     -   name: filters_page
