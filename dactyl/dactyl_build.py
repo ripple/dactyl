@@ -170,8 +170,8 @@ def parse_markdown(page, target=None, pages=None, categories=[], mode="html",
         )
     except Exception as e:
         traceback.print_tb(e.__traceback__)
-        recoverable_error("Couldn't preprocess markdown for page %s: %s" %
-                (page["name"], repr(e)), bypass_errors)
+        recoverable_error("Couldn't preprocess markdown for page %s: %s(%s)" %
+                (page["name"], repr(e), str(e)), bypass_errors)
         # Just fetch the md without running the preprocessor
         md = preprocess_markdown(page,
             target=target,
