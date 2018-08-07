@@ -195,9 +195,9 @@ def filter_markdown(md, mode="html", currentpage={}, **kwargs):
 
 def substitute_md_links(md, link_subs, do_images=False):
     if do_images:
-        regex = MDLink.MARKDOWN_LINK_REGEX
+        regex = MDLink.MD_LINK_REGEX
     else:
-        regex = MDLink.MARKDOWN_IMG_REGEX
+        regex = MDLink.MD_IMG_REGEX
     links = [MDLink(*m) for m in regex.findall(md)]
 
     for link in links:

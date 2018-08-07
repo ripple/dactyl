@@ -42,24 +42,27 @@ def guess_title_from_md_file(filepath):
     """Takes the path to an md file and return a suitable title.
     If the first two lines look like a Markdown header, use that.
     Otherwise, return the filename."""
-    with open(filepath, "r") as f:
-        line1 = f.readline()
-        line2 = f.readline()
+    try:
+        with open(filepath, "r") as f:
+            line1 = f.readline()
+            line2 = f.readline()
 
-        # look for headers in the "followed by ----- or ===== format"
-        ALT_HEADER_REGEX = re.compile("^[=-]{3,}$")
-        if ALT_HEADER_REGEX.match(line2):
-            possible_header = line1
-            if possible_header.strip():
-                return possible_header.strip()
+            # look for headers in the "followed by ----- or ===== format"
+            ALT_HEADER_REGEX = re.compile("^[=-]{3,}$")
+            if ALT_HEADER_REGEX.match(line2):
+                possible_header = line1
+                if possible_header.strip():
+                    return possible_header.strip()
 
-        # look for headers in the "## abc ## format"
-        HEADER_REGEX = re.compile("^#+\s*(.+[^#\s])\s*#*$")
-        m = HEADER_REGEX.match(line1)
-        if m:
-            possible_header = m.group(1)
-            if possible_header.strip():
-                return possible_header.strip()
+            # look for headers in the "## abc ## format"
+            HEADER_REGEX = re.compile("^#+\s*(.+[^#\s])\s*#*$")
+            m = HEADER_REGEX.match(line1)
+            if m:
+                possible_header = m.group(1)
+                if possible_header.strip():
+                    return possible_header.strip()
+    except FileNotFoundError as e:
+        logger.warning("Couldn't guess title of page (file not found): %s" % e)
 
     #basically if the first line's not a markdown header, we give up and use
     # the filename instead
