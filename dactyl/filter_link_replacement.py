@@ -174,11 +174,12 @@ class MDLink: # Used for link substitution on markdown
             s += "(" + self.url + ")"
         return s
 
-def filter_markdown(md, mode="html", currentpage={}, **kwargs):
+def filter_markdown(md, mode="html", currentpage={}, logger=None, **kwargs):
     """
     In "Githubify" mode, we need to do link substitution on the Markdown itself
     since we won't have an opportunity to do it on the HTML output.
     """
+    globals()["logger"] = logger
     if mode != "md":
         return md
 
@@ -191,22 +192,40 @@ def filter_markdown(md, mode="html", currentpage={}, **kwargs):
         md = substitute_md_images(currentpage, image_subs)
         md = substitute_md_links(currentpage, image_subs)
 
+    if LINK_RE_SUBS_FIELD in currentpage:
+        link_re_subs = currentpage[LINK_RE_SUBS_FIELD]
+        md = substitute_md_links(md, link_re_subs, regex_search=True)
+
+    if IMAGE_RE_SUBS_FIELD in currentpage:
+        image_re_subs = currentpage[IMAGE_RE_SUBS_FIELD]
+        md = substitute_md_images(md, image_re_subs, regex_search=True)
+        md = substitute_md_links(md, link_re_subs, regex_search=True)
+
     return md
 
-def substitute_md_links(md, link_subs, do_images=False):
+def substitute_md_links(md, link_subs, do_images=False, regex_search=False):
     if do_images:
-        regex = MDLink.MD_LINK_REGEX
-    else:
         regex = MDLink.MD_IMG_REGEX
+    else:
+        regex = MDLink.MD_LINK_REGEX
     links = [MDLink(*m) for m in regex.findall(md)]
 
     for link in links:
-        for needle, replacement in link_subs:
-            if link.url[:len(needle)] == needle:
-                link.url = replacement + link.url[len(needle):]
-                md = md.replace(link.fullmatch, link.to_markdown())
+        for needle, replacement in link_subs.items():
+            if regex_search:
+                m = re.match(needle, link.url)
+                if m:
+                    new_path = re.sub(needle, replacement, link.url)
+                    link.url = new_path
+                    logger.info("... replacing link '%s' with '%s'" %
+                                (link.fullmatch, link.to_markdown()) )
+                    md = md.replace(link.fullmatch, link.to_markdown() )
+            else:
+                if link.url[:len(needle)] == needle:
+                    link.url = replacement + link.url[len(needle):]
+                    md = md.replace(link.fullmatch, link.to_markdown())
 
     return md
 
-def substitute_md_images(md, image_subs):
-    return substitute_md_links(md, image_subs, do_images=True)
+def substitute_md_images(md, image_subs, regex_search=False):
+    return substitute_md_links(md, image_subs, do_images=True, regex_search=regex_search)
