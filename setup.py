@@ -30,7 +30,7 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: POSIX',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Topic :: Utilities',
         'Topic :: Documentation',
     ],
@@ -50,7 +50,7 @@ setup(
         'beautifulsoup4',
         'jinja2',
         'Markdown',
-        'PyYAML',
+        'ruamel.yaml',
         'requests',
         'watchdog'
     ],

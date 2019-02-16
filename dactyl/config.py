@@ -6,8 +6,7 @@ from dactyl.version import __version__
 
 # Used to import filters.
 from importlib import import_module
-# import importlib.util
-from importlib.machinery import SourceFileLoader
+import importlib.util
 
 # Used for pulling in the default config file
 from pkg_resources import resource_stream
@@ -59,7 +58,7 @@ class DactylConfig:
             else:
                 traceback.print_tb(e.__traceback__)
                 exit("Fatal: Config file '%s' not found"%config_file)
-        except yaml.parser.ParserError as e:
+        except ruamel.yaml.parser.ParserError as e:
             traceback.print_tb(e.__traceback__)
             exit("Fatal: Error parsing config file: %s"%e)
 
@@ -131,14 +130,10 @@ class DactylConfig:
                         f_filepath = os.path.join(filter_path, "filter_"+filter_name+".py")
 
                         ## Requires Python 3.5+
-                        # spec = importlib.util.spec_from_file_location(
-                        #             "dactyl_filters."+filter_name, f_filepath)
-                        # self.filters[filter_name] = importlib.util.module_from_spec(spec)
-                        # spec.loader.exec_module(self.filters[filter_name])
-
-                        ## Compatible with Python 3.4 and 3.3, probably
-                        loader = SourceFileLoader("dactyl_filters", f_filepath)
-                        self.filters[filter_name] = loader.load_module()
+                        spec = importlib.util.spec_from_file_location(
+                                    "dactyl_filters."+filter_name, f_filepath)
+                        self.filters[filter_name] = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(self.filters[filter_name])
 
                         filter_loaded = True
                         break

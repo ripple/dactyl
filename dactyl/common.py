@@ -11,7 +11,9 @@ import os
 import re
 import time
 import traceback
-import yaml
+
+import ruamel.yaml
+yaml = ruamel.yaml.YAML(typ="safe")
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())

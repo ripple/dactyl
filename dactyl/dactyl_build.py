@@ -157,6 +157,8 @@ def parse_markdown(page, target=None, pages=None, categories=[], mode="html",
 
     # We'll apply these filters to the page
     page_filters = get_filters_for_page(page, target)
+    logger.debug("Filters for page {pg}: {fl}".format(
+                 pg=page["name"], fl=page_filters))
 
     # Get the markdown, preprocess, and apply md filters
     try:
