@@ -318,7 +318,7 @@ def preprocess_markdown(page, target=None, categories=[], page_filters=[],
                 md = f.read()
 
     else:
-        pp_env = setup_pp_env(page, page_filters=page_filters)
+        pp_env = setup_pp_env(page, page_filters=page_filters, bypass_errors=bypass_errors)
         md_raw = pp_env.get_template(page["md"])
         md = md_raw.render(
             currentpage=page,
@@ -435,17 +435,31 @@ def get_page_where(page=None):
         return False, config["content_path"]
 
 
-def setup_pp_env(page=None, page_filters=[], no_loader=False):
+def setup_pp_env(page=None, page_filters=[], no_loader=False, bypass_errors=False):
     remote, path = get_page_where(page)
+    if bypass_errors:
+        preferred_undefined = jinja2.Undefined
+    else:
+        preferred_undefined = jinja2.StrictUndefined
     if remote:
         logger.debug("Using remote template loader for page %s" % page)
-        pp_env = jinja2.Environment(loader=jinja2.FunctionLoader(read_markdown_remote))
+        pp_env = jinja2.Environment(undefined=preferred_undefined,
+                loader=jinja2.FunctionLoader(read_markdown_remote))
     elif no_loader:
         logger.debug("Using a no-loader Jinja environment")
-        pp_env = jinja2.Environment()
+        pp_env = jinja2.Environment(undefined=preferred_undefined)
     else:
         logger.debug("Using FileSystemLoader for page %s" % page)
-        pp_env = jinja2.Environment(loader=jinja2.FileSystemLoader(path))
+        pp_env = jinja2.Environment(undefined=preferred_undefined,
+                loader=jinja2.FileSystemLoader(path))
+
+    # Add custom "defined_and_" tests
+    def defined_and_equalto(a,b):
+        return pp_env.tests["defined"](a) and pp_env.tests["equalto"](a, b)
+    pp_env.tests["defined_and_equalto"] = defined_and_equalto
+    def undefined_or_ne(a,b):
+        return pp_env.tests["undefined"](a) or pp_env.tests["ne"](a, b)
+    pp_env.tests["undefined_or_ne"] = undefined_or_ne
 
     # Pull exported values (& functions) from page filters into the pp_env
     for filter_name in page_filters:
@@ -459,9 +473,21 @@ def setup_pp_env(page=None, page_filters=[], no_loader=False):
     return pp_env
 
 
-def setup_html_env():
+def setup_html_env(bypass_errors=False):
+    if bypass_errors:
+        preferred_undefined = jinja2.Undefined
+    else:
+        preferred_undefined = jinja2.StrictUndefined
     if "template_path" in config:
-        env = jinja2.Environment(loader=jinja2.FileSystemLoader(config["template_path"]))
+        env = jinja2.Environment(undefined=preferred_undefined,
+                loader=jinja2.FileSystemLoader(config["template_path"]))
+        # add custom "defined_and_" tests
+        def defined_and_equalto(a,b):
+            return env.tests["defined"](a) and env.tests["equalto"](a, b)
+        env.tests["defined_and_equalto"] = defined_and_equalto
+        def undefined_or_ne(a,b):
+            return env.tests["undefined"](a) or env.tests["ne"](a, b)
+        env.tests["undefined_or_ne"] = undefined_or_ne
     else:
         env = setup_fallback_env()
     env.lstrip_blocks = True
@@ -643,7 +669,7 @@ def render_es_json(currentpage, es_template, pages=[], target=None, categories=[
         "bypass_errors": bypass_errors,
     }
 
-    es_env = setup_pp_env(no_loader=True)
+    es_env = setup_pp_env(no_loader=True, bypass_errors=bypass_errors)
 
     def render_es_field(value, context):
         if type(value) == str: # jinja-render strings
@@ -716,7 +742,7 @@ def render_pages(target=None, mode="html", bypass_errors=False,
 
     if mode == "pdf" or mode == "html":
         # Insert generated HTML into templates using this Jinja environment
-        env = setup_html_env()
+        env = setup_html_env(bypass_errors=bypass_errors)
         fallback_env = setup_fallback_env()
     if mode == "pdf":
         out_path = temp_files_path or temp_dir()
