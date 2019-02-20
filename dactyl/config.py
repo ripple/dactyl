@@ -27,6 +27,8 @@ class DactylConfig:
             exit(0)
 
         self.bypass_errors = cli_args.bypass_errors
+        if self.bypass_errors:
+            yaml.allow_duplicate_keys = True
 
         # Start with the default config, then overwrite later
         self.config = yaml.load(resource_stream(__name__, "default-config.yml"))
@@ -182,6 +184,11 @@ class DactylConfig:
             self.config["out_path"] = self.cli_args.out_dir
 
         self.config["skip_preprocessor"] = self.cli_args.skip_preprocessor
+
+        if self.cli_args.template_strict_undefined:
+            self.config["template_allow_undefined"] = False
+        if self.cli_args.pp_strict_undefined:
+            self.config["preprocessor_allow_undefined"] = False
 
     def html_filename_from(self, page):
         """Take a page definition and choose a reasonable HTML filename for it."""

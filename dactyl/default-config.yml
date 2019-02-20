@@ -43,6 +43,12 @@ prince_executable: prince
 ## If this is true, parses the files as Markdown without Jinja syntax
 skip_preprocessor: false
 
+## Set these to false to raise an error referring to a
+## field that doesn't exist, such as {{ foo }} or {% if foo %}
+## These settings are ignored when running with --bypass_errors.
+template_allow_undefined: true
+preprocessor_allow_undefined: true
+
 ## By default, generates HTML paths from md paths by replacing / with -
 ## Set this to false to make default HTML paths mirror the folder structure of
 ## the input md files.

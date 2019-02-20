@@ -76,6 +76,12 @@ class DactylCLIParser:
                                 help="Don't automatically add a cover / index file.")
             parser.add_argument("--skip_preprocessor", action="store_true", default=False,
                                 help="Don't pre-process Jinja syntax in markdown files")
+            parser.add_argument("--template_strict_undefined", action="store_true",
+                                help="Raise an error on undefined variables in "+
+                                "template syntax.")
+            parser.add_argument("--pp_strict_undefined", action="store_true",
+                                help="Raise an error on undefined variables in "+
+                                "preprocessor syntax.")
             parser.add_argument("--title", type=str, help="Override target display "+\
                                 "name. Useful when passing multiple args to --pages.")
             parser.add_argument("--vars", type=str, help="A YAML or JSON file with vars "+

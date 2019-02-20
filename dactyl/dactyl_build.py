@@ -318,7 +318,11 @@ def preprocess_markdown(page, target=None, categories=[], page_filters=[],
                 md = f.read()
 
     else:
-        pp_env = setup_pp_env(page, page_filters=page_filters, bypass_errors=bypass_errors)
+        if config["preprocessor_allow_undefined"] == False and not bypass_errors:
+            strict_undefined = True
+        else:
+            strict_undefined = False
+        pp_env = setup_pp_env(page, page_filters=page_filters, strict_undefined=strict_undefined)
         md_raw = pp_env.get_template(page["md"])
         md = md_raw.render(
             currentpage=page,
@@ -435,12 +439,12 @@ def get_page_where(page=None):
         return False, config["content_path"]
 
 
-def setup_pp_env(page=None, page_filters=[], no_loader=False, bypass_errors=False):
+def setup_pp_env(page=None, page_filters=[], no_loader=False, strict_undefined=False):
     remote, path = get_page_where(page)
-    if bypass_errors:
-        preferred_undefined = jinja2.Undefined
-    else:
+    if strict_undefined:
         preferred_undefined = jinja2.StrictUndefined
+    else:
+        preferred_undefined = jinja2.Undefined
     if remote:
         logger.debug("Using remote template loader for page %s" % page)
         pp_env = jinja2.Environment(undefined=preferred_undefined,
@@ -473,29 +477,35 @@ def setup_pp_env(page=None, page_filters=[], no_loader=False, bypass_errors=Fals
     return pp_env
 
 
-def setup_html_env(bypass_errors=False):
-    if bypass_errors:
-        preferred_undefined = jinja2.Undefined
-    else:
+def setup_html_env(strict_undefined=False):
+    if strict_undefined:
         preferred_undefined = jinja2.StrictUndefined
+    else:
+        preferred_undefined = jinja2.Undefined
     if "template_path" in config:
         env = jinja2.Environment(undefined=preferred_undefined,
                 loader=jinja2.FileSystemLoader(config["template_path"]))
-        # add custom "defined_and_" tests
-        def defined_and_equalto(a,b):
-            return env.tests["defined"](a) and env.tests["equalto"](a, b)
-        env.tests["defined_and_equalto"] = defined_and_equalto
-        def undefined_or_ne(a,b):
-            return env.tests["undefined"](a) or env.tests["ne"](a, b)
-        env.tests["undefined_or_ne"] = undefined_or_ne
     else:
         env = setup_fallback_env()
+
+    # Customize env: add custom tests, lstrip & trim blocks
+    def defined_and_equalto(a,b):
+        return env.tests["defined"](a) and env.tests["equalto"](a, b)
+    env.tests["defined_and_equalto"] = defined_and_equalto
+    def undefined_or_ne(a,b):
+        return env.tests["undefined"](a) or env.tests["ne"](a, b)
+    env.tests["undefined_or_ne"] = undefined_or_ne
+
     env.lstrip_blocks = True
     env.trim_blocks = True
     return env
 
 
 def setup_fallback_env():
+    """
+    Set up a Jinja env to load templates from the package. These templates
+    assume that we're not using StrictUndefined.
+    """
     env = jinja2.Environment(loader=jinja2.PackageLoader(__name__))
     env.lstrip_blocks = True
     env.trim_blocks = True
@@ -669,7 +679,11 @@ def render_es_json(currentpage, es_template, pages=[], target=None, categories=[
         "bypass_errors": bypass_errors,
     }
 
-    es_env = setup_pp_env(no_loader=True, bypass_errors=bypass_errors)
+    if config["preprocessor_allow_undefined"] == False and not bypass_errors:
+        strict_undefined = True
+    else:
+        strict_undefined = False
+    es_env = setup_pp_env(no_loader=True, strict_undefined=strict_undefined)
 
     def render_es_field(value, context):
         if type(value) == str: # jinja-render strings
@@ -741,8 +755,12 @@ def render_pages(target=None, mode="html", bypass_errors=False,
         # Note: this doesn't delete the old index
 
     if mode == "pdf" or mode == "html":
+        if config["template_allow_undefined"] == False and not bypass_errors:
+            strict_undefined = True
+        else:
+            strict_undefined = False
         # Insert generated HTML into templates using this Jinja environment
-        env = setup_html_env(bypass_errors=bypass_errors)
+        env = setup_html_env(strict_undefined=strict_undefined)
         fallback_env = setup_fallback_env()
     if mode == "pdf":
         out_path = temp_files_path or temp_dir()
