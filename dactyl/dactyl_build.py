@@ -956,7 +956,7 @@ def make_pdf(outfile, target=None, bypass_errors=False, remove_tmp=True,
     abs_pdf_path = os.path.abspath(os.path.join(config["out_path"], outfile))
 
     # Start preparing the prince command
-    args = [config["prince_executable"], '--javascript', '-o', abs_pdf_path]
+    args = [config["prince_executable"], '--javascript', '-o', abs_pdf_path, '--no-warn-css']
     # Change dir to the tempfiles path; this may avoid a bug in Prince
     old_cwd = os.getcwd()
     os.chdir(temp_files_path)
