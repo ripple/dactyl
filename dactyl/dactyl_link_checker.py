@@ -17,7 +17,7 @@ def getSoup(fullPath):
     if fullPath in soupsCache.keys():
         soup = soupsCache[fullPath]
     else:
-        with open(fullPath, 'r') as f:
+        with open(fullPath, 'r', encoding="utf-8") as f:
             soup = BeautifulSoup(f.read(), "html.parser")
             soupsCache[fullPath] = soup
     return soup

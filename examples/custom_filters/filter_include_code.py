@@ -1,6 +1,6 @@
 def include_code(filename, lines="", mark_disjoint="", language=""):
     #TO-DO: Add "start_after" and "end_before" as an alternative to lines
-    with open(filename) as f:
+    with open(filename, encoding="utf-8") as f:
         s = f.read()
 
     # mark_disjoint

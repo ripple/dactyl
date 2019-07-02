@@ -9,9 +9,9 @@ try:
     import pypandoc
     long_description = pypandoc.convert('README.md', 'rst')
 except ImportError:
-    long_description = open('README.md').read()
+    long_description = open('README.md', encoding="utf-8").read()
 
-with open("dactyl/version.py") as versionfile:
+with open("dactyl/version.py", encoding="utf-8") as versionfile:
     exec(versionfile.read())
 
 setup(
