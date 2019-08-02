@@ -81,129 +81,140 @@ def checkLinks(offline=False):
     num_links_checked = 0
     last_checkin = time()
     for dirpath, dirnames, filenames in os.walk(config["out_path"]):
-      if time() - last_checkin > CHECK_IN_INTERVAL:
-        ## Print output periodically so Jenkins/etc. don't kill the job
-        last_checkin = time()
-        print("... still working (dirpath: %s) ..." % dirpath)
-      if "template_path" in config and \
-         os.path.abspath(dirpath) == os.path.abspath(config["template_path"]):
-        # don't try to parse and linkcheck the templates
-        logger.warning("Skipping link checking for template path %s" % dirpath)
-        continue
-      for fname in filenames:
         if time() - last_checkin > CHECK_IN_INTERVAL:
-          last_checkin = time()
-          print("... still working (file: %s) ..." % fname)
-        fullPath = os.path.join(dirpath, fname)
-        if "/node_modules/" in fullPath or ".git" in fullPath:
-          logger.debug("skipping ignored dir: %s" % fullPath)
-          continue
-        if fullPath.endswith(".html"):
-          soup = getSoup(fullPath)
-          unparsed_links = check_for_unparsed_reference_links(soup)
-          if unparsed_links:
-            logger.warning("Found %d unparsed Markdown reference links: %s" %
-                        (len(unparsed_links), "\n... ".join(unparsed_links)))
-            [broken_links.append( (fullPath, u) ) for u in unparsed_links]
-          links = soup.find_all('a')
-          for link in links:
+            ## Print output periodically so Jenkins/etc. don't kill the job
+            last_checkin = time()
+            print("... still working (dirpath: %s) ..." % dirpath)
+        if "template_path" in config and \
+               os.path.abspath(dirpath) == os.path.abspath(config["template_path"]):
+            # don't try to parse and linkcheck the templates
+            logger.warning("Skipping link checking for template path %s" % dirpath)
+            continue
+        for fname in filenames:
             if time() - last_checkin > CHECK_IN_INTERVAL:
-              last_checkin = time()
-              print("... still working (link: %s) ..." % link)
-            if "href" not in link.attrs:
-              #probably an <a name> type anchor, skip
-              continue
+                last_checkin = time()
+                print("... still working (file: %s) ..." % fname)
 
-            endpoint = link['href']
-            if not endpoint.strip():
-              logger.warning("Empty link in %s" % fullPath)
-              broken_links.append( (fullPath, endpoint) )
-              num_links_checked += 1
-
-            elif endpoint == "#":
-              continue
-
-            elif "mailto:" in endpoint:
-              logger.info("Skipping email link in %s to %s"%(fullPath, endpoint))
-              continue
-
-            elif "://" in endpoint:
-              if offline:
-                logger.info("Offline - Skipping remote URL %s"%(endpoint))
+            fullPath = os.path.join(dirpath, fname)
+            if "/node_modules/" in fullPath or ".git" in fullPath:
+                logger.debug("skipping ignored dir: %s" % fullPath)
                 continue
+            if fullPath.endswith(".html"):
+                soup = getSoup(fullPath)
+                unparsed_links = check_for_unparsed_reference_links(soup)
+                if unparsed_links:
+                    logger.warning("Found %d unparsed Markdown reference links: %s" %
+                            (len(unparsed_links), "\n... ".join(unparsed_links)))
+                    [broken_links.append( (fullPath, u) ) for u in unparsed_links]
+                links = soup.find_all('a')
+                for link in links:
+                    if time() - last_checkin > CHECK_IN_INTERVAL:
+                        last_checkin = time()
+                        print("... still working (link: %s) ..." % link)
+                    if "href" not in link.attrs:
+                        #probably an <a name> type anchor, skip
+                        continue
 
-              num_links_checked += 1
-              check_remote_url(endpoint, fullPath, broken_links, externalCache)
+                    endpoint = link['href']
+                    if not endpoint.strip():
+                        logger.warning("Empty link in %s" % fullPath)
+                        broken_links.append( (fullPath, endpoint) )
+                        num_links_checked += 1
+
+                    elif endpoint == "#":
+                        continue
+
+                    elif "mailto:" in endpoint:
+                        logger.warning("Skipping email link in %s to %s" %
+                                (fullPath, endpoint))
+                        continue
+
+                    elif endpoint[0] == '/':
+                        # Can't properly test absolute links without knowing where the
+                        #   server root will be, so skip this
+                        logger.warning("Skipping absolute link in %s to %s" %
+                                (fullPath, endpoint))
+                        continue
+
+                    elif "://" in endpoint:
+                        if offline:
+                            logger.info("Offline - Skipping remote URL %s" % (endpoint))
+                            continue
+
+                        num_links_checked += 1
+                        check_remote_url(endpoint, fullPath, broken_links, externalCache)
 
 
-            elif '#' in endpoint:
-              if fname in config["ignore_anchors_in"]:
-                logger.info("Ignoring anchor %s in dynamic page %s"%(endpoint,fname))
-                continue
-              logger.info("Testing local link %s from %s"%(endpoint, fullPath))
-              num_links_checked += 1
-              filename,anchor = endpoint.split("#",1)
-              if filename == "":
-                fullTargetPath = fullPath
-              else:
-                fullTargetPath = os.path.join(dirpath, filename)
-              if not os.path.exists(fullTargetPath):
-                logger.warning("Broken local link in %s to %s"%(fullPath, endpoint))
-                broken_links.append( (fullPath, endpoint) )
+                    elif '#' in endpoint:
+                        if fname in config["ignore_anchors_in"]:
+                            logger.warning("Ignoring anchor %s in dynamic page %s" %
+                                    (endpoint,fname))
+                            continue
+                        logger.info("Testing local link %s from %s" %
+                                (endpoint, fullPath))
+                        num_links_checked += 1
+                        filename,anchor = endpoint.split("#",1)
+                        if filename == "":
+                            fullTargetPath = fullPath
+                        else:
+                            fullTargetPath = os.path.join(dirpath, filename)
+                        if not os.path.exists(fullTargetPath):
+                            logger.warning("Broken local link in %s to %s" %
+                                    (fullPath, endpoint))
+                            broken_links.append( (fullPath, endpoint) )
 
-              elif filename in config["ignore_anchors_in"]:
-                  #Some pages are populated dynamically, so BeatifulSoup wouldn't
-                  # be able to find anchors in them anyway
-                  logger.info("Skipping anchor link in %s to dynamic page %s" %
-                        (fullPath, endpoint))
-                  continue
+                        elif filename in config["ignore_anchors_in"]:
+                            #Some pages are populated dynamically, so BeatifulSoup wouldn't
+                            # be able to find anchors in them anyway
+                            logger.info("Skipping anchor link in %s to ignored page %s" %
+                                  (fullPath, endpoint))
+                            continue
 
-              elif fullTargetPath != "../":
-                num_links_checked += 1
-                targetSoup = getSoup(fullTargetPath)
-                if not targetSoup.find(id=anchor) and not targetSoup.find(
-                        "a",attrs={"name":anchor}):
-                  logger.warning("Broken anchor link in %s to %s"%(fullPath, endpoint))
-                  broken_links.append( (fullPath, endpoint) )
-                else:
-                  logger.info("...anchor found.")
-                continue
+                        elif fullTargetPath != "../":
+                            num_links_checked += 1
+                            targetSoup = getSoup(fullTargetPath)
+                            if not targetSoup.find(id=anchor) and not targetSoup.find(
+                                        "a",attrs={"name":anchor}):
+                                logger.warning("Broken anchor link in %s to %s" %
+                                        (fullPath, endpoint))
+                                broken_links.append( (fullPath, endpoint) )
+                            else:
+                                logger.info("...anchor found.")
+                            continue
 
-            elif endpoint[0] == '/':
-              #can't really test links out of the local field
-              logger.info("Skipping absolute link in %s to %s"%(fullPath, endpoint))
-              continue
+                    else:
+                        num_links_checked += 1
+                        if not os.path.exists(os.path.join(dirpath, endpoint)):
+                            logger.warning("Broken local link in %s to %s" %
+                                    (fullPath, endpoint))
+                            broken_links.append( (fullPath, endpoint) )
 
-            else:
-              num_links_checked += 1
-              if not os.path.exists(os.path.join(dirpath, endpoint)):
-                logger.warning("Broken local link in %s to %s"%(fullPath, endpoint))
-                broken_links.append( (fullPath, endpoint) )
+                    #Now check images
+                    imgs = soup.find_all('img')
+                    for img in imgs:
+                        num_links_checked += 1
+                        if "src" not in img.attrs or not img["src"].strip():
+                            logger.warning("Broken image with no src in %s" % fullPath)
+                            broken_links.append( (fullPath, img["src"]) )
+                            continue
 
-          #Now check images
-          imgs = soup.find_all('img')
-          for img in imgs:
-            num_links_checked += 1
-            if "src" not in img.attrs or not img["src"].strip():
-              logger.warning("Broken image with no src in %s" % fullPath)
-              broken_links.append( (fullPath, img["src"]) )
-              continue
+                        src = img["src"]
+                        if "://" in src:
+                            if offline:
+                                logger.info("Offline - Skipping remote image %s"%(endpoint))
+                                continue
 
-            src = img["src"]
-            if "://" in src:
-              if offline:
-                logger.info("Offline - Skipping remote image %s"%(endpoint))
-                continue
+                            check_remote_url(src, fullPath, broken_links, externalCache, isImg=True)
 
-              check_remote_url(src, fullPath, broken_links, externalCache, isImg=True)
-
-            else:
-              logger.info("Checking local image %s in %s" % (src, fullPath))
-              if os.path.exists(os.path.join(dirpath, src)):
-                logger.info("...success")
-              else:
-                logger.warning("Broken local image %s in %s" % (src, fullPath))
-                broken_links.append( (fullPath, src) )
+                        else:
+                            logger.info("Checking local image %s in %s" %
+                                    (src, fullPath))
+                            if os.path.exists(os.path.join(dirpath, src)):
+                                logger.info("...success")
+                            else:
+                                logger.warning("Broken local image %s in %s" %
+                                        (src, fullPath))
+                                broken_links.append( (fullPath, src) )
     return broken_links, num_links_checked
 
 
