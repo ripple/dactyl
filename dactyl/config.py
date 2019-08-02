@@ -51,7 +51,7 @@ class DactylConfig:
     def load_config_from_file(self, config_file):
         logger.debug("loading config file %s..." % config_file)
         try:
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 loaded_config = yaml.load(f)
         except FileNotFoundError as e:
             if config_file == DEFAULT_CONFIG_FILE:
@@ -165,14 +165,14 @@ class DactylConfig:
     def load_style_rules(self):
         """Reads word and phrase substitution files into the config"""
         if "word_substitutions_file" in self.config:
-            with open(self.config["word_substitutions_file"], "r") as f:
+            with open(self.config["word_substitutions_file"], "r", endoding="utf-8") as f:
                 self.config["disallowed_words"] = yaml.load(f)
         else:
             logger.warning("No 'word_substitutions_file' found in config.")
             self.config["disallowed_words"] = {}
 
         if "phrase_substitutions_file" in self.config:
-            with open(self.config["phrase_substitutions_file"], "r") as f:
+            with open(self.config["phrase_substitutions_file"], "r", encoding="utf-8") as f:
                 self.config["disallowed_phrases"] = yaml.load(f)
         else:
             logger.warning("No 'phrase_substitutions_file' found in config.")
@@ -210,7 +210,7 @@ class DactylConfig:
         """Loads an ElasticSearch template (as JSON)"""
         template_path = os.path.join(self.config["template_path"], filename)
         try:
-            with open(template_path) as f:
+            with open(template_path, encoding="utf-8") as f:
                 es_template = json.load(f)
         except (FileNotFoundError, json.decoder.JSONDecodeError) as e:
             if type(e) == FileNotFoundError:

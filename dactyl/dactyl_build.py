@@ -314,7 +314,7 @@ def preprocess_markdown(page, target=None, categories=[], page_filters=[],
             md = read_markdown_remote(page["md"])
         else:
             logger.info("... reading markdown from file")
-            with open(page["md"], "r") as f:
+            with open(page["md"], "r", encoding="utf-8") as f:
                 md = f.read()
 
     else:
@@ -887,7 +887,7 @@ def write_page(page_text, filepath, out_path):
         logger.info("creating output folder %s" % out_folder)
         os.makedirs(out_folder)
     fileout = os.path.join(out_path, filepath)
-    with open(fileout, "w") as f:
+    with open(fileout, "w", encoding="utf-8") as f:
         logger.info("writing to file: %s..." % fileout)
         f.write(page_text)
 
@@ -1010,7 +1010,7 @@ def main(cli_args):
     if cli_args.vars:
         try:
             if cli_args.vars[-5:] in (".json",".yaml"):
-                with open(cli_args.vars, "r") as f:
+                with open(cli_args.vars, "r", encoding="utf-8") as f:
                     custom_keys = yaml.load(f)
             else:
                 custom_keys = yaml.load(cli_args.vars)

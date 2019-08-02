@@ -45,7 +45,7 @@ def guess_title_from_md_file(filepath):
     If the first two lines look like a Markdown header, use that.
     Otherwise, return the filename."""
     try:
-        with open(filepath, "r") as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             line1 = f.readline()
             line2 = f.readline()
 
