@@ -199,7 +199,10 @@ def checkLinks(offline=False):
                             continue
 
                         src = img["src"]
-                        if "://" in src:
+                        if src[0] == "/":
+                            logger.warning("Skipping absolute image path %s in %s" %
+                                    (src, fullPath))
+                        elif "://" in src:
                             if offline:
                                 logger.info("Offline - Skipping remote image %s"%(endpoint))
                                 continue
