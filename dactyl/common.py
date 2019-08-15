@@ -69,3 +69,28 @@ def guess_title_from_md_file(filepath):
     #basically if the first line's not a markdown header, we give up and use
     # the filename instead
     return os.path.basename(filepath)
+
+def parse_frontmatter(text):
+    """Separate YAML frontmatter, if any, from a string, and return the
+    text separate from the parsed front-matter."""
+    if len(text) < 6:
+        logger.debug("...too short for frontmatter")
+        return text, {}
+
+    if text[:3] == "---" and text.find("---", 3) != -1:
+        logger.debug("...has front matter")
+        raw_frontmatter = text[3:text.find("---", 3)]
+        frontmatter = yaml.load(raw_frontmatter)
+        # Map some Jekyll-specific frontmatter variables to their Dactyl equivs
+        if "title" in frontmatter.keys():
+            # We don't care about the Jekyll "page.name" field so it's OK to
+            #   overwrite it.
+            frontmatter["name"] = frontmatter["title"]
+        if "categories" in frontmatter.keys() and len(frontmatter["categories"]):
+            frontmatter["category"] = frontmatter["categories"][0]
+        print("Loaded frontmatter:", frontmatter)#TODO: remove me
+
+        return text[text.find("---", 3)+4:], frontmatter
+    else:
+        logger.debug("...no front matter detected")
+        return text, {}

@@ -34,6 +34,12 @@ pages:
         targets:
             - everything
 
+    -   md: with-frontmatter.md
+        name: placeholder_with_frontmatter_local
+        html: with-frontmatter.html
+        targets:
+            - everything
+
     -   name: Conditionals Test
         category: Tests
         md: conditionals.md

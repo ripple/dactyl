@@ -31,6 +31,7 @@ from watchdog.events import PatternMatchingEventHandler
 
 from dactyl.config import DactylConfig
 from dactyl.cli import DactylCLIParser
+from dactyl.jinja_loaders import FrontMatterRemoteLoader, FrontMatterFSLoader
 
 # These fields are special, and pages don't inherit them directly
 RESERVED_KEYS_TARGET = [
@@ -296,9 +297,11 @@ def get_categories(pages):
     logger.debug("categories: %s" % categories)
     return categories
 
+
 def preprocess_markdown(page, target=None, categories=[], page_filters=[],
                         mode="html", current_time="TIME_UNKNOWN",
-                        bypass_errors=False, skip_preprocessor="NOT SPECIFIED"):
+                        bypass_errors=False, skip_preprocessor="NOT SPECIFIED",
+                        read_frontmatter=True):
     """Read a markdown file, local or remote, and preprocess it, returning the
     preprocessed text."""
     target=get_target(target)
@@ -317,6 +320,15 @@ def preprocess_markdown(page, target=None, categories=[], page_filters=[],
             with open(page["md"], "r", encoding="utf-8") as f:
                 md = f.read()
 
+        if read_frontmatter:
+            try:
+                md, frontmatter = parse_frontmatter(md)
+                merge_dicts(frontmatter, page)
+            except Exception as e:
+                traceback.print_tb(e.__traceback__)
+                recoverable_error("Error reading frontmatter for page %s: %s" %
+                     (page, repr(e)), bypass_errors)
+
     else:
         if config["preprocessor_allow_undefined"] == False and not bypass_errors:
             strict_undefined = True
@@ -324,6 +336,11 @@ def preprocess_markdown(page, target=None, categories=[], page_filters=[],
             strict_undefined = False
         pp_env = setup_pp_env(page, page_filters=page_filters, strict_undefined=strict_undefined)
         md_raw = pp_env.get_template(page["md"])
+        if "fm_map" in dir(pp_env.loader):#TODO: this is a hack
+            fm_vars = pp_env.loader.fm_map.get(page["md"], {})
+        else:
+            fm_vars = {}
+        merge_dicts(fm_vars, page)
         md = md_raw.render(
             currentpage=page,
             categories=categories,
@@ -333,7 +350,6 @@ def preprocess_markdown(page, target=None, categories=[], page_filters=[],
             mode=mode,
             config=config
         )
-
 
     # Apply markdown-based filters here
     for filter_name in page_filters:
@@ -448,14 +464,14 @@ def setup_pp_env(page=None, page_filters=[], no_loader=False, strict_undefined=F
     if remote:
         logger.debug("Using remote template loader for page %s" % page)
         pp_env = jinja2.Environment(undefined=preferred_undefined,
-                loader=jinja2.FunctionLoader(read_markdown_remote))
+                loader=FrontMatterRemoteLoader())
     elif no_loader:
         logger.debug("Using a no-loader Jinja environment")
         pp_env = jinja2.Environment(undefined=preferred_undefined)
     else:
         logger.debug("Using FileSystemLoader for page %s" % page)
         pp_env = jinja2.Environment(undefined=preferred_undefined,
-                loader=jinja2.FileSystemLoader(path))
+                loader=FrontMatterFSLoader(path))
 
     # Add custom "defined_and_" tests
     def defined_and_equalto(a,b):
