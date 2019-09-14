@@ -13,6 +13,9 @@ from dactyl.common import *
 from distutils.dir_util import copy_tree, remove_tree
 from shutil import copy as copy_file
 
+# shallow copying of data types
+from copy import copy
+
 # Necessary for prince
 import subprocess
 
@@ -31,6 +34,7 @@ from watchdog.events import PatternMatchingEventHandler
 
 from dactyl.config import DactylConfig
 from dactyl.cli import DactylCLIParser
+from dactyl.openapi import ApiDef
 
 # These fields are special, and pages don't inherit them directly
 RESERVED_KEYS_TARGET = [
@@ -40,6 +44,13 @@ RESERVED_KEYS_TARGET = [
 ]
 ADHOC_TARGET = "__ADHOC__"
 ES_EVAL_KEY = "__dactyl_eval__"
+OPENAPI_SPEC_KEY = "openapi_specification"
+API_SLUG_KEY = "api_slug"
+
+HOW_FROM_URL = 1
+HOW_FROM_GENERATOR = 2
+HOW_FROM_FILE = 3
+
 
 def target_slug_name(target, fields_to_use=[], separator="-"):
     """Make a name for the target that's safe for use in URLs & filenames,
@@ -245,6 +256,28 @@ def get_pages(target=None, bypass_errors=False):
         pages = [page for page in pages
                  if should_include(page, target["name"])]
 
+    # Expand OpenAPI spec placeholders into their generated pages
+    new_pages = []
+    for p in pages:
+        if OPENAPI_SPEC_KEY in p.keys():
+            api_slug = p.get(API_SLUG_KEY, None)
+            extra_fields = {k:v for k,v in p.items() if k not in [OPENAPI_SPEC_KEY, API_SLUG_KEY]}
+            template_path = config.get("openapi_md_template_path", None)
+            try:
+                swagger = ApiDef(p[OPENAPI_SPEC_KEY], api_slug=api_slug,
+                        extra_fields=extra_fields, template_path=template_path)
+                swagger_pages = swagger.create_pagelist()
+                logger.debug("Adding generated OpenAPI reference pages: %s"%swagger_pages)
+                new_pages += swagger_pages
+            except Exception as e:
+                traceback.print_tb(e.__traceback__)
+                recoverable_error("Error when parsing OpenAPI definition %s: %s" %
+                     (p, repr(e)), bypass_errors)
+                # Omit the API def from the page list if an error occurred
+        else:
+            new_pages.append(p)
+    pages = new_pages
+
     # Check for pages that would overwrite each other
     html_outs_in_target = []
     for p in pages:
@@ -307,11 +340,14 @@ def preprocess_markdown(page, target=None, categories=[], page_filters=[],
     if skip_preprocessor=="NOT SPECIFIED":
         skip_preprocessor = config["skip_preprocessor"]
 
+    how, basepath = get_page_how(page)
     if skip_preprocessor:
-        remote, basepath = get_page_where(page)
-        if remote:
+        if how == HOW_FROM_URL:
             logger.info("... reading markdown from URL.")
             md = read_markdown_remote(page["md"])
+        elif how == HOW_FROM_GENERATOR:
+            logger.info("... reading markdown from generator")
+            md = page["__md_generator"]()
         else:
             logger.info("... reading markdown from file")
             with open(page["md"], "r", encoding="utf-8") as f:
@@ -323,7 +359,10 @@ def preprocess_markdown(page, target=None, categories=[], page_filters=[],
         else:
             strict_undefined = False
         pp_env = setup_pp_env(page, page_filters=page_filters, strict_undefined=strict_undefined)
-        md_raw = pp_env.get_template(page["md"])
+        if how == HOW_FROM_GENERATOR:
+            md_raw = pp_env.get_template("_")
+        else:
+            md_raw = pp_env.get_template(page["md"])
         md = md_raw.render(
             currentpage=page,
             categories=categories,
@@ -425,30 +464,41 @@ def copy_static_files(template_static=True, content_static=True, out_path=None):
             logger.debug("No content_static_path in conf; skipping copy")
 
 
-def get_page_where(page=None):
-    """Returns a (remote, path) tuple where remote is a boolean and path is the
-    URL or file path."""
+def get_page_how(page=None):
+    """
+    Explains how to get the markdown for a page object.
+    Returns a (how, path) tuple where path is the URL or file path, and how
+    is one of the following constants:
+    - HOW_FROM_GENERATOR - function to generate the markdown
+    - HOW_FROM_FILE - local file to be read
+    - HOW_FROM_URL - remote file to be fetched over HTTP(S)"""
     if not page:
-        return False, config["content_path"]
+        return HOW_FROM_FILE, config["content_path"]
+    elif "__md_generator" in page:
+        return HOW_FROM_GENERATOR, None
     elif "pp_dir" in page:
-        return False, page["pp_dir"]
+        return HOW_FROM_FILE, page["pp_dir"]
     elif "md" in page and (page["md"][:5] == "http:" or
                 page["md"][:6] == "https:"):
-        return True, os.path.dirname(page["md"])
+        return HOW_FROM_URL, os.path.dirname(page["md"])
     else:
-        return False, config["content_path"]
+        return HOW_FROM_FILE, config["content_path"]
 
 
 def setup_pp_env(page=None, page_filters=[], no_loader=False, strict_undefined=False):
-    remote, path = get_page_where(page)
+    how, path = get_page_how(page)
     if strict_undefined:
         preferred_undefined = jinja2.StrictUndefined
     else:
         preferred_undefined = jinja2.Undefined
-    if remote:
+    if how == HOW_FROM_URL:
         logger.debug("Using remote template loader for page %s" % page)
         pp_env = jinja2.Environment(undefined=preferred_undefined,
                 loader=jinja2.FunctionLoader(read_markdown_remote))
+    elif how == HOW_FROM_GENERATOR:
+        logger.debug("Using a generator-loader for page %s" % page)
+        pp_env = jinja2.Environment(undefined=preferred_undefined,
+                loader=jinja2.DictLoader({"_": page["__md_generator"]()}))
     elif no_loader:
         logger.debug("Using a no-loader Jinja environment")
         pp_env = jinja2.Environment(undefined=preferred_undefined)
@@ -567,7 +617,7 @@ def match_only_page(only_page, currentpage):
 
 def render_page(currentpage, target, pages, mode, current_time, categories,
         use_template, bypass_errors=False):
-    if "md" in currentpage:
+    if "md" in currentpage or "__md_generator" in currentpage:
         # Read and parse the markdown
         try:
             html_content = parse_markdown(
@@ -843,7 +893,7 @@ def render_pages(target=None, mode="html", bypass_errors=False,
                 bypass_errors=bypass_errors
             )
         elif mode == "md":
-            if "md" not in currentpage:
+            if "md" not in currentpage and "__md_generator" not in currentpage:
                 logger.info("md mode: Skipping page (no md): %s" % currentpage)
                 continue
             filepath = currentpage["md"]
