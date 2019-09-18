@@ -6,30 +6,27 @@
 
 import jinja2
 from copy import deepcopy
+from ruamel.yaml.comments import CommentedMap as YamlMap
+from ruamel.yaml.comments import CommentedSeq as YamlSeq
 
 from dactyl.common import *
+from dactyl.http_constants import HTTP_METHODS, HTTP_STATUS_CODES
 
 DATA_TYPES_SUFFIX = "-data-types"
 METHOD_TOC_SUFFIX = "-methods"
-HTTP_METHODS = [
-    "get",
-    "put",
-    "post",
-    "delete",
-    "options",
-    "head",
-    "patch",
-    "trace",
-]
+
 TOC_TEMPLATE = "template-openapi_endpoint_toc.md"
 ENDPOINT_TEMPLATE = "template-openapi_endpoint.md"
-DATA_TYPES_TEMPLATE = "template-openapi_data_types.md"
+DATA_TYPES_TOC_TEMPLATE = "template-openapi_data_types_toc.md"
+DATA_TYPE_TEMPLATE = "template-openapi_data_type.md"
+
 
 class ApiDef:
     def __init__(self, fname, api_slug=None, extra_fields={},
                 template_path=None):
         with open(fname, "r", encoding="utf-8") as f:
             self.swag = yaml.load(f)
+        self.deref_swag()
 
         try:
             self.api_title = self.swag["info"]["title"]
@@ -53,6 +50,14 @@ class ApiDef:
         self.env = jinja2.Environment(loader=loader)
 
     def deref(self, ref, add_title=False):
+        """Look through the YAML for a specific reference key, and return
+        the value that key represents.
+        - Raises IndexError if the key isn't found
+            in the YAML.
+        - add_title: If true, provide a "title" field when the reference
+            resolves to an object that doesn't have a "title". The provided
+            "title" value is based on the key that contained the reference
+        """
         assert len(ref) > 1 and ref[0] == "#" and ref[1] == "/"
         parts = ref[2:].split("/")
         assert len(parts) > 0
@@ -67,7 +72,9 @@ class ApiDef:
                 raise IndexError(key)
 
             if len(parts) == 1:
-                if add_title:
+                if add_title and "keys" in dir(context[key]) and \
+                                "title" not in context[key].keys():
+                    # Give this object a "title" field based on the key to it
                     context[key]["title"] = parts[0]
                 return context[key]
             else:
@@ -75,45 +82,58 @@ class ApiDef:
 
         return dig(parts, self.swag)
 
-    # def render(self):
-    #     self.write_file(self.render_toc(), self.api_slug+METHOD_TOC_SUFFIX+".md")
-    #
-    #     for path, path_def in self.swag["paths"].items():
-    #         #TODO: inherit path-generic fields
-    #         for method in HTTP_METHODS:
-    #             if method in path_def.keys():
-    #                 endpoint = path_def[method]
-    #                 to_file = self.method_file(path, method, endpoint)
-    #                 self.write_file(self.render_endpoint(path, method, endpoint), to_file)
-    #
-    #     self.write_file(self.render_data_types(), self.api_slug+DATA_TYPES_SUFFIX+".md")
+    def deref_swag(self):
+        """
+        Walk the OpenAPI specification for $ref objects and resolve them to
+        the values they reference. Assumes the entire spec is contained in a
+        single file.
+        """
+        print("in deref_swag")
+        def deref_yaml(yaml_value):
+            if "keys" in dir(yaml_value): # Dictionary-like type
+                if "$ref" in yaml_value.keys():
+                    # It's a reference; deref it
+                    reffed_value = self.deref(yaml_value["$ref"], True)
+                    # The referenced object may contain more references, so
+                    # resolve those before returning
+                    return deref_yaml(reffed_value)
+                else:
+                    # recurse through each key/value pair looking for refs
+                    the_copy = YamlMap()
+                    for k,v in yaml_value.items():
+                        the_copy[k] = deref_yaml(v)
+                    return the_copy
+            elif "append" in dir(yaml_value): # List-like type
+                # recurse through each item looking for refs
+                the_copy = YamlSeq()
+                for item in yaml_value:
+                    the_copy.append(deref_yaml(item))
+                return the_copy
+            else: # Probably a basic type
+                # base case: return the value
+                return yaml_value
 
-    def render_toc(self):
+        self.swag = deref_yaml(self.swag)
+
+
+    def render_method_toc(self):
         t = self.env.get_template(TOC_TEMPLATE)
         context = self.new_context()
+        context["endpoints"] = self.endpoint_iter()
         return t.render(self.swag, **context)
 
-    def render_data_types(self):
-        t = self.env.get_template(DATA_TYPES_TEMPLATE)
+    def render_data_types_toc(self):
+        t = self.env.get_template(DATA_TYPES_TOC_TEMPLATE)
         context = self.new_context()
-        schemas = self.swag["components"]["schemas"]
+        context["schemas"] = self.data_type_iter()
+        return t.render(self.swag, **context)
 
-        # Dereference properties first
-        for cname, c in schemas.items():
-            if "properties" in c.keys():
-                for pname, p in c["properties"].items():
-                    if "$ref" in p.keys():
-                        schemas[cname]["properties"][pname] = self.deref(p["$ref"])
-
-        # Dereference aliased data types
-        for cname, c in schemas.items():
-            if "$ref" in c.keys():
-                schemas[cname] = self.deref(c["$ref"])
-
-        return t.render(**context, schemas=schemas)
-
-    def get_endpoint_renderer(self, path, method, endpoint):
-        return lambda: self.render_endpoint(path, method, endpoint)
+    def render_data_type(self, key, schema):
+        t = self.env.get_template(DATA_TYPE_TEMPLATE)
+        context = self.new_context()
+        if "title" not in schema.keys():
+            schema["title"] = key
+        return t.render(schema, **context)
 
     def render_endpoint(self, path, method, endpoint):
         t = self.env.get_template(ENDPOINT_TEMPLATE)
@@ -121,39 +141,45 @@ class ApiDef:
         context["method"] = method
         context["path"] = path
         context["path_params"] = [p for p in endpoint.get("parameters",[]) if p["in"]=="path"]
-        for p in context["path_params"]:
-            if "schema" in p.keys() and "$ref" in p["schema"].keys():
-                p["schema"] = self.deref(p["schema"]["$ref"], add_title=True)
-                # add_title is a hack since the XRP-API ref doesn't use titles
         context["query_params"] = [p for p in endpoint.get("parameters",[]) if p["in"]=="query"]
-        for p in context["path_params"]:
-            if "schema" in p.keys() and "$ref" in p["schema"].keys():
-                p["schema"] = self.deref(p["schema"]["$ref"], add_title=True)
         #TODO: header & cookie params??
         return t.render(endpoint, **context)
 
+    def get_endpoint_renderer(self, path, method, endpoint):
+        return lambda: self.render_endpoint(path, method, endpoint)
+
+    def get_data_type_renderer(self, key, schema):
+        return lambda: self.render_data_type(key, schema)
+
+    def endpoint_iter(self):
+        paths = self.swag.get("paths", {})
+        for path, path_def in paths.items():
+            for method in HTTP_METHODS:
+                if method in path_def.keys():
+                    endpoint = path_def[method]
+                    yield (path, method, endpoint)
+
+    def data_type_iter(self):
+        schemas = self.swag.get("components", {}).get("schemas", {})
+        for key,schema in schemas.items():
+            title = schema.get("title", key)
+            yield (title, schema)
+
     def create_pagelist(self):
+        """
+        Return an array of pages representing this API, which Dactyl can use
+        as it would use a normal list of pages in the config
+        """
         pages = []
 
         # TODO: make all the blurb/category strings template strings that can
         #       be translated and configured
 
-        # add data types page
-        data_types_page = deepcopy(self.extra_fields)
-        data_types_page.update({
-            "name": self.api_title+" Data Types",
-            "__md_generator": self.render_data_types,
-            "html": self.api_slug+DATA_TYPES_SUFFIX+".html",
-            "blurb": "Definitions for all data types in "+self.api_title,
-            "category": self.api_title+" Conventions",
-        })
-        pages.append(data_types_page)
-
         # add methods table of contents
         toc_page = deepcopy(self.extra_fields)
         toc_page.update({
             "name": self.api_title+" Methods",
-            "__md_generator": self.render_toc,
+            "__md_generator": self.render_method_toc,
             "html": self.api_slug+METHOD_TOC_SUFFIX+".html",
             "blurb": "List of methods/endpoints available in "+self.api_title,
             "category": self.api_title+" Methods",
@@ -161,26 +187,41 @@ class ApiDef:
         pages.append(toc_page)
 
         # add each endpoint
-        for path, path_def in self.swag["paths"].items():
-            for method in HTTP_METHODS:
-                if method in path_def.keys():
-                    endpoint = path_def[method]
+        for path, method, endpoint in self.endpoint_iter():
+            method_page = deepcopy(self.extra_fields)
+            method_page.update({
+                "name": endpoint["operationId"],
+                "__md_generator": self.get_endpoint_renderer(path, method, endpoint),
+                "html": self.method_link(path, method, endpoint),
+                "blurb": endpoint.get("description", endpoint["operationId"]+" method"),
+                "category": self.api_title+" Methods",
+            })
+            pages.append(method_page)
 
-                    method_page = deepcopy(self.extra_fields)
-                    method_page.update({
-                        "name": endpoint["operationId"],
-                        "__md_generator": self.get_endpoint_renderer(path, method, endpoint),
-                        "html": self.method_link(path, method, endpoint),
-                        "blurb": endpoint.get("description", endpoint["operationId"]+" method"),
-                        "category": self.api_title+" Methods",
-                    })
-                    pages.append(method_page)
+        # add data types table of contents
+        data_types_page = deepcopy(self.extra_fields)
+        data_types_page.update({
+            "name": self.api_title+" Data Types",
+            "__md_generator": self.render_data_types_toc,
+            "html": self.api_slug+DATA_TYPES_SUFFIX+".html",
+            "blurb": "List of all data types defined for "+self.api_title,
+            "category": self.api_title+" Data Types",
+        })
+        pages.append(data_types_page)
 
-        # yaml2 = ruamel.yaml.YAML()
-        # yaml2.indent(offset=4, sequence=8)
-        # out_path = os.path.join(OUT_DIR, YAML_OUT_FILE)
-        # with open(out_path, "w", encoding="utf-8") as f:
-        #     yaml2.dump({"pages":pages}, f)
+        # add each data type from the components.schemas list
+        schemas = self.swag.get("components", {}).get("schemas", {})
+        for title, schema in self.data_type_iter():
+            data_type_page = deepcopy(self.extra_fields)
+            data_type_page.update({
+                "name": title,
+                "__md_generator": self.get_data_type_renderer(title, schema),
+                "html": self.type_link(title),
+                "blurb": "Definition of "+title+" data type",
+                "category": self.api_title+" Data Types",
+            })
+            pages.append(data_type_page)
+
         return pages
 
     def new_context(self):
@@ -189,19 +230,12 @@ class ApiDef:
             "type_link": self.type_link,
             "method_link": self.method_link,
             "HTTP_METHODS": HTTP_METHODS,
+            "HTTP_STATUS_CODES": HTTP_STATUS_CODES,
+            "spec": self.swag,
         }
 
-    # def write_file(self, page_text, filepath):
-    #     out_folder = os.path.join(self.out_dir, os.path.dirname(filepath))
-    #     if not os.path.isdir(out_folder):
-    #         os.makedirs(out_folder)
-    #     fileout = os.path.join(out_folder, filepath)
-    #     with open(fileout, "w", encoding="utf-8") as f:
-    #         f.write(page_text)
-
-
     def type_link(self, title):
-        return self.api_slug+DATA_TYPES_SUFFIX+".html#"+slugify(title.lower())
+        return self.api_slug+DATA_TYPES_SUFFIX+"-"+slugify(title.lower())+".html"
 
     def method_link(self, path, method, endpoint):
         return self.api_slug+"-"+slugify(endpoint["operationId"]+".html")

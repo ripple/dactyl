@@ -35,7 +35,23 @@ This API method uses the following query parameters:
 {% endif %}
 
 {% if requestBody is defined %}
-The request body takes the form of a
+{{requestBody.description}}
+
+{% if requestBody.content["application/json"].schema is defined %}
+{% set req_schema = requestBody.content["application/json"].schema %}
+JSON body formatted as a [{{req_schema.title}}]({{type_link(req_schema.title)}})
+{% endif %}
 {% endif %}
 
-## Response Format
+## Response Formats
+
+{% for response_code, response in responses %}
+### {{response_code}} {{HTTP_STATUS_CODES[response_code]}}
+
+{{ response.description}}
+
+{% if response.content["application/json"].schema is defined %}
+{% set resp_schema = response.content["application/json"].schema %}
+JSON body formatted as a [{{resp_schema.title}}]({{type_link(resp_schema.title)}})
+{% endif %}
+{% endfor %}
