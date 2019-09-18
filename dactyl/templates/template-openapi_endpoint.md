@@ -45,12 +45,12 @@ JSON body formatted as a [{{req_schema.title}}]({{type_link(req_schema.title)}})
 
 ## Response Formats
 
-{% for response_code, response in responses %}
+{% for response_code, response in responses.items() %}
 ### {{response_code}} {{HTTP_STATUS_CODES[response_code]}}
 
 {{ response.description}}
 
-{% if response.content["application/json"].schema is defined %}
+{% if response.content is defined and response.content["application/json"] is defined and response.content["application/json"].schema is defined %}
 {% set resp_schema = response.content["application/json"].schema %}
 JSON body formatted as a [{{resp_schema.title}}]({{type_link(resp_schema.title)}})
 {% endif %}
