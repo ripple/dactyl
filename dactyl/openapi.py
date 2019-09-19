@@ -5,12 +5,13 @@
 ################################################################################
 
 import jinja2
+import json
 from copy import deepcopy
 from ruamel.yaml.comments import CommentedMap as YamlMap
 from ruamel.yaml.comments import CommentedSeq as YamlSeq
 
 from dactyl.common import *
-from dactyl.http_constants import HTTP_METHODS, HTTP_STATUS_CODES
+from dactyl.http_constants import HTTP_METHODS, HTTP_STATUS_CODES, HTTP_METHODS_WITH_REQ_BODIES
 
 DATA_TYPES_SUFFIX = "-data-types"
 METHOD_TOC_SUFFIX = "-methods"
@@ -20,12 +21,12 @@ ENDPOINT_TEMPLATE = "template-openapi_endpoint.md"
 DATA_TYPES_TOC_TEMPLATE = "template-openapi_data_types_toc.md"
 DATA_TYPE_TEMPLATE = "template-openapi_data_type.md"
 
-
 class ApiDef:
     def __init__(self, fname, api_slug=None, extra_fields={},
                 template_path=None):
         with open(fname, "r", encoding="utf-8") as f:
             self.swag = yaml.load(f)
+        self.clean_up_swag()
         self.deref_swag()
 
         try:
@@ -39,7 +40,11 @@ class ApiDef:
             self.api_slug = api_slug
 
         self.extra_fields = extra_fields
+        self.setup_jinja_env(template_path)
 
+    def setup_jinja_env(self, template_path=None):
+        """Sets up the environment used to inject OpenAPI data into Markdown
+        templates"""
         if template_path is None:
             loader = jinja2.PackageLoader(__name__)
         else:
@@ -48,8 +53,10 @@ class ApiDef:
                 jinja2.PackageLoader(__name__)
             )
         self.env = jinja2.Environment(loader=loader)
+        self.env.lstrip_blocks = True
+        self.env.rstrip_blocks = True
 
-    def deref(self, ref, add_title=False):
+    def deref(self, ref):
         """Look through the YAML for a specific reference key, and return
         the value that key represents.
         - Raises IndexError if the key isn't found
@@ -72,10 +79,6 @@ class ApiDef:
                 raise IndexError(key)
 
             if len(parts) == 1:
-                if add_title and "keys" in dir(context[key]) and \
-                                "title" not in context[key].keys():
-                    # Give this object a "title" field based on the key to it
-                    context[key]["title"] = parts[0]
                 return context[key]
             else:
                 return dig(parts[1:], context[key])
@@ -88,12 +91,12 @@ class ApiDef:
         the values they reference. Assumes the entire spec is contained in a
         single file.
         """
-        print("in deref_swag")
+
         def deref_yaml(yaml_value):
             if "keys" in dir(yaml_value): # Dictionary-like type
                 if "$ref" in yaml_value.keys():
                     # It's a reference; deref it
-                    reffed_value = self.deref(yaml_value["$ref"], True)
+                    reffed_value = self.deref(yaml_value["$ref"])
                     # The referenced object may contain more references, so
                     # resolve those before returning
                     return deref_yaml(reffed_value)
@@ -114,6 +117,14 @@ class ApiDef:
                 return yaml_value
 
         self.swag = deref_yaml(self.swag)
+
+    def clean_up_swag(self):
+        # Give each schema in the "components" a title if it's missing one
+        schemas = self.swag.get("components", {}).get("schemas", {})
+        for key,schema in schemas.items():
+            title = schema.get("title", key)
+            schema["title"] = title
+        self.deref_swag()
 
 
     def render_method_toc(self):
@@ -142,8 +153,32 @@ class ApiDef:
         context["path"] = path
         context["path_params"] = [p for p in endpoint.get("parameters",[]) if p["in"]=="path"]
         context["query_params"] = [p for p in endpoint.get("parameters",[]) if p["in"]=="query"]
+        context["x_example_request_body"] = self.get_x_example_request_body(path,method,endpoint)
         #TODO: header & cookie params??
         return t.render(endpoint, **context)
+
+    def get_x_example_request_body(self, path, method, endpoint):
+        if method not in HTTP_METHODS_WITH_REQ_BODIES:
+            return ""
+
+        content = endpoint.get("requestBody",{}).get("content",{})
+        if not content:
+            return ""
+        for mediatype,content_inner in content.items():
+            try:
+                ex = list(content_inner["examples"].values())[0]["value"]
+            except (IndexError, KeyError, AttributeError) as e:
+                logger.debug("Media type %s didn't have an example value"%mediatype)
+                return ""
+
+            try:
+                ex_pp = json.dumps(ex, indent=4, separators=(',', ': '))
+            except TypeError:
+                ex_pp = ex
+            return ex_pp
+
+        logger.debug("couldn't find an example value for %s %s"%(method,path))
+        return ""
 
     def get_endpoint_renderer(self, path, method, endpoint):
         return lambda: self.render_endpoint(path, method, endpoint)
@@ -157,12 +192,15 @@ class ApiDef:
             for method in HTTP_METHODS:
                 if method in path_def.keys():
                     endpoint = path_def[method]
+                    operationId = endpoint.get("operationId", slugify(method+path))
+                    endpoint["operationId"] = operationId
                     yield (path, method, endpoint)
 
     def data_type_iter(self):
         schemas = self.swag.get("components", {}).get("schemas", {})
         for key,schema in schemas.items():
             title = schema.get("title", key)
+            schema["title"] = title
             yield (title, schema)
 
     def create_pagelist(self):
@@ -232,6 +270,7 @@ class ApiDef:
             "HTTP_METHODS": HTTP_METHODS,
             "HTTP_STATUS_CODES": HTTP_STATUS_CODES,
             "spec": self.swag,
+            "debug": print,#TODO:remove
         }
 
     def type_link(self, title):

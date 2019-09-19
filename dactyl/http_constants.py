@@ -9,6 +9,13 @@ HTTP_METHODS = [
     "trace",
 ]
 
+HTTP_METHODS_WITH_REQ_BODIES = [
+    "put",
+    "post",
+    "delete",
+    "patch",
+]
+
 HTTP_STATUS_CODES = {
     "100": "Continue",
     "101": "Switching Protocols",
