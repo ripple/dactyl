@@ -1007,9 +1007,6 @@ def make_pdf(outfile, target=None, bypass_errors=False, remove_tmp=True,
 
     # Start preparing the prince command
     args = [config["prince_executable"], '--javascript', '-o', abs_pdf_path, '--no-warn-css']
-    # Change dir to the tempfiles path; this may avoid a bug in Prince
-    old_cwd = os.getcwd()
-    os.chdir(temp_files_path)
 
     pages = get_pages(target, bypass_errors)
     if only_page:
@@ -1020,6 +1017,10 @@ def make_pdf(outfile, target=None, bypass_errors=False, remove_tmp=True,
             return
     # Each HTML output file in the target is another arg to prince
     args += [p["html"] for p in pages]
+
+    # Change dir to the tempfiles path; this may avoid a bug in Prince
+    old_cwd = os.getcwd()
+    os.chdir(temp_files_path)
 
     logger.info("generating PDF: running %s..." % " ".join(args))
     prince_resp = subprocess.check_output(args, universal_newlines=True)

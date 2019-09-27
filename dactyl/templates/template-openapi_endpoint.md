@@ -1,4 +1,4 @@
-# {{operationId}}
+# {{summary}}
 
 {{description}}
 

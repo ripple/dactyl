@@ -17,6 +17,7 @@ DATA_TYPES_SUFFIX = "-data-types"
 METHOD_TOC_SUFFIX = "-methods"
 
 TOC_TEMPLATE = "template-openapi_endpoint_toc.md"
+TAG_TOC_TEMPLATE = "template-openapi_endpoint_tag_toc.md"
 ENDPOINT_TEMPLATE = "template-openapi_endpoint.md"
 DATA_TYPES_TOC_TEMPLATE = "template-openapi_data_types_toc.md"
 DATA_TYPE_TEMPLATE = "template-openapi_data_type.md"
@@ -131,6 +132,15 @@ class ApiDef:
         t = self.env.get_template(TOC_TEMPLATE)
         context = self.new_context()
         context["endpoints"] = self.endpoint_iter()
+        context["endpoints_by_tag"] = self.endpoint_iter
+        return t.render(self.swag, **context)
+
+    def render_tag_toc(self, tag):
+        t = self.env.get_template(TAG_TOC_TEMPLATE)
+        context = self.new_context()
+        context["tag"] = tag
+        context["endpoints"] = self.endpoint_iter()
+        context["endpoints_by_tag"] = self.endpoint_iter
         return t.render(self.swag, **context)
 
     def render_data_types_toc(self):
@@ -154,7 +164,7 @@ class ApiDef:
         context["path_params"] = [p for p in endpoint.get("parameters",[]) if p["in"]=="path"]
         context["query_params"] = [p for p in endpoint.get("parameters",[]) if p["in"]=="query"]
         context["x_example_request_body"] = self.get_x_example_request_body(path,method,endpoint)
-        #TODO: header & cookie params??
+        #TODO: header & cookie params?? example response body?
         return t.render(endpoint, **context)
 
     def get_x_example_request_body(self, path, method, endpoint):
@@ -186,15 +196,24 @@ class ApiDef:
     def get_data_type_renderer(self, key, schema):
         return lambda: self.render_data_type(key, schema)
 
-    def endpoint_iter(self):
+    def get_tag_toc_renderer(self, tag):
+        return lambda: self.render_tag_toc(tag)
+
+    def endpoint_iter(self, tag=None):
         paths = self.swag.get("paths", {})
         for path, path_def in paths.items():
             for method in HTTP_METHODS:
                 if method in path_def.keys():
                     endpoint = path_def[method]
-                    operationId = endpoint.get("operationId", slugify(method+path))
-                    endpoint["operationId"] = operationId
-                    yield (path, method, endpoint)
+                    if tag==None or tag in endpoint.get("tags", []) or \
+                            (tag=="Uncategorized" and endpoint.get("tags", []) == []):
+                        # TODO: Inherit parameters from the path definition itself
+                        # Fill in some "sensible defaults" for fields we really want
+                        operationId = endpoint.get("operationId", slugify(method+path))
+                        endpoint["operationId"] = operationId
+                        summary = endpoint.get("summary", operationId)
+                        endpoint["summary"] = summary
+                        yield (path, method, endpoint)
 
     def data_type_iter(self):
         schemas = self.swag.get("components", {}).get("schemas", {})
@@ -216,25 +235,40 @@ class ApiDef:
         # add methods table of contents
         toc_page = deepcopy(self.extra_fields)
         toc_page.update({
-            "name": self.api_title+" Methods",
+            "name": "All "+self.api_title+" Methods",
             "__md_generator": self.render_method_toc,
             "html": self.api_slug+METHOD_TOC_SUFFIX+".html",
             "blurb": "List of methods/endpoints available in "+self.api_title,
-            "category": self.api_title+" Methods",
+            "category": "All "+self.api_title+" Methods",
         })
         pages.append(toc_page)
 
-        # add each endpoint
-        for path, method, endpoint in self.endpoint_iter():
-            method_page = deepcopy(self.extra_fields)
-            method_page.update({
-                "name": endpoint["operationId"],
-                "__md_generator": self.get_endpoint_renderer(path, method, endpoint),
-                "html": self.method_link(path, method, endpoint),
-                "blurb": endpoint.get("description", endpoint["operationId"]+" method"),
-                "category": self.api_title+" Methods",
+        # add a table of contents per tag
+        for tag in self.swag.get("tags",[{"name": "Uncategorized","description":""}]):
+            tag_toc_page = deepcopy(self.extra_fields)
+            tag_toc_page.update({
+                "name": tag["name"].title()+" Methods",
+                "__md_generator": self.get_tag_toc_renderer(tag),
+                "html": self.api_slug+"-"+tag["name"]+METHOD_TOC_SUFFIX+".html",
+                "blurb": tag.get("description",""),
+                "category": tag["name"].title()+" Methods",
             })
-            pages.append(method_page)
+            pages.append(tag_toc_page)
+
+            # Add endpoints for this tag, except duplicates
+            for path, method, endpoint in self.endpoint_iter(tag["name"]):
+                tag0 = endpoint.get("tags",["Uncategorized"])[0]
+                if tag0 != tag["name"]:
+                    continue # Skip method whose primary tag is not this one
+                method_page = deepcopy(self.extra_fields)
+                method_page.update({
+                    "name": endpoint["summary"],
+                    "__md_generator": self.get_endpoint_renderer(path, method, endpoint),
+                    "html": self.method_link(path, method, endpoint),
+                    "blurb": endpoint.get("description", endpoint["operationId"]+" method"),
+                    "category": tag0+" Methods",
+                })
+                pages.append(method_page)
 
         # add data types table of contents
         data_types_page = deepcopy(self.extra_fields)
@@ -271,6 +305,7 @@ class ApiDef:
             "HTTP_STATUS_CODES": HTTP_STATUS_CODES,
             "spec": self.swag,
             "debug": print,#TODO:remove
+            "slugify": slugify,
         }
 
     def type_link(self, title):
