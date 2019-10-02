@@ -45,6 +45,7 @@ RESERVED_KEYS_TARGET = [
 ADHOC_TARGET = "__ADHOC__"
 ES_EVAL_KEY = "__dactyl_eval__"
 OPENAPI_SPEC_KEY = "openapi_specification"
+OPENAPI_TEMPLATE_PATH_KEY = "openapi_md_template_path"
 API_SLUG_KEY = "api_slug"
 
 HOW_FROM_URL = 1
@@ -103,6 +104,21 @@ def get_target(target):
     if "name" in target:
         # Eh, it's probably a target, just return it
         return target
+
+def make_openapi_target(spec_path):
+    openapi = get_api_def(spec_path)
+    t = {
+        "name": openapi.api_slug,
+        "display_name": openapi.api_title,
+    }
+
+    config["pages"] = [{
+        "openapi_specification": spec_path,
+        "api_slug": openapi.api_slug,
+        "targets": [openapi.api_slug],
+    }]
+    config["targets"].append(t)
+    return t
 
 
 def make_adhoc_target(inpages):
@@ -244,6 +260,21 @@ def parse_markdown(page, target=None, pages=None, categories=[], mode="html",
     return html2
 
 
+cached_openapi_specs = {}
+def get_api_def(spec_path, api_slug=None, extra_fields={}, template_path=None):
+    """
+    Instantiate an ApiDef instance only if we haven't done so already. This
+    saves the trouble of fetching & parsing API specs more than once.
+    """
+    if spec_path in cached_openapi_specs.keys():
+        return cached_openapi_specs[spec_path]
+
+    apidef = ApiDef(spec_path, api_slug=api_slug,
+            extra_fields=extra_fields, template_path=template_path)
+    cached_openapi_specs[spec_path] = apidef
+    return apidef
+
+
 def get_pages(target=None, bypass_errors=False):
     """Read pages from config and return an object, optionally filtered
        to just the pages that this target cares about"""
@@ -260,12 +291,12 @@ def get_pages(target=None, bypass_errors=False):
     new_pages = []
     for p in pages:
         if OPENAPI_SPEC_KEY in p.keys():
+            logger.debug("Expanding OpenAPI spec from placeholder: %s"%p)
             api_slug = p.get(API_SLUG_KEY, None)
             extra_fields = {k:v for k,v in p.items() if k not in [OPENAPI_SPEC_KEY, API_SLUG_KEY]}
-            template_path = config.get("openapi_md_template_path", None)
+            template_path = p.get(OPENAPI_TEMPLATE_PATH_KEY, None)
             try:
-                swagger = ApiDef(p[OPENAPI_SPEC_KEY], api_slug=api_slug,
-                        extra_fields=extra_fields, template_path=template_path)
+                swagger = get_api_def(p[OPENAPI_SPEC_KEY], api_slug, extra_fields, template_path)
                 swagger_pages = swagger.create_pagelist()
                 logger.debug("Adding generated OpenAPI reference pages: %s"%swagger_pages)
                 new_pages += swagger_pages
@@ -1055,6 +1086,9 @@ def main(cli_args):
     if cli_args.pages:
         make_adhoc_target(cli_args.pages)
         cli_args.target = ADHOC_TARGET
+    elif cli_args.openapi:
+        t = make_openapi_target(cli_args.openapi)
+        cli_args.target = t["name"]
 
     target = get_target(cli_args.target)
 

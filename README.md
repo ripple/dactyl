@@ -199,6 +199,21 @@ The `currentpage` dictionary has the following special fields in this mode:
 | `headermap` | `dict`      | A mapping of the page's headers to the unique IDs of those headers in the generated HTML version. |
 | `blurb`     | `str`       | An introductory blurb generated from the page's first paragraph of text. |
 
+
+### OpenAPI Specification Parsing
+
+Dactyl contains experimental support for automatically generating documentation from an [OpenAPI Specification](https://github.com/OAI/OpenAPI-Specification). Dactyl has partial support for **v3.0.x** of the OpenAPI spec.
+
+From the commandline, you can generate documentation for a spec using the `--openapi` option, providing a file path or URL to the spec. For example:
+
+```
+dactyl_build --openapi https://raw.githubusercontent.com/OAI/OpenAPI-Specification/master/examples/v3.0/petstore.yaml
+```
+
+You can also [add an OpenAPI specification to a config file](TODO), where the generated documentation can be part of a larger target that includes other files.
+
+
+
 ### Link Checking
 
 The link checker is a separate script. It assumes that you've already built some documentation to an output path. Use it as follows:
@@ -319,12 +334,38 @@ Each individual page definition can have the following fields:
 | `html`                   | String    | _(Optional)_ The filename where this file should be written in the output directory. If omitted, Dactyl chooses a filename based on the `md` field (if provided), the `name` field (if provided), or the current time (as a last resort). By default, generated filenames flatten the folder structure of the md files. To instead replicate the folder structure of the source documents in auto-generated filenames, add `flatten_default_html_paths: true` to the top level of your Dactyl config file. |
 | `name`                   | String    | _(Optional)_ Human-readable display name for this page. If omitted but `md` is provided, Dactyl tries to guess the right file name by looking at the first two lines of the `md` source file. |
 | `md`                     | String    | _(Optional)_ The markdown filename to parse to generate this page, relative to the **content_path** in your config. If this is not provided, the source file is assumed to be empty. (You might do that if you use a nonstandard `template` for this page.) |
+| `openapi_specification`  | String    | _(Optional)_ The file path or http(s) URL to an OpenAPI v3.0 specification to be parsed into generated documentation. If provided, this entry becomes expanded into a set of several pages that describe the methods and data types defined for the given API. The generated pages inherit the other fields of this page object. **Experimental.** If the path is a relative path, it is evaluated based on the directory Dactyl is called from, not the content directory. |
+| `api_slug`               | String    | _(Optional)_ If this is an `openapi_specification` entry,
 | `category` | String | _(Optional)_ The name of a category to group this page into. This is used by Dactyl's built-in templates to organize the table of contents. |
 | `template`               | String    | _(Optional)_ The filename of a custom [Jinja][] HTML template to use when building this page for HTML, relative to the **template_path** in your config. |
 | `pdf_template`           | String    | _(Optional)_ The filename of a custom [Jinja][] HTML template to use when building this page for PDF, relative to the **template_path** in your config. |
+| `openapi_md_template_path` | String | _(Optional)_ Path to a folder containing [templates to be used for OpenAPI spec parsing](#openapiSpecTemplates). If omitted, use the [built-in templates](dactyl/templates/).
 | ...                      | (Various) | Additional arbitrary key-value pairs as desired. These values can be used by templates or pre-processing. |
 
 [Jinja]: http://jinja.pocoo.org/
+
+#### OpenAPI Specifications
+
+You can add a special entry to the `pages` array to represent an OpenAPI v3.0 specification, which will be expanded into several pages representing the methods and data types specified in the file. For example:
+
+```
+-   openapi_specification: https://raw.githubusercontent.com/OAI/OpenAPI-Specification/master/examples/v3.0/petstore.yaml
+    api_slug: petstore
+    foo: bar
+    targets:
+        - baz
+```
+
+The `api_slug` field is optional, and provides a prefix that gets used for a bunch of file names and stuff. Other fields are inherited by all of the pages the specification builds, which are:
+
+- An "All Methods" table of contents, listing every path operation in the `paths` of the OpenAPI specification.
+- "Tag Methods" table of contents pages for each `tag` used in the OpenAPI specification.
+- Pages for all "API Methods" (path operations) in `paths` of the OpenAPI specification.
+- A "Data Types" table of contents, listing every data type defined in the `schema` section of the OpenAPI specification.
+- Individual pages for each data type in the OpenAPI specification's `schema` section.
+
+You can override the [templates used for generated OpenAPI pages](#openapiSpecTemplates) to adjust how the Markdown is generated by providing the path to a different set of templates in the `openapi_md_template_path` field.
+
 
 ## Editing
 
@@ -428,3 +469,9 @@ Dactyl provides the following information to templates, which you can access wit
 | `mode`            | The output format: either `html` (default), `pdf`, or `md`. |
 | `page_toc`        | A table of contents generated from the current page's headers. Wrap this in a `<ul>` element. |
 | `sidebar_content` | (Deprecated alias for `page_toc`.) |
+
+### OpenAPI Spec Templates
+
+When generating docs from an API specification, Dactyl generates a Markdown version for each of these pages first, then uses that as the content for the HTML version as it does when parsing normal Markdown pages. You can use your own templates instead. The templates must use the same filenames as the [built-in OpenAPI templates](dactyl/templates/), which match the pattern `template-openapi_*.md`.
+
+<!-- TODO: Additional documentation on what fields are available to each template. -->

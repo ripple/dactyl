@@ -6,6 +6,7 @@
 
 import jinja2
 import json
+import requests
 from copy import deepcopy
 from ruamel.yaml.comments import CommentedMap as YamlMap
 from ruamel.yaml.comments import CommentedSeq as YamlSeq
@@ -23,10 +24,9 @@ DATA_TYPES_TOC_TEMPLATE = "template-openapi_data_types_toc.md"
 DATA_TYPE_TEMPLATE = "template-openapi_data_type.md"
 
 class ApiDef:
-    def __init__(self, fname, api_slug=None, extra_fields={},
+    def __init__(self, spec_path, api_slug=None, extra_fields={},
                 template_path=None):
-        with open(fname, "r", encoding="utf-8") as f:
-            self.swag = yaml.load(f)
+        self.read_swag(spec_path)
         self.clean_up_swag()
         self.deref_swag()
 
@@ -43,16 +43,33 @@ class ApiDef:
         self.extra_fields = extra_fields
         self.setup_jinja_env(template_path)
 
+    def read_swag(self, spec_path):
+        """Read the OpenAPI definition from either a local file or a URL, and
+        store it at self.swag"""
+        logger.debug("Reading OpenAPI definition from %s"%spec_path)
+
+        if spec_path[:5] == "http:" or spec_path[:6] == "https:":
+            response = requests.get(spec_path)
+            if response.status_code == 200:
+                self.swag = yaml.load(response.text)
+            else:
+                raise requests.RequestException("Status code for page was not 200")
+        else:
+            with open(spec_path, "r", encoding="utf-8") as f:
+                self.swag = yaml.load(f)
+
+
     def setup_jinja_env(self, template_path=None):
         """Sets up the environment used to inject OpenAPI data into Markdown
         templates"""
         if template_path is None:
             loader = jinja2.PackageLoader(__name__)
         else:
-            loader = jinja2.ChoiceLoader(
+            logger.debug("OpenAPI spec: preferring templates from %s"%template_path)
+            loader = jinja2.ChoiceLoader([
                 jinja2.FileSystemLoader(template_path),
                 jinja2.PackageLoader(__name__)
-            )
+            ])
         self.env = jinja2.Environment(loader=loader)
         self.env.lstrip_blocks = True
         self.env.rstrip_blocks = True
@@ -126,6 +143,18 @@ class ApiDef:
             title = schema.get("title", key)
             schema["title"] = title
         self.deref_swag()
+
+        # Find all tags used in endpoints and add any undefined ones to the
+        # top level OpenAPI Object
+        taglist = self.swag.get("tags", [])
+        for path, method, endpoint in self.endpoint_iter():
+            etags = endpoint.get("tags", [])
+            for tag in etags:
+                if tag not in [t.get("name") for t in taglist]:
+                    taglist.append({
+                        "name": tag,
+                    })
+        self.swag["tags"] = taglist
 
 
     def render_method_toc(self):

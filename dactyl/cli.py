@@ -72,6 +72,8 @@ class DactylCLIParser:
                             help="Output to this folder (overrides config file)")
             parser.add_argument("--pages", type=str, help="Markdown file(s) to build "+\
                                 "that aren't described in the config.", nargs="+")
+            parser.add_argument("--openapi", type=str, help="OpenAPI spec file "+
+                                "to generate docs from.")
             parser.add_argument("--no_cover", "-n", action="store_true",
                                 help="Don't automatically add a cover / index file.")
             parser.add_argument("--skip_preprocessor", action="store_true", default=False,

@@ -6,7 +6,7 @@
 View API methods by category:
 
 {% for tag in tags %}
-- [{{tag.name|title}} Methods](#{{slugify(tag.name)}}-methods)
+- [{{tag.name|title}} Methods](#{{slugify(tag.name)|lower}}-methods)
 {% endfor %}
 {% endif %}
 
