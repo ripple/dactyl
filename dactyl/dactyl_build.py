@@ -927,7 +927,15 @@ def render_pages(target=None, mode="html", bypass_errors=False,
             if "md" not in currentpage and "__md_generator" not in currentpage:
                 logger.info("md mode: Skipping page (no md): %s" % currentpage)
                 continue
-            filepath = currentpage["md"]
+            if "md" not in currentpage:
+                # Uses an __md_generator, assume there's an "html" field provided
+                filepath = currentpage["html"].replace(".html", ".md")
+                if filepath[-3:] != ".md": # previous replacement didn't work
+                    filepath = filepath + ".md"
+            else:
+                filepath = currentpage["md"]
+            if filepath.lower()[:5] == "http:" or filepath.lower()[:6] == "https:":
+                filepath = slugify(filepath)
             try:
                 page_text = preprocess_markdown(currentpage,
                     target=target,

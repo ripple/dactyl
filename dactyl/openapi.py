@@ -338,6 +338,7 @@ class ApiDef:
         }
 
     def type_link(self, title):
+        # TODO: in "md" mode, use ".md" suffix
         return self.api_slug+DATA_TYPES_SUFFIX+"-"+slugify(title.lower())+".html"
 
     def method_link(self, path, method, endpoint):
