@@ -4,12 +4,7 @@
 
 from setuptools import setup
 
-# Convert the markdown readme to ReST using Pandoc
-try:
-    import pypandoc
-    long_description = pypandoc.convert('README.md', 'rst')
-except ImportError:
-    long_description = open('README.md', encoding="utf-8").read()
+long_description = open('README.md', encoding="utf-8").read()
 
 with open("dactyl/version.py", encoding="utf-8") as versionfile:
     exec(versionfile.read())
@@ -19,6 +14,7 @@ setup(
     version=__version__,
     description='Tools to generate documentation.',
     long_description=long_description,
+    long_description_content_type="text/markdown",
     url='https://github.com/ripple/dactyl',
     author='Ripple',
     author_email='rome@ripple.com',
