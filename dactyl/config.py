@@ -165,7 +165,7 @@ class DactylConfig:
     def load_style_rules(self):
         """Reads word and phrase substitution files into the config"""
         if "word_substitutions_file" in self.config:
-            with open(self.config["word_substitutions_file"], "r", endoding="utf-8") as f:
+            with open(self.config["word_substitutions_file"], "r", encoding="utf-8") as f:
                 self.config["disallowed_words"] = yaml.load(f)
         else:
             logger.warning("No 'word_substitutions_file' found in config.")
