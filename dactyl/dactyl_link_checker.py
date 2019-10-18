@@ -154,6 +154,9 @@ def checkLinks(offline=False):
                                 (endpoint, fullPath))
                         num_links_checked += 1
                         filename,anchor = endpoint.split("#",1)
+                        # Strip query parameters
+                        if "?" in filename:
+                            filename, query = filename.split("?", 1)
                         if filename == "":
                             fullTargetPath = fullPath
                         else:
@@ -184,10 +187,14 @@ def checkLinks(offline=False):
 
                     else:
                         num_links_checked += 1
-                        if not os.path.exists(os.path.join(dirpath, endpoint)):
+                        if "?" in endpoint:
+                            filename, query = endpoint.split("?", 1)
+                        else:
+                            filename = endpoint
+                        if not os.path.exists(os.path.join(dirpath, filename)):
                             logger.warning("Broken local link in %s to %s" %
-                                    (fullPath, endpoint))
-                            broken_links.append( (fullPath, endpoint) )
+                                    (fullPath, filename))
+                            broken_links.append( (fullPath, filename) )
 
                     #Now check images
                     imgs = soup.find_all('img')
