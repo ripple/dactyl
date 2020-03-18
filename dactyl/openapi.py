@@ -24,6 +24,7 @@ DATA_TYPES_TOC_TEMPLATE = "template-openapi_data_types_toc.md"
 DATA_TYPE_TEMPLATE = "template-openapi_data_type.md"
 
 class ApiDef:
+    cached_specs = {}
     def __init__(self, spec_path, api_slug=None, extra_fields={},
                 template_path=None):
         self.read_swag(spec_path)
@@ -42,6 +43,21 @@ class ApiDef:
 
         self.extra_fields = extra_fields
         self.setup_jinja_env(template_path)
+
+    @classmethod
+    def from_path(cls, spec_path, api_slug=None, extra_fields={},
+                template_path=None):
+        """
+        Instantiate an ApiDef instance only if we haven't done so already. This
+        saves the trouble of fetching & parsing API specs more than once.
+        """
+        if spec_path in cls.cached_specs.keys():
+            return cls.cached_specs[spec_path]
+
+        apidef = cls(spec_path, api_slug=api_slug,
+                extra_fields=extra_fields, template_path=template_path)
+        cls.cached_specs[spec_path] = apidef
+        return apidef
 
     def read_swag(self, spec_path):
         """Read the OpenAPI definition from either a local file or a URL, and

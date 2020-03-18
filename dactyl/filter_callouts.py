@@ -4,7 +4,7 @@
 ## Copyright: Ripple Labs, Inc. 2016                                          ##
 ##                                                                            ##
 ## Looks for sections starting **Note:** or **Caution:** and gives them CSS   ##
-## classes like "callout note" so they can be styled accordinglyselfselfself. ##
+## classes like "callout note" so they can be styled accordingly.             ##
 ################################################################################
 import re
 

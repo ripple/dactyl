@@ -34,145 +34,36 @@ from watchdog.events import PatternMatchingEventHandler
 
 from dactyl.config import DactylConfig
 from dactyl.cli import DactylCLIParser
-from dactyl.openapi import ApiDef
+from dactyl.target import DactylTarget
+
 from dactyl.jinja_loaders import FrontMatterRemoteLoader, FrontMatterFSLoader
 
-# These fields are special, and pages don't inherit them directly
-RESERVED_KEYS_TARGET = [
-    "name",
-    "display_name",
-    "pages",
-]
-ADHOC_TARGET = "__ADHOC__"
-ES_EVAL_KEY = "__dactyl_eval__"
-OPENAPI_SPEC_KEY = "openapi_specification"
-OPENAPI_TEMPLATE_PATH_KEY = "openapi_md_template_path"
-API_SLUG_KEY = "api_slug"
+
 
 HOW_FROM_URL = 1
 HOW_FROM_GENERATOR = 2
 HOW_FROM_FILE = 3
 
 
-def target_slug_name(target, fields_to_use=[], separator="-"):
-    """Make a name for the target that's safe for use in URLs & filenames,
-    from human-readable fields"""
-    target = get_target(target)
-    filename_segments = []
-    for fieldname in fields_to_use:
-        if fieldname in target.keys():
-            filename_segments.append(slugify(target[fieldname]))
-
-    if filename_segments:
-        return separator.join(filename_segments)
-    else:
-        return slugify(target["name"])
-
-def es_index_name(target):
-    return target_slug_name(target, config["es_index_fields"], config["es_index_separator"])
-
-def default_pdf_name(target):
-    """Choose a reasonable name for a PDF file in case one isn't specified."""
-    return target_slug_name(target, config["pdf_filename_fields"], config["pdf_filename_separator"])+".pdf"
+class DactylBuilder:
+    def __init__(target, mode, TODO):
+        assert isinstance(target, DactylTarget)
+        self.target = target
+        self.mode = mode
+        # Generate a unique nonce per-run to be used for tempdir folder names
+        self.nonce = str(time.time()).replace(".","")
 
 
-# Generate a unique nonce per-run to be used for tempdir folder names
-nonce = str(time.time()).replace(".","")
-def temp_dir():
-    run_dir = os.path.join(config["temporary_files_path"],
-                      "dactyl-"+nonce)
-    if not os.path.isdir(run_dir):
-        os.makedirs(run_dir)
-    return run_dir
-
-def get_target(target):
-    """Get a target by name, or return the default target object.
-       We can't use default args in function defs because the default is
-       set at runtime based on config"""
-    if target == None:
-        logger.debug("get_target: using target #0")
-        if len(config["targets"]) == 0:
-            exit("No targets found. Either specify a config file or --pages")
-        return config["targets"][0]
-
-    if type(target) == str:
-        try:
-            return next(t for t in config["targets"] if t["name"] == target)
-        except StopIteration:
-            logger.critical("Unknown target: %s" % target)
-            exit(1)
-
-    if "name" in target:
-        # Eh, it's probably a target, just return it
-        return target
-
-def make_openapi_target(spec_path):
-    openapi = get_api_def(spec_path)
-    t = {
-        "name": openapi.api_slug,
-        "display_name": openapi.api_title,
-    }
-
-    config["pages"] = [{
-        "openapi_specification": spec_path,
-        "api_slug": openapi.api_slug,
-        "targets": [openapi.api_slug],
-    }]
-    config["targets"].append(t)
-    return t
+    def temp_dir(self):
+        run_dir = os.path.join(config["temporary_files_path"],
+                          "dactyl-"+nonce)
+        if not os.path.isdir(run_dir):
+            os.makedirs(run_dir)
+        return run_dir
 
 
-def make_adhoc_target(inpages):
-    t = {
-        "name": ADHOC_TARGET,
-        "display_name": "(Untitled)",
-    }
 
-    if len(inpages) == 1:
-        t["display_name"] = guess_title_from_md_file(inpages[0])
 
-    for inpage in inpages:
-        # Figure out the actual filename and location of this infile
-        # and set the content source dir appropriately
-        in_dir, in_file = os.path.split(inpage)
-        config["content_path"] = in_dir
-
-        # Figure out what html file to output to
-        ENDS_IN_MD = re.compile("\.md$", re.I)
-        if re.search(ENDS_IN_MD, in_file):
-            out_html_file = re.sub(ENDS_IN_MD, ".html", in_file)
-        else:
-            out_html_file = in_file+".html"
-
-        # Try to come up with a reasonable page title
-        page_title = guess_title_from_md_file(inpage)
-
-        new_page = {
-            "name": page_title,
-            "md": in_file,
-            "html": out_html_file,
-            "targets": [ADHOC_TARGET],
-            "category": "Pages",
-            "pp_dir": in_dir,
-        }
-        config["pages"].append(new_page)
-
-    config["targets"].append(t)
-
-    return t
-
-def get_filters_for_page(page, target=None):
-    ffp = set(config["default_filters"])
-    target = get_target(target)
-    if "filters" in target:
-        ffp.update(target["filters"])
-    if "filters" in page:
-        ffp.update(page["filters"])
-    loaded_filters = set(config.filters.keys())
-    # logger.debug("Removing unloaded filters from page %s...\n  Before: %s"%(page,ffp))
-    ffp &= loaded_filters
-    # logger.debug("  After: %s"%ffp)
-    return ffp
 
 
 def parse_markdown(page, target=None, pages=None, categories=[], mode="html",
@@ -261,95 +152,6 @@ def parse_markdown(page, target=None, pages=None, categories=[], mode="html",
     return html2
 
 
-cached_openapi_specs = {}
-def get_api_def(spec_path, api_slug=None, extra_fields={}, template_path=None):
-    """
-    Instantiate an ApiDef instance only if we haven't done so already. This
-    saves the trouble of fetching & parsing API specs more than once.
-    """
-    if spec_path in cached_openapi_specs.keys():
-        return cached_openapi_specs[spec_path]
-
-    apidef = ApiDef(spec_path, api_slug=api_slug,
-            extra_fields=extra_fields, template_path=template_path)
-    cached_openapi_specs[spec_path] = apidef
-    return apidef
-
-
-def get_pages(target=None, bypass_errors=False):
-    """Read pages from config and return an object, optionally filtered
-       to just the pages that this target cares about"""
-
-    target = get_target(target)
-    pages = config["pages"]
-
-    if target["name"]:
-        #filter pages that aren't part of this target
-        pages = [page for page in pages
-                 if should_include(page, target["name"])]
-
-    # Expand OpenAPI spec placeholders into their generated pages
-    new_pages = []
-    for p in pages:
-        if OPENAPI_SPEC_KEY in p.keys():
-            logger.debug("Expanding OpenAPI spec from placeholder: %s"%p)
-            api_slug = p.get(API_SLUG_KEY, None)
-            extra_fields = {k:v for k,v in p.items() if k not in [OPENAPI_SPEC_KEY, API_SLUG_KEY]}
-            template_path = p.get(OPENAPI_TEMPLATE_PATH_KEY, None)
-            try:
-                swagger = get_api_def(p[OPENAPI_SPEC_KEY], api_slug, extra_fields, template_path)
-                swagger_pages = swagger.create_pagelist()
-                logger.debug("Adding generated OpenAPI reference pages: %s"%swagger_pages)
-                new_pages += swagger_pages
-            except Exception as e:
-                traceback.print_tb(e.__traceback__)
-                recoverable_error("Error when parsing OpenAPI definition %s: %s" %
-                     (p, repr(e)), bypass_errors)
-                # Omit the API def from the page list if an error occurred
-        else:
-            new_pages.append(p)
-    pages = new_pages
-
-    # Check for pages that would overwrite each other
-    html_outs_in_target = []
-    for p in pages:
-        if p["html"] in html_outs_in_target:
-            recoverable_error(("Repeated output filename '%s': "+
-                "the earlier instances will be overwritten") % p["html"],
-                bypass_errors)
-        html_outs_in_target.append(p["html"])
-
-    # Pages should inherit non-reserved keys from the target
-    for p in pages:
-        merge_dicts(target, p, RESERVED_KEYS_TARGET)
-
-    return pages
-
-def should_include(page, target_name):
-    """Report whether a given page should be part of the given target"""
-    if "targets" not in page:
-        return False
-    if target_name in page["targets"]:
-        return True
-    else:
-        return False
-
-def merge_dicts(default_d, specific_d, reserved_keys_top=[]):
-    """
-    Extend specific_d with values from default_d (recursively), keeping values
-    from specific_d where they both exist. (This is like dict.update() but
-    without overwriting duplicate keys in the updated dict.)
-
-    reserved_keys_top is only used at the top level, not recursively
-    """
-    for key,val in default_d.items():
-        if key in reserved_keys_top:
-            continue
-        if key not in specific_d.keys():
-            specific_d[key] = val
-        elif type(specific_d[key]) == dict and type(val) == dict:
-                merge_dicts(val, specific_d[key])
-        #else leave the key in the specific_d
 
 def get_categories(pages):
     """Produce an ordered, de-duplicated list of categories from
@@ -513,67 +315,7 @@ def copy_static_files(template_static=True, content_static=True, out_path=None):
             logger.debug("No content_static_path in conf; skipping copy")
 
 
-def get_page_how(page=None):
-    """
-    Explains how to get the markdown for a page object.
-    Returns a (how, path) tuple where path is the URL or file path, and how
-    is one of the following constants:
-    - HOW_FROM_GENERATOR - function to generate the markdown
-    - HOW_FROM_FILE - local file to be read
-    - HOW_FROM_URL - remote file to be fetched over HTTP(S)"""
-    if not page:
-        return HOW_FROM_FILE, config["content_path"]
-    elif "__md_generator" in page:
-        return HOW_FROM_GENERATOR, None
-    elif "pp_dir" in page:
-        return HOW_FROM_FILE, page["pp_dir"]
-    elif "md" in page and (page["md"][:5] == "http:" or
-                page["md"][:6] == "https:"):
-        return HOW_FROM_URL, os.path.dirname(page["md"])
-    else:
-        return HOW_FROM_FILE, config["content_path"]
 
-
-def setup_pp_env(page=None, page_filters=[], no_loader=False, strict_undefined=False):
-    how, path = get_page_how(page)
-    if strict_undefined:
-        preferred_undefined = jinja2.StrictUndefined
-    else:
-        preferred_undefined = jinja2.Undefined
-    if how == HOW_FROM_URL:
-        logger.debug("Using remote template loader for page %s" % page)
-        pp_env = jinja2.Environment(undefined=preferred_undefined,
-                loader=FrontMatterRemoteLoader())
-    elif how == HOW_FROM_GENERATOR:
-        logger.debug("Using a generator-loader for page %s" % page)
-        pp_env = jinja2.Environment(undefined=preferred_undefined,
-                loader=jinja2.DictLoader({"_": page["__md_generator"]()}))
-    elif no_loader:
-        logger.debug("Using a no-loader Jinja environment")
-        pp_env = jinja2.Environment(undefined=preferred_undefined)
-    else:
-        logger.debug("Using FileSystemLoader for page %s" % page)
-        pp_env = jinja2.Environment(undefined=preferred_undefined,
-                loader=FrontMatterFSLoader(path))
-
-    # Add custom "defined_and_" tests
-    def defined_and_equalto(a,b):
-        return pp_env.tests["defined"](a) and pp_env.tests["equalto"](a, b)
-    pp_env.tests["defined_and_equalto"] = defined_and_equalto
-    def undefined_or_ne(a,b):
-        return pp_env.tests["undefined"](a) or pp_env.tests["ne"](a, b)
-    pp_env.tests["undefined_or_ne"] = undefined_or_ne
-
-    # Pull exported values (& functions) from page filters into the pp_env
-    for filter_name in page_filters:
-        if filter_name not in config.filters.keys():
-            logger.debug("Skipping unloaded filter '%s'" % filter_name)
-            continue
-        if "export" in dir(config.filters[filter_name]):
-            for key,val in config.filters[filter_name].export.items():
-                logger.debug("... pulling in filter_%s's exported key '%s'" % (filter_name, key))
-                pp_env.globals[key] = val
-    return pp_env
 
 
 def setup_html_env(strict_undefined=False):
@@ -610,7 +352,7 @@ def setup_fallback_env():
     env.trim_blocks = True
     return env
 
-def toc_from_headers(html_string):
+    def toc_from_headers(html_string):
     """make a table of contents from headers"""
     soup = BeautifulSoup(html_string, "html.parser")
     headers = soup.find_all(name=re.compile("h[1-3]"), id=True)

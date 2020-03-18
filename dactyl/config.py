@@ -38,6 +38,7 @@ class DactylConfig:
         else:
             logger.debug("No config file specified, trying ./dactyl-config.yml")
             self.load_config_from_file(DEFAULT_CONFIG_FILE)
+        self.check_consistency()
         self.load_filters()
 
 
@@ -77,6 +78,13 @@ class DactylConfig:
 
         self.config.update(loaded_config)
 
+    def check_consistency(self):
+        """
+        Check a loaded config for common errors, such as unused pages,
+        references to non-existing targets, duplicate target names, etc.
+        """
+
+        # Look for poorly or redundantly defined targets
         targetnames = set()
         for t in self.config["targets"]:
             if "name" not in t:
@@ -87,7 +95,7 @@ class DactylConfig:
                     t["name"], self.bypass_errors)
             targetnames.add(t["name"])
 
-        # Check page list for consistency and provide default values
+        # Check page list for consistency
         for page in self.config["pages"]:
             if "targets" not in page:
                 if "name" in page:
@@ -103,13 +111,7 @@ class DactylConfig:
                 recoverable_error("Page '%s' contains undefined targets: %s" %
                             (page, set(page["targets"]).difference(targetnames)),
                             self.bypass_errors)
-            if "md" in page and "name" not in page:
-                logger.debug("Guessing page name for page %s" % page)
-                page_path = os.path.join(self.config["content_path"], page["md"])
-                page["name"] = guess_title_from_md_file(page_path)
 
-            if "html" not in page:
-                page["html"] = self.html_filename_from(page)
 
 
     def load_filters(self):
