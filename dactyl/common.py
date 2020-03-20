@@ -21,7 +21,7 @@ logger.addHandler(logging.StreamHandler())
 DEFAULT_PDF_FILE = "__DEFAULT_FILENAME__"
 NO_PDF = "__NO_PDF__"
 DEFAULT_ES_URL = "__DEFAULT_ES_HOST__"
-NO_ES_UP = "__NO_ES_UP__"
+NO_ES_UP = False
 
 # These fields are special, and pages don't inherit them directly
 RESERVED_KEYS_TARGET = [

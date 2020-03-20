@@ -12,7 +12,9 @@ class DactylTarget:
     def __init__(self, config, name=None, inpages=None, spec_path=None):
         assert isinstance(config, DactylConfig)
         self.config = config
+        self.pages = None
 
+        # Set self.data based on the input type
         if inpages is not None:
             self.from_adhoc(inpages)
         elif spec_path is not None:
@@ -20,6 +22,7 @@ class DactylTarget:
         else:
             self.from_config(name)
         self.name = self.data["name"]
+
 
     def from_config(self, name=None):
         """
@@ -116,6 +119,15 @@ class DactylTarget:
         return self.slug_name(self.config["es_index_fields"],
                               self.config["es_index_separator"])
 
+    def add_cover(self):
+        """
+        Add the default cover page to the pagelist where self.update_pages()
+        will find it.
+        """
+        coverpage = self.config["cover_page"]
+        coverpage["targets"] = [self.name]
+        self.config["pages"].insert(0, coverpage)
+
     def default_pdf_name(self):
         """Choose a reasonable name for a PDF file in case one isn't specified."""
         return self.slug_name(self.config["pdf_filename_fields"],
@@ -137,6 +149,14 @@ class DactylTarget:
             return True
         else:
             return False
+
+    def gain_fields(self, fields):
+        """
+        Add the provided fields to this target's definition
+        """
+        merge_dicts(fields, self.data, RESERVED_KEYS_TARGET)
+        if "display_name" in fields: # Exception to reserved key rule
+            self.data["display_name"] = fields["display_name"]
 
     def bestow_fields(self, page):
         """
@@ -236,3 +256,13 @@ class DactylTarget:
             html_outs.add(p["html"])
 
         self.pages = pages
+
+    def categories(self):
+        """Produce an ordered, de-duplicated list of categories from
+           this target's page list"""
+        categories = []
+        for page in self.pages:
+            if "category" in page and page["category"] not in categories:
+                categories.append(page["category"])
+        logger.debug("categories: %s" % categories)
+        return categories

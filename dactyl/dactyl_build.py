@@ -35,8 +35,7 @@ from watchdog.events import PatternMatchingEventHandler
 from dactyl.config import DactylConfig
 from dactyl.cli import DactylCLIParser
 from dactyl.target import DactylTarget
-
-from dactyl.jinja_loaders import FrontMatterRemoteLoader, FrontMatterFSLoader
+from dactyl.page import DactylPage
 
 
 
@@ -46,12 +45,30 @@ HOW_FROM_FILE = 3
 
 
 class DactylBuilder:
-    def __init__(target, mode, TODO):
+    def __init__(target, mode, only_page=None):
         assert isinstance(target, DactylTarget)
         self.target = target
         self.mode = mode
         # Generate a unique nonce per-run to be used for tempdir folder names
         self.nonce = str(time.time()).replace(".","")
+
+        # Set a bunch of settings that can be overwritten after instantiating
+        if mode == "html":
+            self.copy_content_static = True
+            self.copy_template_static = True
+        elif mode == "md":
+            self.copy_content_static = True
+            self.copy_template_static = False
+        else:
+            self.copy_content_static = False
+            self.copy_template_static = False
+
+        self.leave_temp_files = False
+
+        if mode == "es":
+            self.es_upload = DEFAULT_ES_URL
+        else:
+            self.es_upload = False
 
 
     def temp_dir(self):
@@ -61,258 +78,87 @@ class DactylBuilder:
             os.makedirs(run_dir)
         return run_dir
 
+    def build_all(self):
+        for page in self.target.pages:
+            pass #TODO
 
 
+    def write_page(self, page_text, filepath, out_path):
+        ### TODO: possibly move some of these args to properties
+        out_folder = os.path.join(out_path, os.path.dirname(filepath))
+        if not os.path.isdir(out_folder):
+            logger.info("creating output folder %s" % out_folder)
+            os.makedirs(out_folder)
+        fileout = os.path.join(out_path, filepath)
+        with open(fileout, "w", encoding="utf-8") as f:
+            logger.info("writing to file: %s..." % fileout)
+            f.write(page_text)
 
+    def build_one(self, only_page):
+        """
+        TODO: build one page
+        """
 
+    def build_all(self):
+        """
+        TODO: build all pages
+        """
 
-def parse_markdown(page, target=None, pages=None, categories=[], mode="html",
-                    current_time="", bypass_errors=False):
-    """Takes a page object (must contain "md" attribute) and returns parsed
-    and filtered HTML."""
-    target = get_target(target)
+    def watch(self):
+        """
+        replacement for:
+        watch(mode, target, cli_args.only, cli_args.pdf,
+                es_upload=cli_args.es_upload,)
+        """
 
-    logger.info("Preparing page %s" % page["name"])
+    def copy_static(self, template_static=None, content_static=None, out_path=None):
+        """
+        Copy static files to the output directory.
+        """
 
-    # We'll apply these filters to the page
-    page_filters = get_filters_for_page(page, target)
-    logger.debug("Filters for page {pg}: {fl}".format(
-                 pg=page["name"], fl=page_filters))
+        if template_static is None:
+            template_static = self.copy_template_static
+        if content_static is None:
+            content_static = self.copy_content_static
+        if out_path is None:
+            out_path = self.config["out_path"]
 
-    # Get the markdown, preprocess, and apply md filters
-    try:
-        md = preprocess_markdown(page,
-            target=target,
-            categories=categories,
-            mode=mode,
-            current_time=current_time,
-            page_filters=page_filters,
-            bypass_errors=bypass_errors,
-        )
-    except Exception as e:
-        traceback.print_tb(e.__traceback__)
-        recoverable_error("Couldn't preprocess markdown for page %s: %s(%s)" %
-                (page["name"], repr(e), str(e)), bypass_errors)
-        # Just fetch the md without running the preprocessor
-        md = preprocess_markdown(page,
-            target=target,
-            categories=categories,
-            mode=mode,
-            current_time=current_time,
-            page_filters=page_filters,
-            bypass_errors=bypass_errors,
-            skip_preprocessor=True
-        )
+        if template_static:
+            template_static_src = self.config["template_static_path"]
 
-    # Actually parse the markdown
-    logger.info("... parsing markdown...")
-    html = markdown(md, extensions=["markdown.extensions.extra",
-                                    "markdown.extensions.toc"],
-                    lazy_ol=False)
-
-    # Apply raw-HTML-string-based filters here
-    for filter_name in page_filters:
-        if "filter_html" in dir(config.filters[filter_name]):
-            logger.info("... applying HTML filter %s" % filter_name)
-            html = config.filters[filter_name].filter_html(
-                    html,
-                    currentpage=page,
-                    categories=categories,
-                    pages=pages,
-                    target=target,
-                    current_time=current_time,
-                    mode=mode,
-                    config=config,
-                    logger=logger,
-            )
-
-    # Some filters would rather operate on a soup than a string.
-    # May as well parse once and re-serialize once.
-    soup = BeautifulSoup(html, "html.parser")
-
-    # Apply soup-based filters here
-    for filter_name in page_filters:
-        if "filter_soup" in dir(config.filters[filter_name]):
-            logger.info("... applying soup filter %s" % filter_name)
-            config.filters[filter_name].filter_soup(
-                    soup,
-                    currentpage=page,
-                    categories=categories,
-                    pages=pages,
-                    target=target,
-                    current_time=current_time,
-                    mode=mode,
-                    config=config,
-                    logger=logger,
-            )
-            # ^ the soup filters apply to the same object, passed by reference
-
-    logger.info("... re-rendering HTML from soup...")
-    html2 = str(soup)
-    return html2
-
-
-
-def get_categories(pages):
-    """Produce an ordered, de-duplicated list of categories from
-       the page list"""
-    categories = []
-    for page in pages:
-        if "category" in page and page["category"] not in categories:
-            categories.append(page["category"])
-    logger.debug("categories: %s" % categories)
-    return categories
-
-
-def preprocess_markdown(page, target=None, categories=[], page_filters=[],
-                        mode="html", current_time="TIME_UNKNOWN",
-                        bypass_errors=False, skip_preprocessor="NOT SPECIFIED",
-                        read_frontmatter=True):
-    """Read a markdown file, local or remote, and preprocess it, returning the
-    preprocessed text."""
-    target=get_target(target)
-    pages=get_pages(target, bypass_errors)
-
-    if skip_preprocessor=="NOT SPECIFIED":
-        skip_preprocessor = config["skip_preprocessor"]
-
-    how, basepath = get_page_how(page)
-    if skip_preprocessor:
-        if how == HOW_FROM_URL:
-            logger.info("... reading markdown from URL.")
-            md = read_markdown_remote(page["md"])
-        elif how == HOW_FROM_GENERATOR:
-            logger.info("... reading markdown from generator")
-            md = page["__md_generator"]()
-        else:
-            logger.info("... reading markdown from file")
-            with open(page["md"], "r", encoding="utf-8") as f:
-                md = f.read()
-
-        if read_frontmatter:
-            try:
-                md, frontmatter = parse_frontmatter(md)
-                merge_dicts(frontmatter, page)
-            except Exception as e:
-                traceback.print_tb(e.__traceback__)
-                recoverable_error("Error reading frontmatter for page %s: %s" %
-                     (page, repr(e)), bypass_errors)
-
-    else:
-        if config["preprocessor_allow_undefined"] == False and not bypass_errors:
-            strict_undefined = True
-        else:
-            strict_undefined = False
-        pp_env = setup_pp_env(page, page_filters=page_filters, strict_undefined=strict_undefined)
-        if how == HOW_FROM_GENERATOR:
-            md_raw = pp_env.get_template("_")
-        else:
-            md_raw = pp_env.get_template(page["md"])
-
-        if "fm_map" in dir(pp_env.loader): #TODO: this is a hack
-            fm_vars = pp_env.loader.fm_map.get(page["md"], {})
-        else:
-            fm_vars = {}
-        merge_dicts(fm_vars, page)
-
-        md = md_raw.render(
-            currentpage=page,
-            categories=categories,
-            pages=pages,
-            target=target,
-            current_time=current_time,
-            mode=mode,
-            config=config
-        )
-
-    # Apply markdown-based filters here
-    for filter_name in page_filters:
-        if "filter_markdown" in dir(config.filters[filter_name]):
-            logger.info("... applying markdown filter %s" % filter_name)
-            md = config.filters[filter_name].filter_markdown(
-                md,
-                currentpage=page,
-                categories=categories,
-                pages=pages,
-                target=target,
-                current_time=current_time,
-                mode=mode,
-                config=config,
-                logger=logger,
-            )
-
-    logger.info("... markdown is ready")
-    return md
-
-
-def read_markdown_remote(url):
-    """Fetch a remote markdown file and return its contents"""
-    parsed_url = urlparse(url)
-
-    # save this base URL if it's new; that way we can try to let remote
-    # templates inherit from other templates at related URLs
-    if parsed_url.scheme or "baseurl" not in dir(read_markdown_remote):
-        base_path = os.path.dirname(parsed_url.path)
-        read_markdown_remote.baseurl = (
-            parsed_url[0],
-            parsed_url[1],
-            base_path,
-            parsed_url[3],
-            parsed_url[4],
-            parsed_url[5],
-        )
-    # if we're at read_markdown_remote without a scheme, it's probably a remote
-    # template trying to import another template, so let's assume it's from the
-    # base path of the imported template
-    if not parsed_url.scheme:
-        url = os.path.join(read_markdown_remote.baseurl, url)
-
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.text
-    else:
-        raise requests.RequestException("Status code for page was not 200")
-
-
-def copy_static_files(template_static=True, content_static=True, out_path=None):
-    """Copy static files to the output directory."""
-    if out_path == None:
-        out_path = config["out_path"]
-
-    if template_static:
-        template_static_src = config["template_static_path"]
-
-        if os.path.isdir(template_static_src):
-            template_static_dst = os.path.join(out_path,
-                                       os.path.basename(template_static_src))
-            copy_tree(template_static_src, template_static_dst)
-        else:
-            logger.warning(("Template` static path '%s' doesn't exist; "+
-                            "skipping.") % template_static_src)
-
-    if content_static:
-        if "content_static_path" in config:
-            if type(config["content_static_path"]) == str:
-                content_static_srcs = [config["content_static_path"]]
+            if os.path.isdir(template_static_src):
+                template_static_dst = os.path.join(out_path,
+                                           os.path.basename(template_static_src))
+                copy_tree(template_static_src, template_static_dst)
             else:
-                content_static_srcs = config["content_static_path"]
+                logger.warning(("Template static path '%s' doesn't exist; "+
+                                "skipping.") % template_static_src)
 
-            for content_static_src in content_static_srcs:
-                if os.path.isdir(content_static_src):
-                    content_static_dst = os.path.join(out_path,
-                                        os.path.basename(content_static_src))
-                    copy_tree(content_static_src, content_static_dst)
-                elif os.path.isfile(content_static_src):
-                    content_static_dst = os.path.join(out_path,
-                                        os.path.dirname(content_static_src))
-                    logger.debug("Copying single content_static_path file '%s'." %
-                            content_static_src)
-                    copy_file(content_static_src, content_static_dst)
+        if content_static:
+            if "content_static_path" in self.config:
+                if type(self.config["content_static_path"]) == str:
+                    content_static_srcs = [self.config["content_static_path"]]
                 else:
-                    logger.warning("Content static path '%s' doesn't exist; skipping." %
-                                    content_static_src)
-        else:
-            logger.debug("No content_static_path in conf; skipping copy")
+                    content_static_srcs = self.config["content_static_path"]
+
+                for content_static_src in content_static_srcs:
+                    if os.path.isdir(content_static_src):
+                        content_static_dst = os.path.join(out_path,
+                                            os.path.basename(content_static_src))
+                        copy_tree(content_static_src, content_static_dst)
+                    elif os.path.isfile(content_static_src):
+                        content_static_dst = os.path.join(out_path,
+                                            os.path.dirname(content_static_src))
+                        logger.debug("Copying single content_static_path file '%s'." %
+                                content_static_src)
+                        copy_file(content_static_src, content_static_dst)
+                    else:
+                        logger.warning("Content static path '%s' doesn't exist; skipping." %
+                                        content_static_src)
+            else:
+                logger.debug("No content_static_path in conf; skipping copy")
+
+
 
 
 
@@ -352,31 +198,6 @@ def setup_fallback_env():
     env.trim_blocks = True
     return env
 
-    def toc_from_headers(html_string):
-    """make a table of contents from headers"""
-    soup = BeautifulSoup(html_string, "html.parser")
-    headers = soup.find_all(name=re.compile("h[1-3]"), id=True)
-    toc_s = ""
-    for h in headers:
-        if h.name == "h1":
-            toc_level = "level-1"
-        elif h.name == "h2":
-            toc_level = "level-2"
-        else:
-            toc_level = "level-3"
-
-        new_a = soup.new_tag("a", href="#"+h["id"])
-        if h.string:
-            new_a.string = h.string
-        else:
-            new_a.string = " ".join(h.strings)
-        new_li = soup.new_tag("li")
-        new_li["class"] = toc_level
-        new_li.append(new_a)
-
-        toc_s += str(new_li)+"\n"
-
-    return str(toc_s)
 
 
 def safe_get_template(template_name, env, fallback_env):
@@ -406,47 +227,47 @@ def match_only_page(only_page, currentpage):
             return True
     return False
 
-def render_page(currentpage, target, pages, mode, current_time, categories,
-        use_template, bypass_errors=False):
-    if "md" in currentpage or "__md_generator" in currentpage:
-        # Read and parse the markdown
-        try:
-            html_content = parse_markdown(
-                currentpage,
-                target=target,
-                pages=pages,
-                mode=mode,
-                current_time=current_time,
-                categories=categories,
-                bypass_errors=bypass_errors,
-            )
-
-        except Exception as e:
-            traceback.print_tb(e.__traceback__)
-            recoverable_error("Error when fetching page %s: %s" %
-                 (currentpage["name"], repr(e)), bypass_errors)
-            html_content=""
-
-    else:
-        html_content = ""
-
-    # Prepare some parameters for rendering
-    page_toc = toc_from_headers(html_content)
-
-    # Render the content into the appropriate template
-    out_html = use_template.render(
-        currentpage=currentpage,
-        categories=categories,
-        pages=pages,
-        content=html_content,
-        target=target,
-        current_time=current_time,
-        sidebar_content=page_toc, # legacy
-        page_toc=page_toc,
-        mode=mode,
-        config=config
-    )
-    return out_html
+# def render_page(currentpage, target, pages, mode, current_time, categories,
+#         use_template, bypass_errors=False):
+#     if "md" in currentpage or "__md_generator" in currentpage:
+#         # Read and parse the markdown
+#         try:
+#             html_content = parse_markdown(
+#                 currentpage,
+#                 target=target,
+#                 pages=pages,
+#                 mode=mode,
+#                 current_time=current_time,
+#                 categories=categories,
+#                 bypass_errors=bypass_errors,
+#             )
+#
+#         except Exception as e:
+#             traceback.print_tb(e.__traceback__)
+#             recoverable_error("Error when fetching page %s: %s" %
+#                  (currentpage["name"], repr(e)), bypass_errors)
+#             html_content=""
+#
+#     else:
+#         html_content = ""
+#
+#     # Prepare some parameters for rendering
+#     page_toc = toc_from_headers(html_content)
+#
+#     # Render the content into the appropriate template
+#     out_html = use_template.render(
+#         currentpage=currentpage,
+#         categories=categories,
+#         pages=pages,
+#         content=html_content,
+#         target=target,
+#         current_time=current_time,
+#         sidebar_content=page_toc, # legacy
+#         page_toc=page_toc,
+#         mode=mode,
+#         config=config
+#     )
+#     return out_html
 
 def add_bonus_fields(currentpage, target=None, pages=None, categories=[],
         mode="html", current_time="", bypass_errors=False):
@@ -725,20 +546,7 @@ def render_pages(target=None, mode="html", bypass_errors=False,
     if only_page and not matched_only:
         exit("Didn't find requested 'only' page '%s'" % only_page)
 
-# def make_esj(target=target, bypass_errors=cli_args.bypass_errors,
-#             only_page=cli_args.only,):
-#     """Build .json files to be uploaded to ElasticSearch for pages in target."""
-#
 
-def write_page(page_text, filepath, out_path):
-    out_folder = os.path.join(out_path, os.path.dirname(filepath))
-    if not os.path.isdir(out_folder):
-        logger.info("creating output folder %s" % out_folder)
-        os.makedirs(out_folder)
-    fileout = os.path.join(out_path, filepath)
-    with open(fileout, "w", encoding="utf-8") as f:
-        logger.info("writing to file: %s..." % fileout)
-        f.write(page_text)
 
 
 def watch(mode, target, only_page="", pdf_file=DEFAULT_PDF_FILE,
@@ -852,13 +660,11 @@ def main(cli_args):
         exit(0)
 
     if cli_args.pages:
-        make_adhoc_target(cli_args.pages)
-        cli_args.target = ADHOC_TARGET
+        target = DactylTarget(config, inpages=cli_args.pages)
     elif cli_args.openapi:
-        t = make_openapi_target(cli_args.openapi)
-        cli_args.target = t["name"]
-
-    target = get_target(cli_args.target)
+        target = DactylTarget(config, spec_path=cli_args.openapi)
+    else:
+        target = DactylTarget(config, name=cli_args.target)
 
     if cli_args.vars:
         try:
@@ -867,83 +673,65 @@ def main(cli_args):
                     custom_keys = yaml.load(f)
             else:
                 custom_keys = yaml.load(cli_args.vars)
-            for k,v in custom_keys.items():
-                if k not in RESERVED_KEYS_TARGET:
-                    logger.debug("setting var '%s'='%s'" %(k,v))
-                    target[k] = v
-                else:
-                    raise KeyError("Vars can't include reserved key '%s'" % k)
+            target.gain_fields(custom_keys)
         except Exception as e:
             traceback.print_tb(e.__traceback__)
             exit("FATAL: --vars value was improperly formatted: %s" % repr(e))
 
     if cli_args.title:
-        target["display_name"] = cli_args.title
+        target.gain_keys({"display_name": cli_args.title})
 
-    if not cli_args.no_cover and not target.get("no_cover", False):
-        # Add the default cover as the first page of the target
-        coverpage = config["cover_page"]
-        coverpage["targets"] = [target["name"]]
-        config["pages"].insert(0, coverpage)
+    if not cli_args.no_cover and not target.data.get("no_cover", False):
+        target.add_cover()
 
     if cli_args.pdf != NO_PDF:
         mode = "pdf"
-        logger.info("making a pdf...")
-        make_pdf(cli_args.pdf,
-                target=target,
-                bypass_errors=cli_args.bypass_errors,
-                remove_tmp=(not cli_args.leave_temp_files),
-                only_page=cli_args.only,
-                es_upload=cli_args.es_upload,
-        )
-        logger.info("pdf done")
+    elif cli_args.md:
+        mode = "md"
+    elif cli_args.es:
+        mode = "es"
     else:
-        # Set mode and default content/template static copy settings
-        if cli_args.md:
-            mode = "md"
-            content_static = True
-            template_static = False
-        elif cli_args.es:
-            mode = "es"
-            content_static = False
-            template_static = False
-        else:
-            mode = "html"
-            content_static = True
-            template_static = True
+        mode = "html"
 
-        # Override static files copy setting based on CLI flags, if any are used
-        if cli_args.no_static:
-            content_static = False
-            template_static = False
-        elif cli_args.template_static:
-            content_static = False
-            template_static = True
-        elif cli_args.content_static:
-            content_static = True
-            template_static = False
-        elif cli_args.copy_static:
-            content_static = True
-            template_static = True
+    builder = DactylBuilder(target, mode)
 
+    if mode == "pdf":
+        builder.pdf_filename = cli_args.pdf
+    if mode == "es" or cli_args.es_upload:
+        builder.es_upload = cli_args.es_upload
 
-        logger.info("rendering %s..." % mode)
-        render_pages(target=target,
-                     bypass_errors=cli_args.bypass_errors,
-                     only_page=cli_args.only,
-                     mode=mode,
-                     es_upload=cli_args.es_upload,
-        )
-        logger.info("done rendering %s" % mode)
-        if content_static or template_static:
-            logger.info("outputting static files...")
-            copy_static_files(template_static=template_static,
-                              content_static=content_static)
+    # Override static files copy setting based on CLI flags, if any are used
+    if cli_args.no_static:
+        builder.copy_content_static = False
+        builder.copy_template_static = False
+    elif cli_args.template_static:
+        builder.copy_content_static = False
+        builder.copy_template_static = True
+    elif cli_args.content_static:
+        builder.copy_content_static = True
+        builder.copy_template_static = False
+    elif cli_args.copy_static:
+        builder.copy_content_static = True
+        builder.copy_template_static = True
+
+    if cli_args.leave_temp_files:
+        builder.leave_temp_files = True
+
+    logger.info("loading pages..." % mode)
+    builder.load()
+    if cli_args.only:
+        logger.info("building page %s..."%cli_args.only)
+        builder.build_one(cli_args.only)
+    else:
+        logger.info("building target %s..."%target.name)
+        builder.build_all()
+    logger.info("done building")
+
+    builder.copy_static()
 
     if cli_args.watch:
         logger.info("watching for changes...")
-        watch(mode, target, cli_args.only, cli_args.pdf,
-                es_upload=cli_args.es_upload,)
+        builder.watch()
 
 
 def dispatch_main():
