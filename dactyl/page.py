@@ -35,10 +35,12 @@ class DactylPage:
             self.load_from_generator(preprocess)
 
         self.md = None
+        self.html = None
         self.twolines = None
 
         self.provide_name()
         self.provide_html()
+        self.provide_bonus_fields()
 
     def get_pp_env(self, loader):
         if (self.config["preprocessor_allow_undefined"] or
@@ -132,10 +134,6 @@ class DactylPage:
         else:
             self.rawtext = self.data["__md_generator"]()
 
-    ### TODO: figure out if this no_loader setup is still necessary
-    # logger.debug("Using a no-loader Jinja environment")
-    # pp_env = jinja2.Environment(undefined=preferred_undefined)
-
     def provide_name(self):
         """
         Add the "name" field, if not defined.
@@ -190,6 +188,7 @@ class DactylPage:
         logger.debug("Generated html filename '%s' for page: %s" %
                     (new_filename, self.data))
 
+
     def preprocess(self, context):
         ## Context:
             # target=target,
@@ -231,6 +230,10 @@ class DactylPage:
         Returns the page's contents as HTML. Parses Markdown & runs filters
         if any.
         """
+        if self.html is not None:
+            # Reuse saved results if we have them
+            return self.html
+
         md = self.md_content(context)
 
         logger.info("... parsing markdown...")
@@ -264,6 +267,15 @@ class DactylPage:
         # Give each header a unique ID and fill out the Table of Contents
         self.update_toc(soup)
 
+        # Add a "blurb" attribute to the page
+        #TODO: try to migrate this and other "bonus fields" to the "load" step,
+        # maybe by having a preliminary build that parses the HTML before the
+        # final build?
+        self.provide_blurb(soup)
+
+        # Add this page's plaintext field. ElasticSearch upload uses this.
+        self.data["plaintext"] = soup.get_text()
+
         # Apply soup-based filters here
         for filter_name in self.filters():
             if "filter_soup" in dir(config.filters[filter_name]):
@@ -287,6 +299,7 @@ class DactylPage:
 
         logger.info("... re-rendering HTML from soup...")
         html2 = str(soup)
+        self.html = html2
         return html2
 
     @staticmethod
@@ -309,10 +322,15 @@ class DactylPage:
             "id": "header-content-as-text", # doesn't have the # prefix
             "level": 1, #1-6, based on h1, h2, etc.
         }
+        Also add the "headermap" field used for ES JSON, which is in the form
+        {
+            "Header Content as Text": "#header-content-as-text"
+        }
         """
 
         self.toc = []
         uniqIDs = {}
+        headermap = {}
         headers = soup.find_all(name=re.compile("h[1-6]"))
         for h in headers:
             h_id = self.idify(h.get_text())
@@ -329,6 +347,9 @@ class DactylPage:
                 "id": h_id,
                 "level": int(h.name[1])
             })
+            # ElasticSearch doesn't like dots in keys, so escape those
+            escaped_name = h.get_text().replace(".","-")
+            headermap[escaped_name] = "#"+h_id
 
     def legacy_toc(self):
         """
@@ -344,6 +365,25 @@ class DactylPage:
             li.append(a)
             soup.append(li)
         return str(soup)
+
+    def provide_blurb(self, soup):
+        """
+        Add a "blurb" field, based on the first paragraph in the page, if one
+        is not already provided.
+        """
+        if "blurb" in self.data:
+            return
+        p = soup.find("p")
+        while p:
+            if p.get_text().strip():
+                self.data["blurb"] = p.get_text()
+                break
+            else:
+                p = p.find_next_sibling("p")
+        else:
+            logger.debug("Couldn't find a paragraph with text in page %s." % self.data)
+            # Fall back to reusing the page name as the blurb
+            self.data["blurb"] = self.data["name"]
 
     def render(self, use_template, context):
         """
@@ -371,12 +411,50 @@ class DactylPage:
             headers=self.toc,
             **context,
         )
+        return out_html
 
     def es_json(self, use_template, context):
         """
         Return JSON for uploading to ElasticSearch
         """
-        return ""#TODO: stub
+        if self.html is None:
+            self.html_content(context)
+
+        # Setup Jinja env for rendering strings
+        es_env = self.get_pp_env(loader=None)#TODO: does this even work?
+
+        def eval_es_string(expr):
+            try:
+                result = eval(expr, {}, context)
+            except Exception as e:
+                self.target.error("__dactyl_eval__ failed on expression '%s'" %
+                                    expr, e)
+                result = expr
+            return result
+
+        def render_es_field(value):
+            if type(value) == str: # jinja-render strings
+                field_templ = es_env.from_string(value)
+                try:
+                    parsed_field = field_templ.render(context)
+                except jinja2.exceptions.TemplateSyntaxError as e:
+                    self.target.error("Couldn't parse value '%s' in ES template" %
+                        value, e)
+                return parsed_field
+            elif type(value) in (type(None), int, float, bool): # preserve literals
+                return value
+            elif type(value) == dict and ES_EVAL_KEY in value.keys():
+                return eval_es_string(value[ES_EVAL_KEY])
+            elif type(value) == dict: # recurse!
+                return {rkey: render_es_field(rval) for rkey,rval in value.items()}
+            elif type(value) == list: # recurse!
+                return [render_es_field(rval) for rval in value]
+            else:
+                self.target.error("Unknown type in ES template: %s"%type(value))
+                return ""
+
+        wout = {key: render_es_field(val) for key,val in use_template.items()}
+        return json.dumps(wout, indent=4, separators=(',', ': '))
 
     def filepath(self, mode):
         """
