@@ -13,7 +13,6 @@ from pkg_resources import resource_stream
 
 # Not the file containing defaults, but the default name of user-specified conf
 DEFAULT_CONFIG_FILE = "dactyl-config.yml"
-BUILTIN_ES_TEMPLATE = "templates/template-es.json"
 
 class DactylConfig:
     def __init__(self, cli_args):
@@ -208,22 +207,6 @@ class DactylConfig:
                         (new_filename, page))
             return new_filename
 
-    def get_es_template(self, filename):
-        """Loads an ElasticSearch template (as JSON)"""
-        template_path = os.path.join(self.config["template_path"], filename)
-        try:
-            with open(template_path, encoding="utf-8") as f:
-                es_template = json.load(f)
-        except (FileNotFoundError, json.decoder.JSONDecodeError) as e:
-            if type(e) == FileNotFoundError:
-                logger.debug("Didn't find ES template (%s), falling back to default" %
-                    template_path)
-            elif type(e) == json.decoder.JSONDecodeError:
-                recoverable_error(("Error JSON-decoding ES template (%s)" %
-                    template_path), self.bypass_errors)
-            with resource_stream(__name__, BUILTIN_ES_TEMPLATE) as f:
-                es_template = json.load(f)
-        return es_template
 
     def __getitem__(self, key):
         return self.config[key]

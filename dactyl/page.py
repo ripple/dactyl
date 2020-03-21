@@ -1,8 +1,8 @@
 ################################################################################
 ## Dactyl Page Class
 ##
-## A single HTML file in the output,
-## or a placeholder for several
+## Handles the loading, default values, preprocessing, and content parsing
+## for a single HTML page of output.
 ################################################################################
 
 import jinja2
@@ -24,12 +24,6 @@ class DactylPage:
         self.pp_template = None
         self.toc = []
 
-    def load(self, preprocess=True):
-        """
-        Load frontmatter and raw file contents without parsing or rendering.
-        Does not return anything because rendering may depend on Jinja loading
-        the page as a template, etc.
-        """
         logger.info("Preparing page %s" % self.data)
         if "md" in self.data:
             if (self.data["md"][:5] == "http:" or
@@ -40,6 +34,11 @@ class DactylPage:
         elif "__md_generator" in self.data:
             self.load_from_generator(preprocess)
 
+        self.md = None
+        self.twolines = None
+
+        self.provide_name()
+        self.provide_html()
 
     def get_pp_env(self, loader):
         if (self.config["preprocessor_allow_undefined"] or
@@ -73,39 +72,58 @@ class DactylPage:
         return pp_env
 
     def load_from_url(self, preprocess):
+        """
+        Read file over HTTP(S),
+        as either raw text or as a Jinja template,
+        and load frontmatter, if any, either way.
+        """
         url = self.data["md"]
         logger.info("Loading page from URL: %s"%url)
         assert (url[:5] == "http:" or url[:6] == "https:")
         if preprocess:
             pp_env = self.get_pp_env(loader=FrontMatterRemoteLoader())
-            self.pp_template = pp_env.get_template(page["md"])
+            self.pp_template = pp_env.get_template(self.data["md"])
+            frontmatter = pp_env.loader.fm_map[self.data["md"]]
+            merge_dicts(frontmatter, self.data)
+            self.twolines = pp_env.loader.twolines[self.data["md"]]
         else:
             response = requests.get(url)
             if response.status_code == 200:
-                self.rawtext = response.text
+                self.rawtext, frontmatter = parse_frontmatter(response.text)
+                merge_dicts(frontmatter, self.data)
+                self.twolines = self.rawtext.split("\n", 2)[:2]
             else:
                 raise requests.RequestException("Status code for page was not 200")
 
     def load_from_disk(self, preprocess):
         """
         Read the file from the filesystem,
-        as either raw text or a jinja template
+        as either raw text or as a Jinja template,
+        and load frontmatter, if any, either way.
         """
+        assert "md" in self.data
         if preprocess:
             logger.info("... loading markdown from filesystem")
             path = self.config["content_path"]
             pp_env = self.get_pp_env(loader=FrontMatterFSLoader(path))
             self.pp_template = pp_env.get_template(self.data["md"])
+            frontmatter = pp_env.loader.fm_map[self.data["md"]]
+            merge_dicts(frontmatter, self.data)
+            self.twolines = pp_env.loader.twolines[self.data["md"]]
         else:
             logger.info("... reading markdown from file")
             with open(self.data["md"], "r", encoding="utf-8") as f:
-                self.rawtext = f.read()
+                ftext = f.read()
+            self.rawtext, frontmatter = parse_frontmatter(ftext)
+            merge_dicts(frontmatter, self.data)
+            self.twolines = self.rawtext.split("\n", 2)[:2]
 
 
     def load_from_generator(self, preprocess):
         """
         Load the text from a generator function,
-        as either raw text or a jinja template
+        as either raw text or a jinja template.
+        Assume no frontmatter in this case.
         """
         if preprocess:
             pp_env = self.get_pp_env(
@@ -117,6 +135,60 @@ class DactylPage:
     ### TODO: figure out if this no_loader setup is still necessary
     # logger.debug("Using a no-loader Jinja environment")
     # pp_env = jinja2.Environment(undefined=preferred_undefined)
+
+    def provide_name(self):
+        """
+        Add the "name" field, if not defined.
+        """
+        if "name" in self.data:
+            return
+
+        logger.debug("Guessing page name for page %s" % self.data)
+        if "title" in self.data: # Port over the "title" attribute instead
+            self.data["name"] = self.data["title"]
+            return
+        elif self.rawtext:
+            self.data["name"] = guess_title(self.rawtext)
+            return
+        elif self.twolines:
+            logger.debug("Guessing page name from first two lines...")
+            try:
+                soup = BeautifulSoup(markdown(self.twolines), "html.parser")
+                first_h = soup.find(name=re.compile("h[1-6]"))
+                self.data["name"] = first_h.get_text()
+                return
+            except Exception as e:
+                logger.warning("Couldn't guess title of page from twolines: %s" % e)
+
+        if "md" in self.data:
+            self.data["name"] = self.data["md"]
+        else:
+            logger.warning("Using a placeholder name for page: %s" %
+                    str(self.data))
+            self.data["name"] = str(time.time()).replace(".", "-")
+
+    def provide_html(self):
+        """
+        Add the "html" field, if not defined.
+        """
+        if "html" in self.data:
+            return
+
+        if "md" in self.data:
+            # TODO: support "tail" formula
+            new_filename = re.sub(r"[.]md$", ".html", page["md"])
+            if self.config.get("flatten_default_html_paths", True):
+                self.data["html"] = new_filename.replace(os.sep, "-")
+            else:
+                self.data["html"] = new_filename
+        elif "name" in self.data:
+            return slugify(self.data["name"]).lower()+".html"
+        else:
+            new_filename = str(time.time()).replace(".", "-")+".html"
+            self.data["html"] = new_filename
+
+        logger.debug("Generated html filename '%s' for page: %s" %
+                    (new_filename, self.data))
 
     def preprocess(self, context):
         ## Context:
@@ -138,18 +210,23 @@ class DactylPage:
                 )
 
         logger.info("... markdown is ready")
+        self.md = md
         return md
 
-    def md_content(self, context={}):
-        if self.rawtext is not None:
+    def md_content(self, context):
+        if self.md is not None:
+            # return already-preprocessed md
+            return self.md
+        elif self.rawtext is not None:
             return self.rawtext
         elif self.pp_template is not None:
             return self.preprocess(context)
         else:
             logger.warning("md_content(): no rawtext or pp_template")
+            # TODO: ^ this is maybe not a warning?
             return ""
 
-    def html_content(self, context={}):
+    def html_content(self, context):
         """
         Returns the page's contents as HTML. Parses Markdown & runs filters
         if any.
@@ -157,9 +234,7 @@ class DactylPage:
         md = self.md_content(context)
 
         logger.info("... parsing markdown...")
-        html = markdown(md, extensions=["markdown.extensions.extra",
-                                        "markdown.extensions.toc"],
-                                        #TODO: scrap toc, make our own
+        html = markdown(md, extensions=["markdown.extensions.extra"],
                         lazy_ol=False)
 
         # Apply raw-HTML-string-based filters here
@@ -270,14 +345,12 @@ class DactylPage:
             soup.append(li)
         return str(soup)
 
-
-
     def render(self, use_template, context):
         """
         Render the entire page using the given template & context.
         """
         ## Context:
-            # currentpage=currentpage, ## - probably remove
+            # currentpage=currentpage,
             # categories=categories,
             # pages=pages,
             # content=html_content, ## remove
@@ -292,13 +365,46 @@ class DactylPage:
         page_toc = self.toc_from_headers()#TODO
 
         out_html = use_template.render(
-            currentpage=currentpage.data, #TODO?
             content=html_content,
             sidebar_content=self.legacy_toc(),
             page_toc=self.legacy_toc(),
             headers=self.toc,
             **context,
         )
+
+    def es_json(self, use_template, context):
+        """
+        Return JSON for uploading to ElasticSearch
+        """
+        return ""#TODO: stub
+
+    def filepath(self, mode):
+        """
+        Returns the preferred filename to write output to based on the provided
+        mode.
+        """
+
+        if mode == "es":
+            # use .json as file extension instead
+            fp = re.sub(r'(.+)\.html?$', r'\1.json', self.data["html"], flags=re.I)
+            if fp[:5] != ".json": # substitution didn't work
+                fp = fp+".json"
+            return f
+        elif mode == "md":
+            if "md" in self.data:
+                # reuse the input .md filename as output
+                fp = self.data["md"]
+                if ":" in fp: # http: or https: probably
+                    fp = slugify(f)
+            else:
+                # use the html field, but change the file extension to .md
+                fp = re.sub(r'(.+)\.html?$', r'\1.md', self.data["html"], flags=re.I)
+                if fp[-3:] != ".md": # substitution didn't work
+                    fp = fp+".md"
+            return fp
+        else:
+            # for pdf or html just use the html field as-is
+            return self.data["html"]
 
 
     def filters(self):

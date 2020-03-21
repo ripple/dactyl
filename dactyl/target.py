@@ -7,6 +7,7 @@
 from dactyl.common import *
 from dactyl.config import DactylConfig
 from dactyl.openapi import ApiDef
+from dactyl.page import DactylPage
 
 class DactylTarget:
     def __init__(self, config, name=None, inpages=None, spec_path=None):
@@ -121,7 +122,7 @@ class DactylTarget:
 
     def add_cover(self):
         """
-        Add the default cover page to the pagelist where self.update_pages()
+        Add the default cover page to the pagelist where self.load_pages()
         will find it.
         """
         coverpage = self.config["cover_page"]
@@ -161,40 +162,9 @@ class DactylTarget:
     def bestow_fields(self, page):
         """
         Pass on inheritable fields from the target definition to the given page
-        definition.
+        object.
         """
-        merge_dicts(self.data, page, RESERVED_KEYS_TARGET)
-
-    def provide_page_title(page):
-        """
-        Return a suitable title for a page, if it doesn't have one.
-        If the first two lines look like a Markdown header, use that.
-        Otherwise, return the filename."""
-        try:
-            with open(filepath, "r", encoding="utf-8") as f:
-                line1 = f.readline()
-                line2 = f.readline()
-
-                # look for headers in the "followed by ----- or ===== format"
-                ALT_HEADER_REGEX = re.compile("^[=-]{3,}$")
-                if ALT_HEADER_REGEX.match(line2):
-                    possible_header = line1
-                    if possible_header.strip():
-                        return possible_header.strip()
-
-                # look for headers in the "## abc ## format"
-                HEADER_REGEX = re.compile("^#+\s*(.+[^#\s])\s*#*$")
-                m = HEADER_REGEX.match(line1)
-                if m:
-                    possible_header = m.group(1)
-                    if possible_header.strip():
-                        return possible_header.strip()
-        except FileNotFoundError as e:
-            logger.warning("Couldn't guess title of page (file not found): %s" % e)
-
-        #basically if the first line's not a markdown header, we give up and use
-        # the filename instead
-        return os.path.basename(filepath)
+        merge_dicts(self.data, page.data, RESERVED_KEYS_TARGET)
 
     def expand_openapi_spec(self, page):
         """Expand OpenAPI Spec placeholders into a full page list"""
@@ -208,54 +178,46 @@ class DactylTarget:
         template_path = page.get(OPENAPI_TEMPLATE_PATH_KEY, None)
         swagger = ApiDef.from_path(page[OPENAPI_SPEC_KEY], api_slug,
                                        extra_fields, template_path)
-        return swagger.create_pagelist()
+        return [DactylPage(self, p) for p in swagger.create_pagelist()]
 
-    def update_pages(self):
+    def load_pages(self):
         """
         Find the set of pages that this target should include.  At this time,
         we expand OpenAPI spec placeholders into individual pages, read
         frontmatter, and so on. Save it to self.pages for later reference.
         """
         pages = []
-        for page in self.config["pages"]:
-            if not self.should_include(page):
+        for page_data in self.config["pages"]:
+            if not self.should_include(page_data):
                 continue # Skip out-of-target pages
 
             # Expand OpenAPI Spec placeholders into full page lists
-            if OPENAPI_SPEC_KEY in page.keys():
+            if OPENAPI_SPEC_KEY in page_data.keys():
                 try:
-                    swagger_pages = self.expand_openapi_spec(page)
+                    swagger_pages = self.expand_openapi_spec(page_data)
                     logger.debug("Adding generated OpenAPI reference pages: %s"%swagger_pages)
-                    pages += swagger_pages
+                    pages += swagger_pages # TODO: have swagger make Page objects?
                 except Exception as e:
-                    self.error("Error when parsing OpenAPI definition %s" % page, e)
+                    self.error("Error when parsing OpenAPI definition %s" % page_data, e)
                     # Omit the API def from the page list if an error occurred
 
             # Normal in-target pages; provide some default values,
             # then add them to the list
             else:
-                rawtext, frontmatter = parse_frontmatter(page)
-                if "md" in page and "name" not in page:
-                    #TODO: possibly load from frontmatter
-                    logger.debug("Guessing page name for page %s" % page)
-                    page_path = os.path.join(self.config["content_path"], page["md"])
-                    page["name"] = guess_title_from_md_file(page_path)
-
-                if "html" not in page:
-                    page["html"] = self.html_filename_from(page)
-
-                self.bestow_fields(page)
-                pages.append(page)
+                page_o = DactylPage(self, page_data)
+                self.bestow_fields(page_o)
+                pages.append(page_o)
 
         # Check for pages that would overwrite each other
         html_outs = set()
         for p in pages:
-            if p["html"] in html_outs:
-                self.error(("Repeated output filename '%s': "+
-                    "the earlier instances will be overwritten") % p["html"])
-            html_outs.add(p["html"])
+            if p.data["html"] in html_outs:
+                self.error(("Repeated output filename '%s': the earlier "+
+                    "instances will be overwritten") % p.data["html"])
+            html_outs.add(p.data["html"])
 
         self.pages = pages
+        return pages
 
     def categories(self):
         """Produce an ordered, de-duplicated list of categories from

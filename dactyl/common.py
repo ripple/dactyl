@@ -35,6 +35,7 @@ ES_EVAL_KEY = "__dactyl_eval__"
 OPENAPI_SPEC_KEY = "openapi_specification"
 OPENAPI_TEMPLATE_PATH_KEY = "openapi_md_template_path"
 API_SLUG_KEY = "api_slug"
+BUILTIN_ES_TEMPLATE = "templates/template-es.json"
 
 
 def recoverable_error(msg, bypass_errors):
