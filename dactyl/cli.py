@@ -31,7 +31,7 @@ class DactylCLIParser:
         if utility == self.UTIL_BUILD:
             build_mode = parser.add_mutually_exclusive_group(required=False)
             build_mode.add_argument("--pdf", nargs="?", type=str,
-                                const=DEFAULT_PDF_FILE, default=NO_PDF,
+                                const=PDF_USE_DEFAULT, default=NO_PDF,
                                 help="Output a PDF to this file. Requires Prince.")
             build_mode.add_argument("--md", action="store_true",
                                 help="Output markdown only")
@@ -55,7 +55,7 @@ class DactylCLIParser:
                         help="Copy only the content's static files to the out dir",
                         default=False)
             parser.add_argument("--es_upload", nargs="?", type=str,
-                                const=DEFAULT_ES_URL, default=NO_ES_UP,
+                                const=ES_USE_DEFAULT, default=NO_ES_UP,
                                 help="Upload documents to ElasticSearch cluster "+
                                 "at this URL (http://localhost:9200 by default). "+
                                 "Ignored when making PDFs.")

@@ -36,6 +36,7 @@ from dactyl.config import DactylConfig
 from dactyl.cli import DactylCLIParser
 from dactyl.target import DactylTarget
 from dactyl.page import DactylPage
+from dactyl.watch_handler import UpdaterHandler
 
 
 
@@ -66,14 +67,15 @@ class DactylBuilder:
 
         self.out_path = self.config["out_path"]
         if mode == "pdf":
-            self.out_path = self.temp_dir()
+            self.staging_folder = self.temp_dir()
+            self.pdf_filename = PDF_USE_DEFAULT
 
         self.leave_temp_files = False
 
         if mode == "es":
-            self.es_upload = DEFAULT_ES_URL
+            self.es_upload = ES_USE_DEFAULT
         else:
-            self.es_upload = False
+            self.es_upload = NO_ES_UP
 
         if (self.config["template_allow_undefined"] == False and
                 not self.config.bypass_errors):
@@ -125,7 +127,6 @@ class DactylBuilder:
         Build and write all pages in the target, according to the set mode,
         and upload their entries to ElasticSearch if requested.
         """
-        #TODO: bypass_errors? probably just use self.config.bypass_errors
 
         logger.info("loading pages in target...")
         pages = self.target.load_pages()
@@ -146,7 +147,7 @@ class DactylBuilder:
         matched_only = False
         for page in pages:
             if only_page:
-                if match_only_page(only_page, currentpage):
+                if self.match_only_page(only_page, currentpage):
                     matched_only = True
                 else:
                     logger.debug("only_page mode: skipping page %s" % currentpage)
@@ -154,7 +155,7 @@ class DactylBuilder:
 
             page_context = {currentpage=page.data, **context}
 
-            if self.mode == "es" or es_upload != NO_ES_UP:
+            if self.es_upload != NO_ES_UP:
                 es_template = self.template_for_page(page, mode="es")
                 es_json_s = page.es_json(template, page_context)
                 es_page_id = target.name+"."+page.data["html"]
@@ -179,12 +180,14 @@ class DactylBuilder:
             else:
                 logger.warning("not writing empty page '%s'"%page.data["name"])
 
-        if es_upload != NO_ES_UP:
-            self.upload_es(es_data)
-
         if only_page and not matched_only:
             exit("Didn't find requested 'only' page '%s'" % only_page)
 
+        if self.es_upload != NO_ES_UP:
+            self.upload_es(es_data)
+
+        if self.mode == "pdf":
+            self.assemble_pdf()
 
 
     def template_for_page(self, page, mode=None):
@@ -208,8 +211,17 @@ class DactylBuilder:
             return default_template
 
     def write_page(self, page_text, filepath):
-        # Join folders from filepath and out_path
-        out_folder = os.path.join(self.out_path, os.path.dirname(filepath))
+        """
+        Writes HTML/MD/ES JSON out to the filesystem.
+        """
+        if self.mode == "pdf":
+            # only the final pdf goes to out_path
+            base_folder = self.staging_folder
+        else:
+            base_folder = self.out_path
+
+        # Join folders in case the filepath is not just a flat file
+        out_folder = os.path.join(base_folder, os.path.dirname(filepath))
         if not os.path.isdir(out_folder):
             logger.info("creating output folder %s" % out_folder)
             os.makedirs(out_folder)
@@ -217,14 +229,6 @@ class DactylBuilder:
         with open(fileout, "w", encoding="utf-8") as f:
             logger.info("writing to file: %s..." % fileout)
             f.write(page_text)
-
-    def watch(self):
-        """
-        replacement for:
-        watch(mode, target, cli_args.only, cli_args.pdf,
-                es_upload=cli_args.es_upload,)
-        """
-        #TODO: stub
 
     def copy_static(self, template_static=None, content_static=None, out_path=None):
         """
@@ -344,136 +348,131 @@ class DactylBuilder:
                     template_path)
             elif type(e) == json.decoder.JSONDecodeError:
                 recoverable_error(("Error JSON-decoding ES template (%s)" %
-                    template_path), self.bypass_errors)
+                    template_path), self.config.bypass_errors)
             with resource_stream(__name__, BUILTIN_ES_TEMPLATE) as f:
                 es_template = json.load(f)
         return es_template
 
+    def upload_es(self, data):
+        """
+        Upload to ElasticSearch. data is a dict mapping page IDs to JSON strings
+        """
+        es_base = self.cleanup_es_url()
+        es_index = self.target.es_index_name()
 
+        for id, json_s in data.values():
+            doc_type="article"## TODO: other options?
 
-def get_es_instance(es_base_url):
-    if es_base_url == DEFAULT_ES_URL:
-        # Pull it from the config file
-        es_base_url = config.get("elasticsearch", "http://localhost:9200")
+            url = "{es_base}/{index}/{doc_type}/{id}".format(
+    	        es_base=es_base,
+    	        index=es_index.lower(), # ES index names must be lowercase
+    	        doc_type=doc_type,
+    	        id=id,
+    	    )
+            headers = {"Content-Type": "application/json"}
+            logger.info("Uploading to ES: PUT %s" % url)
+    	    r = requests.put(url, headers=headers, data=json_s)
+    	    if r.status_code >= 400:
+    	        recoverable_error("ES upload failed with error: '%s'" % r.text,
+    	                self.config.bypass_errors)
+
+    def cleanup_es_url(self):
+        """
+        Do some post-processing on user-specified ES URLs to clean them up,
+        or supply a default ES URL if one wasn't provided.
+        """
+        # Should not be called if not doing es upload
+        assert self.es_upload != NO_ES_UP
+
+        if self.es_upload == ES_USE_DEFAULT:
+            es_base_url = self.config.get("elasticsearch", "http://localhost:9200")
+        else:
+            # URL was explicitly specified
+            es_base_url = self.es_upload
 
         # Make sure it has an http:// or https:// prefix
-    if es_base_url[:7] != "http://" and es_base_url[:8] != "https://":
-        es_base_url = "https://"+es_base_url
+        if es_base_url[:7] != "http://" and es_base_url[:8] != "https://":
+            es_base_url = "https://"+es_base_url
 
-    if es_base_url[-1] == "/": # Drop trailing slash
-        es_base_url = es_base_url[:-1]
+        if es_base_url[-1] == "/": # Drop trailing slash
+            es_base_url = es_base_url[:-1]
 
-    logger.debug("ElasticSearch base URL is '%s'" % es_base_url)
-    return es_base_url
+        logger.debug("ElasticSearch base URL is '%s'" % es_base_url)
+        return es_base_url
 
-def upload_es_json(es_json, es_index, es_base, id, doc_type='article'):
-    """Uploads a document to the ElasticSearch index."""
+    def assemble_pdf(self, only_page=None):
+        """
+        Use Prince to combine temporary HTML files into a PDF.
+        Called at the end of build_all()
+        """
+        assert self.pdf_filename != NO_PDF
 
-    # Using requests
-    url = "{es_base}/{index}/{doc_type}/{id}".format(
-        es_base=es_base,
-        index=es_index.lower(), # ES index names must be lowercase
-        doc_type=doc_type,
-        id=id,
-    )
-    headers = {"Content-Type": "application/json"}
-    logger.info("Uploading to ES: PUT %s" % url)
-    r = requests.put(url, headers=headers, data=es_json)
-    if r.status_code >= 400:
-        recoverable_error("ES upload failed with error: '%s'" % r.text,
-                config.bypass_errors)
+        if self.pdf_filename == PDF_USE_DEFAULT:
+            # Not sure if this can change in watch mode
+            pdf_filename = self.target.default_pdf_name()
+        else:
+            pdf_filename = self.pdf_filename
 
-def watch(mode, target, only_page="", pdf_file=DEFAULT_PDF_FILE,
-          es_upload=NO_ES_UP):
-    """Look for changed files and re-run the build whenever there's an update.
-       Runs until interrupted."""
-    target = get_target(target)
+        # self.staging_folder should contain HTML files by now. Copy static
+        # files there too, since Prince will need them
+        self.copy_static(out_path=self.staging_folder)
 
-    class UpdaterHandler(PatternMatchingEventHandler):
-        """Updates to pattern-matched files means rendering."""
-        def on_any_event(self, event):
-            logger.info("got event!")
-            # bypass_errors=True because Watch shouldn't
-            #  just die if a file is temporarily not found
-            if mode == "pdf":
-                make_pdf(pdf_file, target=target, bypass_errors=True,
-                    only_page=only_page, es_upload=es_upload)
-            else:
-                render_pages(target, mode=mode, bypass_errors=True,
-                            only_page=only_page, es_upload=es_upload)
-            logger.info("done rendering")
+        # Make sure the path we're going to write the PDF to exists
+        if not os.path.isdir(self.out_path):
+            logger.info("creating output folder %s" % self.out_path)
+            os.makedirs(self.out_path)
+        abs_pdf_path = os.path.abspath(os.path.join(self.out_path, pdf_filename))
 
-    patterns = ["*template-*.html",
-                "*.md",
-                "*code_samples/*"]
+        # Start preparing the prince command
+        args = [config["prince_executable"], '--javascript', '-o', abs_pdf_path, '--no-warn-css']
 
-    event_handler = UpdaterHandler(patterns=patterns)
-    observer = Observer()
-    observer.schedule(event_handler, config["template_path"], recursive=True)
-    observer.schedule(event_handler, config["content_path"], recursive=True)
-    observer.start()
-    # The above starts an observing thread,
-    #   so the main thread can just wait
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
+        pages = self.target.pages
+        if only_page:
+            pages = [p for p in pages if self.match_only_page(only_page, p)][:1]
+            if not len(pages):
+                recoverable_error("Couldn't find 'only' page %s" % only_page,
+                    self.config.bypass_errors)
+                return
+        # Each HTML output file in the target is another arg to prince
+        args += [p["html"] for p in pages]
+
+        # Change dir to the tempfiles path; this may avoid a bug in Prince
+        old_cwd = os.getcwd()
+        os.chdir(self.staging_folder)
+
+        logger.info("generating PDF: running %s..." % " ".join(args))
+        prince_resp = subprocess.check_output(args, universal_newlines=True)
+        print(prince_resp)
+
+        # Clean up the staging_folder now that we're done using it
+        os.chdir(old_cwd)
+        if not self.leave_temp_files:
+            remove_tree(self.staging_folder)
 
 
-def make_pdf(outfile, target=None, bypass_errors=False, remove_tmp=True,
-        only_page="", es_upload=NO_ES_UP):
-    """Use prince to convert several HTML files into a PDF"""
-    logger.info("rendering PDF-able versions of pages...")
-    target = get_target(target)
+    def watch(self):
+        """
+        Look for changed files and re-run the build whenever there's an update.
+        Runs until interrupted.
 
-    temp_files_path = temp_dir()
-    render_pages(target=target, mode="pdf", bypass_errors=bypass_errors,
-            temp_files_path=temp_files_path, only_page=only_page,
-            es_upload=es_upload)
+        replacement for:
+        watch(mode, target, cli_args.only, cli_args.pdf,
+                es_upload=cli_args.es_upload,)
+        """
 
-    # Choose a reasonable default filename if one wasn't provided yet
-    if outfile == DEFAULT_PDF_FILE:
-        outfile = default_pdf_name(target)
-
-    # Prince will need the static files, so copy them over
-    copy_static_files(out_path=temp_files_path)
-
-    # Make sure the path we're going to write the PDF to exists
-    if not os.path.isdir(config["out_path"]):
-        logger.info("creating output folder %s" % config["out_path"])
-        os.makedirs(config["out_path"])
-    abs_pdf_path = os.path.abspath(os.path.join(config["out_path"], outfile))
-
-    # Start preparing the prince command
-    args = [config["prince_executable"], '--javascript', '-o', abs_pdf_path, '--no-warn-css']
-
-    pages = get_pages(target, bypass_errors)
-    if only_page:
-        pages = [p for p in pages if match_only_page(only_page, p)][:1]
-        if not len(pages):
-            recoverable_error("Couldn't find 'only' page %s" % only_page,
-                bypass_errors)
-            return
-    # Each HTML output file in the target is another arg to prince
-    args += [p["html"] for p in pages]
-
-    # Change dir to the tempfiles path; this may avoid a bug in Prince
-    old_cwd = os.getcwd()
-    os.chdir(temp_files_path)
-
-    logger.info("generating PDF: running %s..." % " ".join(args))
-    prince_resp = subprocess.check_output(args, universal_newlines=True)
-    print(prince_resp)
-
-    # Clean up the tempdir now that we're done using it
-    os.chdir(old_cwd)
-    if remove_tmp:
-        remove_tree(temp_files_path)
-
-
-################ theoretically below here is OK?
+        event_handler = UpdaterHandler(builder=self)
+	    observer = Observer()
+	    observer.schedule(event_handler, self.config["template_path"], recursive=True)
+	    observer.schedule(event_handler, self.config["content_path"], recursive=True)
+	    observer.start()
+	    # The above starts an observing thread,
+	    #   so the main thread can just wait
+	    try:
+	        while True:
+	            time.sleep(1)
+	    except KeyboardInterrupt:
+	        observer.stop()
+	    observer.join()
 
 def list_targets():
     rows = []
@@ -554,8 +553,6 @@ def main(cli_args):
     if cli_args.leave_temp_files:
         builder.leave_temp_files = True
 
-    logger.info("loading pages..." % mode)
-    builder.load()
     if cli_args.only:
         logger.info("building page %s..."%cli_args.only)
         builder.build_one(cli_args.only)

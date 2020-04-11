@@ -18,9 +18,9 @@ yaml = ruamel.yaml.YAML(typ="safe")
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
-DEFAULT_PDF_FILE = "__DEFAULT_FILENAME__"
+PDF_USE_DEFAULT = "__DEFAULT_FILENAME__"
 NO_PDF = "__NO_PDF__"
-DEFAULT_ES_URL = "__DEFAULT_ES_HOST__"
+ES_USE_DEFAULT = "__ES_USE_DEFAULT__"
 NO_ES_UP = False
 
 # These fields are special, and pages don't inherit them directly
@@ -74,7 +74,7 @@ def parse_frontmatter(text):
             frontmatter["name"] = frontmatter["title"]
         if "categories" in frontmatter.keys() and len(frontmatter["categories"]):
             frontmatter["category"] = frontmatter["categories"][0]
-        print("Loaded frontmatter:", frontmatter)#TODO: remove me
+        logger.debug("Loaded frontmatter: %s"% frontmatter)
 
         return text[text.find("---", 3)+4:], frontmatter
     else:
