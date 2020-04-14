@@ -242,6 +242,31 @@ class DactylTarget:
                     # Start a new child list at the parent
                     parent.data["children"] = [p.data]
 
+            p.data["is_ancestor_of"] = self.make_ancestor_lookup(p)
+
+    @staticmethod
+    def make_ancestor_lookup(p):
+        logger.debug("defining is_ancestor_of for %s"%p)
+        def is_ancestor_of(html):
+            logger.debug("is_ancestor_of...")
+            if "children" not in p.data.keys():
+                logger.debug("...no children (%s)"%list(p.data.keys()))
+                return False
+            if type(p.data["children"]) != list:
+                logger.debug("...children not list")
+                return False
+            for kid in p.data["children"]:
+                logger.debug("...has children")
+                if kid["html"] == html:
+                    logger.debug("direct child")
+                    return True
+                logger.debug("...recursing!")
+                if kid["is_ancestor_of"](html):
+                    return True
+            logger.debug("...{p} isn't an ancestor of {html}.".format(p=p,html=html))
+            return False
+        return is_ancestor_of
+
     def categories(self):
         """Produce an ordered, de-duplicated list of categories from
            this target's page list"""

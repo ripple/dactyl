@@ -345,6 +345,7 @@ The following fields are automatically added after a page has been parsed to HTM
 | `headermap` | Dictionary | A mapping of the page's headers to the unique IDs of those headers in the generated HTML version. |
 | `blurb`     | String     | An introductory blurb generated from the page's first paragraph of text. |
 | `children`  | List       | A list of pages, in order of appearance, that refer to this page as their `parent`. Each of these "child" pages is a reference to the page definition (dictionary) for that child. |
+| `is_ancestor_of` | Function | A function that takes one argument, the string identifying a potential child page by that child's `html` field. This function returns `True` if this page is a direct or indirect parent of the child page. |
 
 [Jinja]: http://jinja.pocoo.org/
 
