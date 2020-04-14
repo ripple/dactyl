@@ -108,10 +108,10 @@ If you have a lot of targets, it can be hard to remember what the short names fo
 
 ```sh
 $ dactyl_build -l
-tests		Dactyl Test Suite
-rc-install		Ripple Connect v2.6.3 Installation Guide
-rc-release-notes		
-kc-rt-faq		Ripple Trade Migration FAQ
+tests        Dactyl Test Suite
+rc-install        Ripple Connect v2.6.3 Installation Guide
+rc-release-notes        
+kc-rt-faq        Ripple Trade Migration FAQ
 ```
 
 #### Building Markdown
@@ -190,14 +190,6 @@ The context provided to the preprocessing and to the `__dactyl_eval__` expressio
 | `mode`          | `str`       | Always equal to `es` in this context         |
 | `current_time`  | `str`       | The current time, in the `time_format` specified in the config. (Defaults to YYYY-MM-DD) |
 | `bypass_errors` | `bool`      | If `true`, this build is running with the option to continue through errors where possible. |
-
-The `currentpage` dictionary has the following special fields in this mode:
-
-| Field       | Python Type | Description                                      |
-|:------------|:------------|:-------------------------------------------------|
-| `plaintext` | `str`       | A plaintext-only version of the page's markdown content, with all Markdown and HTML syntax removed. |
-| `headermap` | `dict`      | A mapping of the page's headers to the unique IDs of those headers in the generated HTML version. |
-| `blurb`     | `str`       | An introductory blurb generated from the page's first paragraph of text. |
 
 
 ### OpenAPI Specification Parsing
@@ -339,8 +331,20 @@ Each individual page definition can have the following fields:
 | `category` | String | _(Optional)_ The name of a category to group this page into. This is used by Dactyl's built-in templates to organize the table of contents. |
 | `template`               | String    | _(Optional)_ The filename of a custom [Jinja][] HTML template to use when building this page for HTML, relative to the **template_path** in your config. |
 | `pdf_template`           | String    | _(Optional)_ The filename of a custom [Jinja][] HTML template to use when building this page for PDF, relative to the **template_path** in your config. |
-| `openapi_md_template_path` | String | _(Optional)_ Path to a folder containing [templates to be used for OpenAPI spec parsing](#openapi-spec-templates). If omitted, use the [built-in templates](dactyl/templates/).
+| `openapi_md_template_path` | String | _(Optional)_ Path to a folder containing [templates to be used for OpenAPI spec parsing](#openapi-spec-templates). If omitted, use the [built-in templates](dactyl/templates/). |
+| `parent`                 | String    | _(Optional)_ The HTML filename of the page to treat as a parent of this one for purposes of hierarchy. If omitted, treat the page as a "top-level" page. |
 | ...                      | (Various) | Additional arbitrary key-value pairs as desired. These values can be used by templates or pre-processing. |
+
+If the file specified by `md` begins with YAML frontmatter, separated by a line of exactly `---`, the frontmatter is used as a basis for these fields. Certain frontmatter fields are adapted from Jekyll format to Dactyl format: for example, `title` gets copied to `name` if the page does not have a `name`.
+
+The following fields are automatically added after a page has been parsed to HTML. (They're not available when preprocessing or rendering Markdown to HTML, but _are_ available when rendering HTML templates.)
+
+| Field                    | Type      | Description                           |
+|:-------------------------|:----------|:--------------------------------------|
+| `plaintext` | String     | A plaintext-only version of the page's markdown content, with all Markdown and HTML syntax removed. |
+| `headermap` | Dictionary | A mapping of the page's headers to the unique IDs of those headers in the generated HTML version. |
+| `blurb`     | String     | An introductory blurb generated from the page's first paragraph of text. |
+| `children`  | List       | A list of pages, in order of appearance, that refer to this page as their `parent`. Each of these "child" pages is a reference to the page definition (dictionary) for that child. |
 
 [Jinja]: http://jinja.pocoo.org/
 

@@ -48,6 +48,7 @@ class FrontMatterFSLoader(FileSystemLoader):
     def __init__(self, searchpath, encoding='utf-8', followlinks=False):
         super().__init__(searchpath, encoding, followlinks)
         self.fm_map = defaultdict(dict)
+        self.twolines = {}
 
     def get_source(self, environment, template):
         text, filename, uptodate = super().get_source(environment, template)

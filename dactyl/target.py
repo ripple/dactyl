@@ -49,11 +49,11 @@ class DactylTarget:
         """
         t = {
             "name": ADHOC_TARGET,
-            "display_name": "(Untitled)",
+            "display_name": UNTITLED_TARGET,
         }
 
-        if len(inpages) == 1:
-            t["display_name"] = guess_title_from_md_file(inpages[0])
+        # if len(inpages) == 1:
+        #     t["display_name"] = guess_title_from_md_file(inpages[0])
 
         for inpage in inpages:
             # Figure out the actual filename and location of this infile
@@ -68,11 +68,7 @@ class DactylTarget:
             else:
                 out_html_file = in_file+".html"
 
-            # Try to come up with a reasonable page title
-            page_title = guess_title_from_md_file(inpage)
-
             new_page = {
-                "name": page_title,
                 "md": in_file,
                 "html": out_html_file,
                 "targets": [ADHOC_TARGET],
@@ -140,7 +136,7 @@ class DactylTarget:
             recoverable_error("{msg}: {err}".format(msg=msg, err=repr(e)),
                               self.config.bypass_errors)
         else:
-            recoverable_error("msg, self.config.bypass_errors)
+            recoverable_error(msg, self.config.bypass_errors)
 
     def should_include(self, page):
         """Report whether a given page should be part of this target"""
@@ -159,28 +155,22 @@ class DactylTarget:
         if "display_name" in fields: # Exception to reserved key rule
             self.data["display_name"] = fields["display_name"]
 
-    def bestow_fields(self, page):
-        """
-        Pass on inheritable fields from the target definition to the given page
-        object.
-        """
-        merge_dicts(self.data, page.data, RESERVED_KEYS_TARGET)
-
-    def expand_openapi_spec(self, page):
+    def expand_openapi_spec(self, page_data, context):
         """Expand OpenAPI Spec placeholders into a full page list"""
-        assert OPENAPI_SPEC_KEY in page.keys():
+        assert OPENAPI_SPEC_KEY in page_data.keys()
 
-        logger.debug("Expanding OpenAPI spec from placeholder: %s"%page)
-        api_slug = page.get(API_SLUG_KEY, None)
-        extra_fields = {k:v for k,v in page.items()
-                        if k not in [OPENAPI_SPEC_KEY, API_SLUG_KEY]}
-        self.bestow_fields(extra_fields)
-        template_path = page.get(OPENAPI_TEMPLATE_PATH_KEY, None)
-        swagger = ApiDef.from_path(page[OPENAPI_SPEC_KEY], api_slug,
+        logger.debug("Expanding OpenAPI spec from placeholder: %s"%page_data)
+        api_slug = page_data.get(API_SLUG_KEY, None)
+        extra_fields = {}
+        merge_dicts(self.data, extra_fields, RESERVED_KEYS_TARGET)
+        merge_dicts(page_data, extra_fields, [OPENAPI_SPEC_KEY, API_SLUG_KEY])
+
+        template_path = page_data.get(OPENAPI_TEMPLATE_PATH_KEY, None)
+        swagger = ApiDef.from_path(page_data[OPENAPI_SPEC_KEY], api_slug,
                                        extra_fields, template_path)
-        return [DactylPage(self, p) for p in swagger.create_pagelist()]
+        return [DactylPage(self, p, context) for p in swagger.create_pagelist()]
 
-    def load_pages(self):
+    def load_pages(self, context):
         """
         Find the set of pages that this target should include.  At this time,
         we expand OpenAPI spec placeholders into individual pages, read
@@ -194,37 +184,70 @@ class DactylTarget:
             # Expand OpenAPI Spec placeholders into full page lists
             if OPENAPI_SPEC_KEY in page_data.keys():
                 try:
-                    swagger_pages = self.expand_openapi_spec(page_data)
+                    swagger_pages = self.expand_openapi_spec(page_data, context)
                     logger.debug("Adding generated OpenAPI reference pages: %s"%swagger_pages)
-                    pages += swagger_pages # TODO: have swagger make Page objects?
+                    pages += swagger_pages
                 except Exception as e:
                     self.error("Error when parsing OpenAPI definition %s" % page_data, e)
                     # Omit the API def from the page list if an error occurred
 
-            # Normal in-target pages; provide some default values,
+            # Normal in-target pages; pass on target key-values,
             # then add them to the list
             else:
-                page_o = DactylPage(self, page_data)
-                self.bestow_fields(page_o)
+                merge_dicts(self.data, page_data, RESERVED_KEYS_TARGET)
+                page_o = DactylPage(self, page_data, context)
                 pages.append(page_o)
 
         # Check for pages that would overwrite each other
         html_outs = set()
         for p in pages:
+            if "html" not in p.data.keys():
+                logger.error("page has no html somehow? %s"%p.data)
             if p.data["html"] in html_outs:
                 self.error(("Repeated output filename '%s': the earlier "+
                     "instances will be overwritten") % p.data["html"])
             html_outs.add(p.data["html"])
 
         self.pages = pages
+
+        # Special case for ad-hoc targets with one page: rename to page name
+        # if no title was provided.
+        if len(self.pages) == 1 and self.name == UNTITLED_TARGET:
+            self.name = self.pages[0].data["name"]
+            self.data["display_name"] = self.name
+
+        self.find_hierarchy()
         return pages
+
+    def find_hierarchy(self):
+        """
+        Adds "children" arrays to pages to mirror "parent" links.
+        """
+        for p in self.pages:
+            if "parent" in p.data.keys():
+                try:
+                    parent = next((pg for pg in self.pages if pg.data["html"] == p.data["parent"]))
+                except StopIteration:
+                    logger.warning("parent '%s' value not found in this target"%p.data["parent"])
+                    continue
+
+                if "children" in parent.data.keys():
+                    if type(parent.data["children"]) != list:
+                        logger.warning("hierarchy: page '%s' has explicit children field, not modifying."%parent.data["html"])
+                        continue
+                    else:
+                        # Add this child to the parent's existing list
+                        parent.data["children"].append(p.data)
+                else:
+                    # Start a new child list at the parent
+                    parent.data["children"] = [p.data]
 
     def categories(self):
         """Produce an ordered, de-duplicated list of categories from
            this target's page list"""
         categories = []
         for page in self.pages:
-            if "category" in page and page["category"] not in categories:
-                categories.append(page["category"])
+            if "category" in page.data and page.data["category"] not in categories:
+                categories.append(page.data["category"])
         logger.debug("categories: %s" % categories)
         return categories

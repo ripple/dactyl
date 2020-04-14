@@ -26,23 +26,26 @@ pages:
         html: tests-index.html
         category: Tests
         section_header: true
+        parent: hierarchy_demo.html
         targets:
             - everything
 
     -   md: includes.md
         category: Tests
+        parent: tests-index.html
         targets:
             - everything
 
     -   md: with-frontmatter.md
-        name: placeholder_with_frontmatter_local
         html: with-frontmatter.html
+        parent: tests-index.html
         targets:
             - everything
 
     -   name: Conditionals Test
         category: Tests
         md: conditionals.md
+        parent: tests-index.html
         targets:
             - everything
             - conditionals
@@ -50,12 +53,20 @@ pages:
     -   name: Lists and Code Blocks Demo
         category: Tests
         md: lists-and-codeblocks.md
+        parent: tests-index.html
         targets:
             - everything
 
     -   name: GitHub Markdown Compatibility
         category: Tests
         md: gfm-compat.md
+        parent: lists-and-codeblocks.html
+        targets:
+            - everything
+
+    -   name: Hierarchy Demo
+        category: Tests
+        template: template-hierarchy.html
         targets:
             - everything
 
@@ -131,6 +142,7 @@ pages:
             - filterdemos
         filters:
             - multicode_tabs
+
 
 # -------------------- Style Checker Rules ------------------------
 word_substitutions_file: plainlanguage_words.yaml

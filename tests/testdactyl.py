@@ -14,7 +14,7 @@ class TestDactyl(unittest.TestCase):
         self.startdir = os.getcwd()
         # Before each test is run, remove the existing files in out subdirectory.
         try:
-	        remove_tree("out")
+            remove_tree("out")
         except FileNotFoundError:
             print("No out/ dir to remove")
 

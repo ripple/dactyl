@@ -11,20 +11,24 @@ import requests
 from markdown import markdown
 from bs4 import BeautifulSoup
 
+from dactyl.common import *
+
 from dactyl.jinja_loaders import FrontMatterRemoteLoader, FrontMatterFSLoader
-from dactyl.target import DactylTarget
+# from dactyl.target import DactylTarget #circular import, fails
 
 class DactylPage:
-    def __init__(self, target, data):
-        assert isinstance(target, DactylTarget)
+    def __init__(self, target, data, context, preprocess=True):
+        # assert isinstance(target, DactylTarget)
         self.target = target
         self.config = self.target.config
         self.data = data
         self.rawtext = None
         self.pp_template = None
+        self.twolines = None
         self.toc = []
 
         logger.info("Preparing page %s" % self.data)
+        # TODO: if bypass_errors, do we retry w/out preprocessing?
         if "md" in self.data:
             if (self.data["md"][:5] == "http:" or
                     self.data["md"][:6] == "https:"):
@@ -36,11 +40,11 @@ class DactylPage:
 
         self.md = None
         self.html = None
-        self.twolines = None
+        self.soup = None
 
+        self.get_html_filename()
         self.provide_name()
-        self.provide_html()
-        self.provide_bonus_fields()
+        self.html_content({"currentpage":data, **context})
 
     def get_pp_env(self, loader):
         if (self.config["preprocessor_allow_undefined"] or
@@ -119,6 +123,7 @@ class DactylPage:
             self.rawtext, frontmatter = parse_frontmatter(ftext)
             merge_dicts(frontmatter, self.data)
             self.twolines = self.rawtext.split("\n", 2)[:2]
+        logger.debug("twolines is: '%s'"%self.twolines)
 
 
     def load_from_generator(self, preprocess):
@@ -141,31 +146,30 @@ class DactylPage:
         if "name" in self.data:
             return
 
-        logger.debug("Guessing page name for page %s" % self.data)
         if "title" in self.data: # Port over the "title" attribute instead
             self.data["name"] = self.data["title"]
-            return
-        elif self.rawtext:
-            self.data["name"] = guess_title(self.rawtext)
+            logger.debug("Guessed page name from title for page %s" % self.data)
             return
         elif self.twolines:
             logger.debug("Guessing page name from first two lines...")
             try:
-                soup = BeautifulSoup(markdown(self.twolines), "html.parser")
+                soup = BeautifulSoup(markdown("\n".join(self.twolines)), "html.parser")
                 first_h = soup.find(name=re.compile("h[1-6]"))
                 self.data["name"] = first_h.get_text()
+                logger.debug("... guessed title: '%s'"%self.data["name"])
                 return
             except Exception as e:
                 logger.warning("Couldn't guess title of page from twolines: %s" % e)
 
         if "md" in self.data:
             self.data["name"] = self.data["md"]
+            logger.debug("Using placeholder name for page based on md path: '%s'"%self.data["name"])
         else:
             logger.warning("Using a placeholder name for page: %s" %
                     str(self.data))
             self.data["name"] = str(time.time()).replace(".", "-")
 
-    def provide_html(self):
+    def get_html_filename(self):
         """
         Add the "html" field, if not defined.
         """
@@ -174,13 +178,13 @@ class DactylPage:
 
         if "md" in self.data:
             # TODO: support "tail" formula
-            new_filename = re.sub(r"[.]md$", ".html", page["md"])
+            new_filename = re.sub(r"[.]md$", ".html", self.data["md"])
             if self.config.get("flatten_default_html_paths", True):
-                self.data["html"] = new_filename.replace(os.sep, "-")
-            else:
-                self.data["html"] = new_filename
+                new_filename = new_filename.replace(os.sep, "-")
+            self.data["html"] = new_filename
         elif "name" in self.data:
-            return slugify(self.data["name"]).lower()+".html"
+            new_filename = slugify(self.data["name"]).lower()+".html"
+            self.data["html"] = new_filename
         else:
             new_filename = str(time.time()).replace(".", "-")+".html"
             self.data["html"] = new_filename
@@ -225,12 +229,12 @@ class DactylPage:
             # TODO: ^ this is maybe not a warning?
             return ""
 
-    def html_content(self, context):
+    def html_content(self, context, regen=False):
         """
         Returns the page's contents as HTML. Parses Markdown & runs filters
         if any.
         """
-        if self.html is not None:
+        if self.html is not None and not regen:
             # Reuse saved results if we have them
             return self.html
 
@@ -244,16 +248,6 @@ class DactylPage:
         for filter_name in self.filters():
             if "filter_html" in dir(self.config.filters[filter_name]):
                 logger.info("... applying HTML filter %s" % filter_name)
-                ## Context:
-                    # html,
-                    # currentpage=page,
-                    # categories=categories,
-                    # pages=pages,
-                    # target=target,
-                    # current_time=current_time,
-                    # mode=mode,
-                    # config=config,
-                    # logger=logger,
                 html = self.config.filters[filter_name].filter_html(
                         html,
                         logger=logger,
@@ -263,33 +257,24 @@ class DactylPage:
         # Some filters would rather operate on a soup than a string.
         # May as well parse once and re-serialize once.
         soup = BeautifulSoup(html, "html.parser")
+        self.soup = soup
 
         # Give each header a unique ID and fill out the Table of Contents
-        self.update_toc(soup)
+        self.update_toc()
 
         # Add a "blurb" attribute to the page
         #TODO: try to migrate this and other "bonus fields" to the "load" step,
         # maybe by having a preliminary build that parses the HTML before the
         # final build?
-        self.provide_blurb(soup)
+        self.provide_blurb()
 
         # Add this page's plaintext field. ElasticSearch upload uses this.
         self.data["plaintext"] = soup.get_text()
 
         # Apply soup-based filters here
         for filter_name in self.filters():
-            if "filter_soup" in dir(config.filters[filter_name]):
+            if "filter_soup" in dir(self.config.filters[filter_name]):
                 logger.info("... applying soup filter %s" % filter_name)
-                ## Context:
-                    # soup,
-                    # currentpage=page,
-                    # categories=categories,
-                    # pages=pages,
-                    # target=target,
-                    # current_time=current_time,
-                    # mode=mode,
-                    # config=config,
-                    # logger=logger,
                 self.config.filters[filter_name].filter_soup(
                         soup,
                         logger=logger,
@@ -312,7 +297,7 @@ class DactylPage:
             return '_'
         return utext
 
-    def update_toc(self, soup):
+    def update_toc(self):
         """
         Assign unique IDs to header elements in a BeautifulSoup object, and
         update internal table of contents accordingly.
@@ -331,7 +316,7 @@ class DactylPage:
         self.toc = []
         uniqIDs = {}
         headermap = {}
-        headers = soup.find_all(name=re.compile("h[1-6]"))
+        headers = self.soup.find_all(name=re.compile("h[1-6]"))
         for h in headers:
             h_id = self.idify(h.get_text())
             if h_id not in uniqIDs.keys():
@@ -366,14 +351,14 @@ class DactylPage:
             soup.append(li)
         return str(soup)
 
-    def provide_blurb(self, soup):
+    def provide_blurb(self):
         """
         Add a "blurb" field, based on the first paragraph in the page, if one
         is not already provided.
         """
         if "blurb" in self.data:
             return
-        p = soup.find("p")
+        p = self.soup.find("p")
         while p:
             if p.get_text().strip():
                 self.data["blurb"] = p.get_text()
@@ -389,20 +374,8 @@ class DactylPage:
         """
         Render the entire page using the given template & context.
         """
-        ## Context:
-            # currentpage=currentpage,
-            # categories=categories,
-            # pages=pages,
-            # content=html_content, ## remove
-            # target=target,
-            # current_time=current_time,
-            # page_toc=page_toc, ## remove
-            # sidebar_content=page_toc, ## remove
-            # mode=mode,
-            # config=config
         # TODO: try block around html_content()?
         html_content = self.html_content(context)
-        page_toc = self.toc_from_headers()#TODO
 
         out_html = use_template.render(
             content=html_content,

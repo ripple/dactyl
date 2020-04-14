@@ -12,6 +12,8 @@ import re
 import time
 import traceback
 
+from pkg_resources import resource_stream
+
 import ruamel.yaml
 yaml = ruamel.yaml.YAML(typ="safe")
 
@@ -30,6 +32,7 @@ RESERVED_KEYS_TARGET = [
     "pages",
 ]
 ADHOC_TARGET = "__ADHOC__"
+UNTITLED_TARGET = "(Untitled)"
 
 ES_EVAL_KEY = "__dactyl_eval__"
 OPENAPI_SPEC_KEY = "openapi_specification"

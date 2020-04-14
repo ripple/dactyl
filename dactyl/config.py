@@ -8,9 +8,6 @@ from dactyl.version import __version__
 from importlib import import_module
 import importlib.util
 
-# Used for pulling in the default config file
-from pkg_resources import resource_stream
-
 # Not the file containing defaults, but the default name of user-specified conf
 DEFAULT_CONFIG_FILE = "dactyl-config.yml"
 

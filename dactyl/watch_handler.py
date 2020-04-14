@@ -1,6 +1,8 @@
 ################################################################################
 # Dactyl watch mode handler class
 ################################################################################
+from watchdog.events import PatternMatchingEventHandler
+
 from dactyl.common import *
 
 class UpdaterHandler(PatternMatchingEventHandler):

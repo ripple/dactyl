@@ -28,9 +28,7 @@ import jinja2
 from markdown import markdown
 from bs4 import BeautifulSoup
 
-# Watchdog stuff
 from watchdog.observers import Observer
-from watchdog.events import PatternMatchingEventHandler
 
 from dactyl.config import DactylConfig
 from dactyl.cli import DactylCLIParser
@@ -128,10 +126,6 @@ class DactylBuilder:
         and upload their entries to ElasticSearch if requested.
         """
 
-        logger.info("loading pages in target...")
-        pages = self.target.load_pages()
-        logger.info("... done loading pages in target")
-
         # Set up context that gets passed to several build/render functions
         # as well as filters
         context = {
@@ -139,21 +133,29 @@ class DactylBuilder:
             "config": self.config,
             "mode": self.mode,
             "target": self.target.data, # just data, for legacy compat
-            "pages": [p.data for p in pages], # just data, for legacy compat
-            "categories": self.target.categories(),
+            # pages: added after pages are loaded
+            # categories: added after pages are loaded
         }
+
+        logger.info("loading pages in target...")
+        # This step parses the MD and adds bonus fields
+        pages = self.target.load_pages(context)
+        context["pages"] = [p.data for p in pages] # just data, for legacy compat
+        context["categories"] = self.target.categories()
+        logger.info("... done loading pages in target")
+
 
         es_data = {}
         matched_only = False
         for page in pages:
             if only_page:
-                if self.match_only_page(only_page, currentpage):
+                if self.match_only_page(only_page, page):
                     matched_only = True
                 else:
-                    logger.debug("only_page mode: skipping page %s" % currentpage)
+                    logger.debug("only_page mode: skipping page %s" % page)
                     continue
 
-            page_context = {currentpage=page.data, **context}
+            page_context = {"currentpage":page.data, **context}
 
             if self.es_upload != NO_ES_UP:
                 es_template = self.template_for_page(page, mode="es")
@@ -167,7 +169,7 @@ class DactylBuilder:
                 page_text = page.render(use_template, page_context)
             elif self.mode == "md":
                 if "md" not in page.data and "__md_generator" not in page.data:
-                    logger.info("... md mode: Skipping page (no md): %s" % currentpage)
+                    logger.info("... md mode: Skipping page (no md): %s" % page)
                     continue
                 page_text = page.md_content(page_context)
             elif self.mode == "es":
@@ -225,7 +227,7 @@ class DactylBuilder:
         if not os.path.isdir(out_folder):
             logger.info("creating output folder %s" % out_folder)
             os.makedirs(out_folder)
-        fileout = os.path.join(out_path, filepath)
+        fileout = os.path.join(base_folder, filepath)
         with open(fileout, "w", encoding="utf-8") as f:
             logger.info("writing to file: %s..." % fileout)
             f.write(page_text)
@@ -364,17 +366,17 @@ class DactylBuilder:
             doc_type="article"## TODO: other options?
 
             url = "{es_base}/{index}/{doc_type}/{id}".format(
-    	        es_base=es_base,
-    	        index=es_index.lower(), # ES index names must be lowercase
-    	        doc_type=doc_type,
-    	        id=id,
-    	    )
+                es_base=es_base,
+                index=es_index.lower(), # ES index names must be lowercase
+                doc_type=doc_type,
+                id=id,
+            )
             headers = {"Content-Type": "application/json"}
             logger.info("Uploading to ES: PUT %s" % url)
-    	    r = requests.put(url, headers=headers, data=json_s)
-    	    if r.status_code >= 400:
-    	        recoverable_error("ES upload failed with error: '%s'" % r.text,
-    	                self.config.bypass_errors)
+            r = requests.put(url, headers=headers, data=json_s)
+            if r.status_code >= 400:
+                recoverable_error("ES upload failed with error: '%s'" % r.text,
+                        self.config.bypass_errors)
 
     def cleanup_es_url(self):
         """
@@ -461,20 +463,20 @@ class DactylBuilder:
         """
 
         event_handler = UpdaterHandler(builder=self)
-	    observer = Observer()
-	    observer.schedule(event_handler, self.config["template_path"], recursive=True)
-	    observer.schedule(event_handler, self.config["content_path"], recursive=True)
-	    observer.start()
-	    # The above starts an observing thread,
-	    #   so the main thread can just wait
-	    try:
-	        while True:
-	            time.sleep(1)
-	    except KeyboardInterrupt:
-	        observer.stop()
-	    observer.join()
+        observer = Observer()
+        observer.schedule(event_handler, self.config["template_path"], recursive=True)
+        observer.schedule(event_handler, self.config["content_path"], recursive=True)
+        observer.start()
+        # The above starts an observing thread,
+        #   so the main thread can just wait
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            observer.stop()
+        observer.join()
 
-def list_targets():
+def list_targets(config):
     rows = []
     for t in config["targets"]:
         if "display_name" in t:
@@ -490,7 +492,7 @@ def list_targets():
     for row in rows:
         print("{row[0]:{width}} {row[1]}".format(row=row, width=col1_width))
 
-def main(cli_args):
+def main(cli_args, config):
     if cli_args.list_targets_only:
         list_targets()
         exit(0)
@@ -529,7 +531,7 @@ def main(cli_args):
     else:
         mode = "html"
 
-    builder = DactylBuilder(target, mode)
+    builder = DactylBuilder(target, config, mode)
 
     if mode == "pdf":
         builder.pdf_filename = cli_args.pdf
@@ -570,10 +572,9 @@ def main(cli_args):
 
 def dispatch_main():
     cli = DactylCLIParser(DactylCLIParser.UTIL_BUILD)
-    global config
     config = DactylConfig(cli.cli_args)
     config.load_build_options()
-    main(cli.cli_args)
+    main(cli.cli_args, config)
 
 
 if __name__ == "__main__":
