@@ -14,13 +14,10 @@ from bs4 import BeautifulSoup
 from dactyl.common import *
 
 from dactyl.jinja_loaders import FrontMatterRemoteLoader, FrontMatterFSLoader
-# from dactyl.target import DactylTarget #circular import, fails
 
 class DactylPage:
-    def __init__(self, target, data, context, preprocess=True):
-        # assert isinstance(target, DactylTarget)
-        self.target = target
-        self.config = self.target.config
+    def __init__(self, config, data, preprocess=True):
+        self.config = config
         self.data = data
         self.rawtext = None
         self.pp_template = None
@@ -42,9 +39,9 @@ class DactylPage:
         self.html = None
         self.soup = None
 
-        self.get_html_filename()
+        self.provide_default_filename()
         self.provide_name()
-        self.html_content({"currentpage":data, **context})
+        # self.html_content({"currentpage":data, **context})
 
     def get_pp_env(self, loader):
         if (self.config["preprocessor_allow_undefined"] or
@@ -91,12 +88,18 @@ class DactylPage:
             self.pp_template = pp_env.get_template(self.data["md"])
             frontmatter = pp_env.loader.fm_map[self.data["md"]]
             merge_dicts(frontmatter, self.data)
+            # special case: let frontmatter overwrite default "html" vals
+            if PROVIDED_FILENAME_KEY in self.data and "html" in frontmatter:
+                self.data["html"] = frontmatter["html"]
             self.twolines = pp_env.loader.twolines[self.data["md"]]
         else:
             response = requests.get(url)
             if response.status_code == 200:
                 self.rawtext, frontmatter = parse_frontmatter(response.text)
                 merge_dicts(frontmatter, self.data)
+                # special case: let frontmatter overwrite default "html" vals
+                if PROVIDED_FILENAME_KEY in self.data and "html" in frontmatter:
+                    self.data["html"] = frontmatter["html"]
                 self.twolines = self.rawtext.split("\n", 2)[:2]
             else:
                 raise requests.RequestException("Status code for page was not 200")
@@ -115,6 +118,9 @@ class DactylPage:
             self.pp_template = pp_env.get_template(self.data["md"])
             frontmatter = pp_env.loader.fm_map[self.data["md"]]
             merge_dicts(frontmatter, self.data)
+            # special case: let frontmatter overwrite default "html" vals
+            if PROVIDED_FILENAME_KEY in self.data and "html" in frontmatter:
+                self.data["html"] = frontmatter["html"]
             self.twolines = pp_env.loader.twolines[self.data["md"]]
         else:
             logger.info("... reading markdown from file")
@@ -122,6 +128,9 @@ class DactylPage:
                 ftext = f.read()
             self.rawtext, frontmatter = parse_frontmatter(ftext)
             merge_dicts(frontmatter, self.data)
+            # special case: let frontmatter overwrite default "html" vals
+            if PROVIDED_FILENAME_KEY in self.data and "html" in frontmatter:
+                self.data["html"] = frontmatter["html"]
             self.twolines = self.rawtext.split("\n", 2)[:2]
         logger.debug("twolines is: '%s'"%self.twolines)
 
@@ -138,6 +147,34 @@ class DactylPage:
             self.pp_template = pp_env.get_template("_")
         else:
             self.rawtext = self.data["__md_generator"]()
+
+    def provide_default_filename(self):
+        """
+        Provide a default "html" filename to a page dictionary if one wasn't
+        explicitly specified. Frontmatter can overwrite this value, but code
+        won't see the frontmatter-provided "html" value when not building the
+        target containing that page.
+        """
+        if "html" in self.data:
+            return
+
+        logger.debug("Need to generate html filename for page %s"%self.data)
+        if "md" in self.data:
+            # TODO: support other formulas including "tail" or "pretty"
+            new_filename = re.sub(r"[.]md$", ".html", self.data["md"])
+            if self.config.get("flatten_default_html_paths", True):
+                new_filename = new_filename.replace(os.sep, "-")
+            self.data["html"] = new_filename
+        elif "name" in self.data:
+            new_filename = slugify(self.data["name"]).lower()+".html"
+            self.data["html"] = new_filename
+        else:
+            new_filename = str(time.time()).replace(".", "-")+".html"
+            self.data["html"] = new_filename
+        self.data[PROVIDED_FILENAME_KEY] = True
+
+        logger.debug("Generated html filename '%s' for page: %s" %
+                    (new_filename, self.data))
 
     def provide_name(self):
         """
@@ -159,6 +196,7 @@ class DactylPage:
                 logger.debug("... guessed title: '%s'"%self.data["name"])
                 return
             except Exception as e:
+                traceback.print_tb(e.__traceback__)
                 logger.warning("Couldn't guess title of page from twolines: %s" % e)
 
         if "md" in self.data:
@@ -169,38 +207,9 @@ class DactylPage:
                     str(self.data))
             self.data["name"] = str(time.time()).replace(".", "-")
 
-    def get_html_filename(self):
-        """
-        Add the "html" field, if not defined.
-        """
-        if "html" in self.data:
-            return
-
-        if "md" in self.data:
-            # TODO: support "tail" formula
-            new_filename = re.sub(r"[.]md$", ".html", self.data["md"])
-            if self.config.get("flatten_default_html_paths", True):
-                new_filename = new_filename.replace(os.sep, "-")
-            self.data["html"] = new_filename
-        elif "name" in self.data:
-            new_filename = slugify(self.data["name"]).lower()+".html"
-            self.data["html"] = new_filename
-        else:
-            new_filename = str(time.time()).replace(".", "-")+".html"
-            self.data["html"] = new_filename
-
-        logger.debug("Generated html filename '%s' for page: %s" %
-                    (new_filename, self.data))
 
 
     def preprocess(self, context):
-        ## Context:
-            # target=target,
-            # categories=categories,
-            # mode=mode,
-            # current_time=current_time,
-            # page_filters=page_filters,
-            # bypass_errors=bypass_errors
         md = self.pp_template.render(**context)
         # Apply markdown-based filters here
         for filter_name in self.filters():
@@ -225,8 +234,7 @@ class DactylPage:
         elif self.pp_template is not None:
             return self.preprocess(context)
         else:
-            logger.warning("md_content(): no rawtext or pp_template")
-            # TODO: ^ this is maybe not a warning?
+            logger.debug("page %s has no rawtext or pp_template"%self.data)
             return ""
 
     def html_content(self, context, regen=False):
@@ -400,8 +408,11 @@ class DactylPage:
             try:
                 result = eval(expr, {}, context)
             except Exception as e:
-                self.target.error("__dactyl_eval__ failed on expression '%s'" %
-                                    expr, e)
+                recoverable_error(
+                    "__dactyl_eval__ failed on expression '{expr}': {e}".format(
+                        expr=expr, e=e),
+                    self.config.bypass_errors
+                )
                 result = expr
             return result
 
@@ -411,8 +422,11 @@ class DactylPage:
                 try:
                     parsed_field = field_templ.render(context)
                 except jinja2.exceptions.TemplateSyntaxError as e:
-                    self.target.error("Couldn't parse value '%s' in ES template" %
-                        value, e)
+                    recoverable_error(
+                        "Couldn't parse value '{value}' in ES template: {e}".format(
+                            value, e),
+                        self.config.bypass_errors
+                    )
                 return parsed_field
             elif type(value) in (type(None), int, float, bool): # preserve literals
                 return value
@@ -423,7 +437,7 @@ class DactylPage:
             elif type(value) == list: # recurse!
                 return [render_es_field(rval) for rval in value]
             else:
-                self.target.error("Unknown type in ES template: %s"%type(value))
+                recoverable_error("Unknown type '{t}' in ES template" % type(value))
                 return ""
 
         wout = {key: render_es_field(val) for key,val in use_template.items()}
@@ -463,10 +477,8 @@ class DactylPage:
         Returns the names of filters to use when processing this page.
         """
         ffp = set(self.config["default_filters"])
-        # can skip this step, since "filters" is inherited by page anyway
-        # if "filters" in self.target.data:
-        #     ffp.update(self.target.data["filters"])
         if "filters" in self.data:
+            # self.data should already include filters inherited from target
             ffp.update(self.data["filters"])
         loaded_filters = set(self.config.filters.keys())
         # logger.debug("Removing unloaded filters from page %s...\n  Before: %s"%(page,ffp))

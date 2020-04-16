@@ -34,6 +34,7 @@ RESERVED_KEYS_TARGET = [
 ADHOC_TARGET = "__ADHOC__"
 UNTITLED_TARGET = "(Untitled)"
 
+PROVIDED_FILENAME_KEY = "__dactyl_provided_filename__"
 ES_EVAL_KEY = "__dactyl_eval__"
 OPENAPI_SPEC_KEY = "openapi_specification"
 OPENAPI_TEMPLATE_PATH_KEY = "openapi_md_template_path"

@@ -39,7 +39,7 @@ class DactylTarget:
             try:
                 self.data = next(t for t in self.config["targets"] if t["name"] == name)
             except StopIteration:
-                logger.critical("Unknown target: %s" % target)
+                logger.critical("Unknown target: %s" % name)
                 exit(1)
 
     def from_adhoc(self, inpages):
@@ -168,7 +168,7 @@ class DactylTarget:
         template_path = page_data.get(OPENAPI_TEMPLATE_PATH_KEY, None)
         swagger = ApiDef.from_path(page_data[OPENAPI_SPEC_KEY], api_slug,
                                        extra_fields, template_path)
-        return [DactylPage(self, p, context) for p in swagger.create_pagelist()]
+        return [DactylPage(self.config, p) for p in swagger.create_pagelist()]
 
     def load_pages(self, context):
         """
@@ -184,7 +184,7 @@ class DactylTarget:
             # Expand OpenAPI Spec placeholders into full page lists
             if OPENAPI_SPEC_KEY in page_data.keys():
                 try:
-                    swagger_pages = self.expand_openapi_spec(page_data, context)
+                    swagger_pages = self.expand_openapi_spec(page_data)
                     logger.debug("Adding generated OpenAPI reference pages: %s"%swagger_pages)
                     pages += swagger_pages
                 except Exception as e:
@@ -195,7 +195,7 @@ class DactylTarget:
             # then add them to the list
             else:
                 merge_dicts(self.data, page_data, RESERVED_KEYS_TARGET)
-                page_o = DactylPage(self, page_data, context)
+                page_o = DactylPage(self.config, page_data)
                 pages.append(page_o)
 
         # Check for pages that would overwrite each other
@@ -248,22 +248,15 @@ class DactylTarget:
     def make_ancestor_lookup(p):
         logger.debug("defining is_ancestor_of for %s"%p)
         def is_ancestor_of(html):
-            logger.debug("is_ancestor_of...")
             if "children" not in p.data.keys():
-                logger.debug("...no children (%s)"%list(p.data.keys()))
                 return False
             if type(p.data["children"]) != list:
-                logger.debug("...children not list")
                 return False
             for kid in p.data["children"]:
-                logger.debug("...has children")
                 if kid["html"] == html:
-                    logger.debug("direct child")
                     return True
-                logger.debug("...recursing!")
                 if kid["is_ancestor_of"](html):
                     return True
-            logger.debug("...{p} isn't an ancestor of {html}.".format(p=p,html=html))
             return False
         return is_ancestor_of
 

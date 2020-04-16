@@ -426,7 +426,7 @@ class DactylBuilder:
         abs_pdf_path = os.path.abspath(os.path.join(self.out_path, pdf_filename))
 
         # Start preparing the prince command
-        args = [config["prince_executable"], '--javascript', '-o', abs_pdf_path, '--no-warn-css']
+        args = [self.config["prince_executable"], '--javascript', '-o', abs_pdf_path, '--no-warn-css']
 
         pages = self.target.pages
         if only_page:

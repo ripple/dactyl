@@ -3,6 +3,7 @@
 ################################################################################
 from dactyl.common import *
 from dactyl.version import __version__
+from dactyl.page import DactylPage
 
 # Used to import filters.
 from importlib import import_module
@@ -36,6 +37,7 @@ class DactylConfig:
             self.load_config_from_file(DEFAULT_CONFIG_FILE)
         self.check_consistency()
         self.load_filters()
+        self.load_pages()
 
 
     def set_logging(self):
@@ -108,7 +110,27 @@ class DactylConfig:
                             (page, set(page["targets"]).difference(targetnames)),
                             self.bypass_errors)
 
+            # Provide a default "html" filename if one was omitted. Frontmatter
+            # can overwrite this value, but code won't see the
+            # frontmatter-provided "html" value outside of the current target.
+            # if "html" not in page.keys():
+            #     print("Need default 'html' value for page", page)
+            #     self.provide_default_filename(page)
+            # same for page name
+            # if "name" not in page:
+                # self.provide_page_name()
 
+    def load_pages(self):
+        """
+        Preload all config'd pages, not just target pages, to get them
+        default name values. Except openapi specs, 'cause that's work.
+        TODO: make this less of a hack
+        """
+        for page_data in self.config["pages"]:
+            if OPENAPI_SPEC_KEY not in page_data:
+                DactylPage(self, page_data)
+                # we throw away the instance but the updates to the page data
+                # persist.
 
     def load_filters(self):
         # Figure out which filters we need
@@ -187,22 +209,6 @@ class DactylConfig:
             self.config["template_allow_undefined"] = False
         if self.cli_args.pp_strict_undefined:
             self.config["preprocessor_allow_undefined"] = False
-
-    def html_filename_from(self, page):
-        """Take a page definition and choose a reasonable HTML filename for it."""
-        if "md" in page:
-            new_filename = re.sub(r"[.]md$", ".html", page["md"])
-            if self.config.get("flatten_default_html_paths", True):
-                return new_filename.replace(os.sep, "-")
-            else:
-                return new_filename
-        elif "name" in page:
-            return slugify(page["name"]).lower()+".html"
-        else:
-            new_filename = str(time.time()).replace(".", "-")+".html"
-            logger.debug("Generated filename '%s' for page: %s" %
-                        (new_filename, page))
-            return new_filename
 
 
     def __getitem__(self, key):
