@@ -24,6 +24,10 @@ class DactylTarget:
             self.from_config(name)
         self.name = self.data["name"]
 
+        # Load *ALL* pages in config, in case some of them need to be referenced
+        # by pages in this target
+        self.config.load_pages()
+
 
     def from_config(self, name=None):
         """
@@ -155,7 +159,7 @@ class DactylTarget:
         if "display_name" in fields: # Exception to reserved key rule
             self.data["display_name"] = fields["display_name"]
 
-    def expand_openapi_spec(self, page_data, context):
+    def expand_openapi_spec(self, page_data):
         """Expand OpenAPI Spec placeholders into a full page list"""
         assert OPENAPI_SPEC_KEY in page_data.keys()
 
@@ -170,7 +174,7 @@ class DactylTarget:
                                        extra_fields, template_path)
         return [DactylPage(self.config, p) for p in swagger.create_pagelist()]
 
-    def load_pages(self, context):
+    def load_pages(self):
         """
         Find the set of pages that this target should include.  At this time,
         we expand OpenAPI spec placeholders into individual pages, read

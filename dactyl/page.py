@@ -237,7 +237,7 @@ class DactylPage:
             logger.debug("page %s has no rawtext or pp_template"%self.data)
             return ""
 
-    def html_content(self, context, regen=False):
+    def html_content(self, context, regen=False, save=True):
         """
         Returns the page's contents as HTML. Parses Markdown & runs filters
         if any.
@@ -292,7 +292,8 @@ class DactylPage:
 
         logger.info("... re-rendering HTML from soup...")
         html2 = str(soup)
-        self.html = html2
+        if save:
+            self.html = html2
         return html2
 
     @staticmethod
@@ -343,6 +344,7 @@ class DactylPage:
             # ElasticSearch doesn't like dots in keys, so escape those
             escaped_name = h.get_text().replace(".","-")
             headermap[escaped_name] = "#"+h_id
+        self.data["headermap"] = headermap
 
     def legacy_toc(self):
         """
@@ -398,10 +400,14 @@ class DactylPage:
         """
         Return JSON for uploading to ElasticSearch
         """
-        if self.html is None:
-            self.html_content(context)
+        # Parse HTML to get the required "bonus" fields like blurb and toc, but
+        # don't save the "es"-rendered HTML as the final output, in case this
+        # is a build-HTML-and-upload-ES run.
+        es_context = {**context}
+        es_context["mode"] = "es"
+        self.html_content(es_context, save=False)
 
-        # Setup Jinja env for rendering strings
+        # Set up Jinja env for rendering strings
         es_env = self.get_pp_env(loader=None)#TODO: does this even work?
 
         def eval_es_string(expr):
@@ -452,9 +458,9 @@ class DactylPage:
         if mode == "es":
             # use .json as file extension instead
             fp = re.sub(r'(.+)\.html?$', r'\1.json', self.data["html"], flags=re.I)
-            if fp[:5] != ".json": # substitution didn't work
+            if fp[-5:] != ".json": # substitution didn't work
                 fp = fp+".json"
-            return f
+            return fp
         elif mode == "md":
             if "md" in self.data:
                 # reuse the input .md filename as output

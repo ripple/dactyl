@@ -103,7 +103,7 @@ class DactylBuilder:
         self.build_all(only_page=only_page)
 
     @staticmethod
-    def match_only_page(only_page, currentpage):
+    def match_only_page(only_page, currentpage_data):
         """
         Returns a boolean indicating whether currentpage (object) matches the
         only_page parameter (string). Used for build_one()
@@ -111,12 +111,12 @@ class DactylBuilder:
         if not only_page:
             return False
         if only_page[-5:] == ".html":
-            if (currentpage["html"] == only_page or
-                    os.path.basename(currentpage["html"]) == only_page):
+            if (currentpage_data["html"] == only_page or
+                    os.path.basename(currentpage_data["html"]) == only_page):
                 return True
         elif only_page[-3:] == ".md":
-            if "md" in currentpage and (currentpage["md"] == only_page or
-                    os.path.basename(currentpage["md"]) == only_page):
+            if "md" in currentpage_data and (currentpage_data["md"] == only_page or
+                    os.path.basename(currentpage_data["md"]) == only_page):
                 return True
         return False
 
@@ -126,6 +126,10 @@ class DactylBuilder:
         and upload their entries to ElasticSearch if requested.
         """
 
+        logger.info("loading pages in target...")
+        pages = self.target.load_pages()
+        logger.info("... done loading pages in target")
+
         # Set up context that gets passed to several build/render functions
         # as well as filters
         context = {
@@ -133,23 +137,15 @@ class DactylBuilder:
             "config": self.config,
             "mode": self.mode,
             "target": self.target.data, # just data, for legacy compat
-            # pages: added after pages are loaded
-            # categories: added after pages are loaded
+            "pages": [p.data for p in pages], # just data, for legacy compat
+            "categories": self.target.categories(),
         }
-
-        logger.info("loading pages in target...")
-        # This step parses the MD and adds bonus fields
-        pages = self.target.load_pages(context)
-        context["pages"] = [p.data for p in pages] # just data, for legacy compat
-        context["categories"] = self.target.categories()
-        logger.info("... done loading pages in target")
-
 
         es_data = {}
         matched_only = False
         for page in pages:
             if only_page:
-                if self.match_only_page(only_page, page):
+                if self.match_only_page(only_page, page.data):
                     matched_only = True
                 else:
                     logger.debug("only_page mode: skipping page %s" % page)
@@ -157,10 +153,10 @@ class DactylBuilder:
 
             page_context = {"currentpage":page.data, **context}
 
-            if self.es_upload != NO_ES_UP:
+            if self.mode == "es" or self.es_upload != NO_ES_UP:
                 es_template = self.template_for_page(page, mode="es")
-                es_json_s = page.es_json(template, page_context)
-                es_page_id = target.name+"."+page.data["html"]
+                es_json_s = page.es_json(es_template, page_context)
+                es_page_id = self.target.name+"."+page.data["html"]
                 es_data[es_page_id] = es_json_s
 
             if self.mode == "html" or self.mode == "pdf":
@@ -189,7 +185,7 @@ class DactylBuilder:
             self.upload_es(es_data)
 
         if self.mode == "pdf":
-            self.assemble_pdf()
+            self.assemble_pdf(only_page)
 
 
     def template_for_page(self, page, mode=None):
@@ -417,7 +413,7 @@ class DactylBuilder:
 
         # self.staging_folder should contain HTML files by now. Copy static
         # files there too, since Prince will need them
-        self.copy_static(out_path=self.staging_folder)
+        self.copy_static(True, True, out_path=self.staging_folder)
 
         # Make sure the path we're going to write the PDF to exists
         if not os.path.isdir(self.out_path):
@@ -430,13 +426,13 @@ class DactylBuilder:
 
         pages = self.target.pages
         if only_page:
-            pages = [p for p in pages if self.match_only_page(only_page, p)][:1]
+            pages = [p for p in pages if self.match_only_page(only_page, p.data)][:1]
             if not len(pages):
                 recoverable_error("Couldn't find 'only' page %s" % only_page,
                     self.config.bypass_errors)
                 return
         # Each HTML output file in the target is another arg to prince
-        args += [p["html"] for p in pages]
+        args += [p.data["html"] for p in pages]
 
         # Change dir to the tempfiles path; this may avoid a bug in Prince
         old_cwd = os.getcwd()
@@ -494,7 +490,7 @@ def list_targets(config):
 
 def main(cli_args, config):
     if cli_args.list_targets_only:
-        list_targets()
+        list_targets(config)
         exit(0)
 
     if cli_args.pages:

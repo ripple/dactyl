@@ -37,7 +37,7 @@ class DactylConfig:
             self.load_config_from_file(DEFAULT_CONFIG_FILE)
         self.check_consistency()
         self.load_filters()
-        self.load_pages()
+        #self.load_pages()
 
 
     def set_logging(self):
@@ -181,22 +181,6 @@ class DactylConfig:
                             ["  %s: %s" % (le["Path"], le["Error"])
                                 for le in loading_errors])
                         ), self.bypass_errors)
-
-    def load_style_rules(self):
-        """Reads word and phrase substitution files into the config"""
-        if "word_substitutions_file" in self.config:
-            with open(self.config["word_substitutions_file"], "r", encoding="utf-8") as f:
-                self.config["disallowed_words"] = yaml.load(f)
-        else:
-            logger.warning("No 'word_substitutions_file' found in config.")
-            self.config["disallowed_words"] = {}
-
-        if "phrase_substitutions_file" in self.config:
-            with open(self.config["phrase_substitutions_file"], "r", encoding="utf-8") as f:
-                self.config["disallowed_phrases"] = yaml.load(f)
-        else:
-            logger.warning("No 'phrase_substitutions_file' found in config.")
-            self.config["disallowed_phrases"] = {}
 
     def load_build_options(self):
         """Overwrites some build-specific options based on the CLI params"""
