@@ -7,6 +7,7 @@
 import jinja2
 import json
 import requests
+import datetime
 from urllib.parse import unquote as urldecode
 from copy import deepcopy
 from ruamel.yaml.comments import CommentedMap as YamlMap
@@ -166,7 +167,7 @@ class ApiDef:
             schema["title"] = title
             if "example" in schema:
                 try:
-                    j = json.dumps(schema["example"], indent=4, default=str)
+                    j = json.dumps(schema["example"], indent=4, default=self.json_default)
                     schema["example"] = j
                 except Exception as e:
                     logger.debug("%s example isn't json: %s"%(title,j))
@@ -244,9 +245,10 @@ class ApiDef:
                     return ""
 
             try:
-                ex_pp = json.dumps(ex, indent=4, separators=(',', ': '))
-            except TypeError:
-                logger.debug("json dumps failed on example: %s"%ex)
+                ex_pp = json.dumps(ex, indent=4, separators=(',', ': '), default=self.json_default)
+            except TypeError as e:
+                traceback.print_tb(e.__traceback__)
+                logger.debug("json dumps failed on example '%s'"%ex)
                 ex_pp = ex
             return ex_pp
 
@@ -391,6 +393,16 @@ class ApiDef:
                 s += "\\"
             s += c
         return s
+
+    @staticmethod
+    def json_default(o):
+        """
+        Serializer function for JSON (from YAML)
+        """
+        if isinstance(o, (datetime.date, datetime.datetime)):
+            return o.isoformat()
+        else:
+            return str(o)
 
     def type_link(self, title):
         # TODO: in "md" mode, use ".md" suffix

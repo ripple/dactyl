@@ -23,8 +23,9 @@ class DactylPage:
         self.pp_template = None
         self.twolines = None
         self.toc = []
+        self.ffp = None
 
-        logger.debug("Loading page %s" % self.data)
+        logger.debug("Loading page %s" % self)
         # TODO: if bypass_errors, do we retry w/out preprocessing?
         if "md" in self.data:
             if (self.data["md"][:5] == "http:" or
@@ -132,7 +133,6 @@ class DactylPage:
             if PROVIDED_FILENAME_KEY in self.data and "html" in frontmatter:
                 self.data["html"] = frontmatter["html"]
             self.twolines = self.rawtext.split("\n", 2)[:2]
-        # logger.debug("twolines is: '%s'"%self.twolines)
 
 
     def load_from_generator(self, preprocess):
@@ -158,7 +158,7 @@ class DactylPage:
         if "html" in self.data:
             return
 
-        logger.debug("Need to generate html filename for page %s"%self.data)
+        logger.debug("Need to generate html filename for page %s" % self)
         if "md" in self.data:
             # TODO: support other formulas including "tail" or "pretty"
             new_filename = re.sub(r"[.]md$", ".html", self.data["md"])
@@ -174,7 +174,7 @@ class DactylPage:
         self.data[PROVIDED_FILENAME_KEY] = True
 
         logger.debug("Generated html filename '%s' for page: %s" %
-                    (new_filename, self.data))
+                    (new_filename, self))
 
     def provide_name(self):
         """
@@ -185,7 +185,7 @@ class DactylPage:
 
         if "title" in self.data: # Port over the "title" attribute instead
             self.data["name"] = self.data["title"]
-            logger.debug("Guessed page name from title for page %s" % self.data)
+            logger.debug("Guessed page name from title for page %s" % self)
             return
         elif self.twolines:
             logger.debug("Guessing page name from first two lines...")
@@ -203,7 +203,7 @@ class DactylPage:
             self.data["name"] = self.data["md"]
             logger.debug("Using placeholder name for page based on md path: '%s'"%self.data["name"])
         else:
-            logger.warning("Using a placeholder name for page: %s" %
+            logger.warning("Using a placeholder name for page %s" %
                     str(self.data))
             self.data["name"] = str(time.time()).replace(".", "-")
 
@@ -487,12 +487,30 @@ class DactylPage:
         """
         Returns the names of filters to use when processing this page.
         """
+        if self.ffp:
+            # Return saved results
+            return self.ffp
         ffp = set(self.config["default_filters"])
         if "filters" in self.data:
             # self.data should already include filters inherited from target
             ffp.update(self.data["filters"])
         loaded_filters = set(self.config.filters.keys())
-        # logger.debug("Removing unloaded filters from page %s...\n  Before: %s"%(page,ffp))
         ffp &= loaded_filters
         logger.debug("...filters for page: %s"%ffp)
+        self.ffp = ffp
         return ffp
+
+    def __repr__(self):
+        if "name" in self.data and "html" in self.data:
+            return "<Page '{name}' ({html})>".format(
+                name=self.data["name"],
+                html=self.data["html"],
+            )
+        if "name" in self.data:
+            return "<Page '{name}'>".format(name=self.data["name"])
+        if "html" in self.data:
+            return "<Page ({html})>".format(html=self.data["html"])
+        strdata = str(self.data)
+        if len(strdata) > 30:
+            strdata = strdata[:27]+"..."
+        return "<Page \{{strdata}\}>".format(strdata=strdata)

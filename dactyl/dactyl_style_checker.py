@@ -83,13 +83,13 @@ class DactylStyleChecker:
 
         style_issues = []
         for page in pages:
-            logger.info("Checking page %s..." % page.data["name"])
+            logger.info("Checking page %s..." % page)
             page_context = {"currentpage":page.data, **context}
             page.html_content(page_context) # This defines page.soup
             logger.debug("page.soup is... %s"%page.soup)
             # If the page has no content, soup can be empty and that's OK.
             if not page.soup.find_all():
-                logger.info("...page %s has no content."%page.data["name"])
+                logger.info("...page %s has no content."%page)
                 continue
 
             page_issues = []

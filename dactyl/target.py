@@ -192,7 +192,8 @@ class DactylTarget:
             if OPENAPI_SPEC_KEY in page_data.keys():
                 try:
                     swagger_pages = self.expand_openapi_spec(page_data)
-                    logger.debug("Adding generated OpenAPI reference pages: %s"%swagger_pages)
+                    logger.debug("Adding generated OpenAPI reference pages: %s" %
+                                    [p.data["name"] for p in swagger_pages])
                     pages += swagger_pages
                 except Exception as e:
                     recoverable_error("Error when parsing OpenAPI definition %s: %s" %
@@ -254,7 +255,7 @@ class DactylTarget:
 
     @staticmethod
     def make_ancestor_lookup(p):
-        logger.debug("defining is_ancestor_of for %s"%p)
+        # logger.debug("defining is_ancestor_of for %s"%p)
         def is_ancestor_of(html):
             if "children" not in p.data.keys():
                 return False
