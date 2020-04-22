@@ -4,12 +4,6 @@
 
 | Summary | Path |
 |:--------|:-----|
-{%- set reflinks = [] -%}
 {%- for path,method,endpoint in endpoints_by_tag(tag.name) %}
-{%- set _ = reflinks.append("["+endpoint.summary+"]: "+method_link(path, method, endpoint) ) %}
-| [{{endpoint.summary}}][] | [`{{method|upper}} {{path}}`][{{endpoint.summary}}] |
+| [{{md_escape(endpoint.summary)}}]({{method_link(path, method, endpoint)}}) | [`{{method|upper}} {{path}}`]({{method_link(path, method, endpoint)}}) |
 {%- endfor %}
-
-{% for reflink in reflinks -%}
-{{reflink}}
-{% endfor %}

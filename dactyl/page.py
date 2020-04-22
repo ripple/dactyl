@@ -381,9 +381,9 @@ class DactylPage:
             else:
                 p = p.find_next_sibling("p")
         else:
-            logger.debug("Couldn't find a paragraph with text in page %s." % self.data)
-            # Fall back to reusing the page name as the blurb
-            self.data["blurb"] = self.data["name"]
+            logger.debug("Couldn't find a paragraph with text in page %s." % self.data["name"])
+            # No text? No blurb.
+            self.data["blurb"] = ""
 
     def render(self, use_template, context):
         """

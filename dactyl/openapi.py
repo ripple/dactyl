@@ -164,6 +164,12 @@ class ApiDef:
         for key,schema in schemas.items():
             title = schema.get("title", key)
             schema["title"] = title
+            if "example" in schema:
+                try:
+                    j = json.dumps(schema["example"], indent=4, default=str)
+                    schema["example"] = j
+                except Exception as e:
+                    logger.debug("%s example isn't json: %s"%(title,j))
         self.deref_swag()
 
         # Find all tags used in endpoints and add any undefined ones to the
@@ -226,15 +232,21 @@ class ApiDef:
         if not content:
             return ""
         for mediatype,content_inner in content.items():
-            try:
-                ex = list(content_inner["examples"].values())[0]["value"]
-            except (IndexError, KeyError, AttributeError) as e:
-                logger.debug("Media type %s didn't have an example value"%mediatype)
-                return ""
+            if "example" in content_inner:
+                # single example
+                ex = content_inner["example"]
+            else:
+                try:
+                    # multiple examples? use the first one
+                    ex = list(content_inner["examples"].values())[0]["value"]
+                except (IndexError, KeyError, AttributeError) as e:
+                    logger.debug("Media type %s didn't have an example value"%mediatype)
+                    return ""
 
             try:
                 ex_pp = json.dumps(ex, indent=4, separators=(',', ': '))
             except TypeError:
+                logger.debug("json dumps failed on example: %s"%ex)
                 ex_pp = ex
             return ex_pp
 
@@ -292,6 +304,8 @@ class ApiDef:
             "blurb": "List of methods/endpoints available in "+self.api_title,
             "category": "All "+self.api_title+" Methods",
         })
+        if "parent" not in toc_page:
+            toc_page["parent"] = "index.html"
         pages.append(toc_page)
 
         # add a table of contents per tag
@@ -303,6 +317,7 @@ class ApiDef:
                 "html": self.api_slug+"-"+tag["name"]+METHOD_TOC_SUFFIX+".html",
                 "blurb": tag.get("description",""),
                 "category": tag["name"].title()+" Methods",
+                "parent": toc_page["html"],
             })
             pages.append(tag_toc_page)
 
@@ -318,6 +333,7 @@ class ApiDef:
                     "html": self.method_link(path, method, endpoint),
                     "blurb": endpoint.get("description", endpoint["operationId"]+" method"),
                     "category": tag0+" Methods",
+                    "parent": tag_toc_page["html"],
                 })
                 pages.append(method_page)
 
@@ -329,6 +345,7 @@ class ApiDef:
             "html": self.api_slug+DATA_TYPES_SUFFIX+".html",
             "blurb": "List of all data types defined for "+self.api_title,
             "category": self.api_title+" Data Types",
+            "parent": toc_page["html"],
         })
         pages.append(data_types_page)
 
@@ -342,6 +359,7 @@ class ApiDef:
                 "html": self.type_link(title),
                 "blurb": "Definition of "+title+" data type",
                 "category": self.api_title+" Data Types",
+                "parent": data_types_page["html"],
             })
             pages.append(data_type_page)
 
@@ -355,9 +373,24 @@ class ApiDef:
             "HTTP_METHODS": HTTP_METHODS,
             "HTTP_STATUS_CODES": HTTP_STATUS_CODES,
             "spec": self.swag,
-            "debug": print,#TODO:remove
+            "debug": logger.debug,
             "slugify": slugify,
+            "md_escape": self.md_escape,
         }
+
+    @staticmethod
+    def md_escape(text):
+        """
+        Escape potential Markdown syntax in a string.
+        This is meant to be passed to the templates.
+        """
+        specialchars = "\\`*_{}[]()#+-.!"
+        s = ""
+        for c in text:
+            if c in specialchars:
+                s += "\\"
+            s += c
+        return s
 
     def type_link(self, title):
         # TODO: in "md" mode, use ".md" suffix

@@ -43,7 +43,10 @@
 {% endfor %}{% endif %}
 {% if pattern is defined %}- **Pattern:** `{{pattern}}`
 {% endif -%}
-{% if example is defined %}- **Example:** `{{example}}`
+{% if example is defined %}- **Example:**
+
+        {{example|indent(8,indentfirst=False)}}
+
 {% endif -%}
 
 {% if properties is defined %}

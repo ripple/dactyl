@@ -18,15 +18,9 @@ View API methods by category:
 
 | Summary | Path |
 |:--------|:-----|
-{%- set reflinks = [] -%}
 {%- for path,method,endpoint in endpoints_by_tag(tag.name) %}
-{%- set _ = reflinks.append("["+endpoint.summary+"]: "+method_link(path, method, endpoint) ) %}
-| [{{endpoint.summary}}][] | [`{{method|upper}} {{path}}`][{{endpoint.summary}}] |
+| [{{endpoint.summary}}]({{method_link(path, method, endpoint)}}) | [`{{method|upper}} {{path}}`]({{method_link(path, method, endpoint)}}) |
 {%- endfor %}
-
-{% for reflink in reflinks -%}
-{{reflink}}
-{% endfor %}
 
 {% endif %}
 {% endfor %}
