@@ -7,6 +7,7 @@
 import jinja2
 import json
 import requests
+from urllib.parse import unquote as urldecode
 from copy import deepcopy
 from ruamel.yaml.comments import CommentedMap as YamlMap
 from ruamel.yaml.comments import CommentedSeq as YamlSeq
@@ -86,9 +87,28 @@ class ApiDef:
                 jinja2.FileSystemLoader(template_path),
                 jinja2.PackageLoader(__name__)
             ])
-        self.env = jinja2.Environment(loader=loader)
+        self.env = jinja2.Environment(loader=loader, extensions=['jinja2.ext.i18n'])
         self.env.lstrip_blocks = True
         self.env.rstrip_blocks = True
+
+    @staticmethod
+    def dig(parts, context):
+        """
+        Search a context object for something matching a $ref (recursive)
+        """
+        key = parts[0].replace("~1", "/").replace("~0", "~") # unescaped
+        key = urldecode(key)
+        try:
+            key = int(key)
+        except:
+            pass
+        if key not in context.keys():
+            raise IndexError(key)
+
+        if len(parts) == 1:
+            return context[key]
+        else:
+            return ApiDef.dig(parts[1:], context[key])
 
     def deref(self, ref):
         """Look through the YAML for a specific reference key, and return
@@ -103,21 +123,7 @@ class ApiDef:
         parts = ref[2:].split("/")
         assert len(parts) > 0
 
-        def dig(parts, context):
-            key = parts[0].replace("~1", "/").replace("~0", "~") # unescaped
-            try:
-                key = int(key)
-            except:
-                pass
-            if key not in context.keys():
-                raise IndexError(key)
-
-            if len(parts) == 1:
-                return context[key]
-            else:
-                return dig(parts[1:], context[key])
-
-        return dig(parts, self.swag)
+        return self.dig(parts, self.swag)
 
     def deref_swag(self):
         """

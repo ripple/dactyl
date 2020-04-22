@@ -17,6 +17,8 @@ from pkg_resources import resource_stream
 import ruamel.yaml
 yaml = ruamel.yaml.YAML(typ="safe")
 
+import gettext
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
@@ -38,12 +40,15 @@ PROVIDED_FILENAME_KEY = "__dactyl_provided_filename__"
 ES_EVAL_KEY = "__dactyl_eval__"
 OPENAPI_SPEC_KEY = "openapi_specification"
 OPENAPI_TEMPLATE_PATH_KEY = "openapi_md_template_path"
+OPENAPI_SPEC_PLACEHOLDER = "__OPENAPI_SPEC_PLACEHOLDER__"
 API_SLUG_KEY = "api_slug"
 BUILTIN_ES_TEMPLATE = "templates/template-es.json"
 
 
-def recoverable_error(msg, bypass_errors):
+def recoverable_error(msg, bypass_errors, error=None):
     """Logs a warning/error message and exits if bypass_errors==False"""
+    if not bypass_errors and error is not None:
+        traceback.print_tb(error.__traceback__)
     logger.error(msg)
     if not bypass_errors:
         exit(1)

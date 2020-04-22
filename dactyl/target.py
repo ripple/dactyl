@@ -14,6 +14,7 @@ class DactylTarget:
         assert isinstance(config, DactylConfig)
         self.config = config
         self.pages = None
+        self.cover = None
 
         # Set self.data based on the input type
         if inpages is not None:
@@ -84,7 +85,7 @@ class DactylTarget:
         self.data = t
         self.config["targets"].append(t)
 
-    def from_openapi(spec_path):
+    def from_openapi(self, spec_path):
         """
         Create a target from an API spec path.
         """
@@ -125,22 +126,16 @@ class DactylTarget:
         Add the default cover page to the pagelist where self.load_pages()
         will find it.
         """
-        coverpage = self.config["cover_page"]
-        coverpage["targets"] = [self.name]
-        self.config["pages"].insert(0, coverpage)
+        coverpage_data = self.config["cover_page"]
+        coverpage_data["targets"] = [self.name]
+        # self.config["pages"].insert(0, coverpage)
+        self.cover = DactylPage(self.config, coverpage_data)
 
     def default_pdf_name(self):
         """Choose a reasonable name for a PDF file in case one isn't specified."""
         return self.slug_name(self.config["pdf_filename_fields"],
                               self.config["pdf_filename_separator"]) + ".pdf"
 
-    def error(self, msg, err=None):
-        if err:
-            traceback.print_tb(e.__traceback__)
-            recoverable_error("{msg}: {err}".format(msg=msg, err=repr(e)),
-                              self.config.bypass_errors)
-        else:
-            recoverable_error(msg, self.config.bypass_errors)
 
     def should_include(self, page):
         """Report whether a given page should be part of this target"""
@@ -181,7 +176,15 @@ class DactylTarget:
         frontmatter, and so on. Save it to self.pages for later reference.
         """
         pages = []
-        for page_data in self.config["pages"]:
+        if self.cover:
+            pages.append(self.cover)
+        for i, page_candidate in enumerate(self.config.page_cache):
+            if page_candidate == OPENAPI_SPEC_PLACEHOLDER:
+                page_data = self.config["pages"][i]
+                logger.debug("loading API spec: {pg}".format(pg=page_data))
+            else:
+                page_data = page_candidate.data
+
             if not self.should_include(page_data):
                 continue # Skip out-of-target pages
 
@@ -192,15 +195,15 @@ class DactylTarget:
                     logger.debug("Adding generated OpenAPI reference pages: %s"%swagger_pages)
                     pages += swagger_pages
                 except Exception as e:
-                    self.error("Error when parsing OpenAPI definition %s" % page_data, e)
+                    recoverable_error("Error when parsing OpenAPI definition %s: %s" %
+                                      (page_data, e), self.config.bypass_errors)
                     # Omit the API def from the page list if an error occurred
 
-            # Normal in-target pages; pass on target key-values,
-            # then add them to the list
+            # Load cached page object; pass on target key-values,
+            # then add it to the list
             else:
                 merge_dicts(self.data, page_data, RESERVED_KEYS_TARGET)
-                page_o = DactylPage(self.config, page_data)
-                pages.append(page_o)
+                pages.append(page_candidate)
 
         # Check for pages that would overwrite each other
         html_outs = set()
@@ -208,8 +211,9 @@ class DactylTarget:
             if "html" not in p.data.keys():
                 logger.error("page has no html somehow? %s"%p.data)
             if p.data["html"] in html_outs:
-                self.error(("Repeated output filename '%s': the earlier "+
-                    "instances will be overwritten") % p.data["html"])
+                recoverable_error(("Repeated output filename '%s'. The earlier "+
+                    "instances will be overwritten") % p.data["html"],
+                    self.config.bypass_errors)
             html_outs.add(p.data["html"])
 
         self.pages = pages

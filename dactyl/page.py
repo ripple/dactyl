@@ -24,7 +24,7 @@ class DactylPage:
         self.twolines = None
         self.toc = []
 
-        logger.info("Preparing page %s" % self.data)
+        logger.debug("Loading page %s" % self.data)
         # TODO: if bypass_errors, do we retry w/out preprocessing?
         if "md" in self.data:
             if (self.data["md"][:5] == "http:" or
@@ -51,7 +51,7 @@ class DactylPage:
             preferred_undefined = jinja2.StrictUndefined
 
         pp_env = jinja2.Environment(undefined=preferred_undefined,
-                loader=loader)
+                extensions=['jinja2.ext.i18n'], loader=loader)
 
         # Add custom "defined_and_" tests
         def defined_and_equalto(a,b):
@@ -112,7 +112,7 @@ class DactylPage:
         """
         assert "md" in self.data
         if preprocess:
-            logger.info("... loading markdown from filesystem")
+            logger.debug("... loading markdown from filesystem")
             path = self.config["content_path"]
             pp_env = self.get_pp_env(loader=FrontMatterFSLoader(path))
             self.pp_template = pp_env.get_template(self.data["md"])
@@ -132,7 +132,7 @@ class DactylPage:
             if PROVIDED_FILENAME_KEY in self.data and "html" in frontmatter:
                 self.data["html"] = frontmatter["html"]
             self.twolines = self.rawtext.split("\n", 2)[:2]
-        logger.debug("twolines is: '%s'"%self.twolines)
+        # logger.debug("twolines is: '%s'"%self.twolines)
 
 
     def load_from_generator(self, preprocess):
@@ -280,6 +280,7 @@ class DactylPage:
         self.data["plaintext"] = soup.get_text()
 
         # Apply soup-based filters here
+        logger.warning("Filters to run: %s"%self.filters())
         for filter_name in self.filters():
             if "filter_soup" in dir(self.config.filters[filter_name]):
                 logger.info("... applying soup filter %s" % filter_name)
@@ -353,12 +354,16 @@ class DactylPage:
         """
         soup = BeautifulSoup("", "html.parser")
         for h in self.toc:
+            if h["level"] > 3:
+                # legacy toc only goes down to h3
+                continue
             a = soup.new_tag("a", href="#"+h["id"])
             a.string = h["text"]
             li = soup.new_tag("li")
             li["class"] = "level-{n}".format(n=h["level"])
             li.append(a)
             soup.append(li)
+            soup.append("\n")
         return str(soup)
 
     def provide_blurb(self):
@@ -489,5 +494,5 @@ class DactylPage:
         loaded_filters = set(self.config.filters.keys())
         # logger.debug("Removing unloaded filters from page %s...\n  Before: %s"%(page,ffp))
         ffp &= loaded_filters
-        # logger.debug("  After: %s"%ffp)
+        logger.debug("...filters for page: %s"%ffp)
         return ffp

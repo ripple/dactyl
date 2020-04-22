@@ -286,9 +286,10 @@ class DactylBuilder:
             preferred_undefined = jinja2.Undefined
         if "template_path" in self.config:
             env = jinja2.Environment(undefined=preferred_undefined,
+                    extensions=['jinja2.ext.i18n'],
                     loader=jinja2.FileSystemLoader(self.config["template_path"]))
         else:
-            env = setup_fallback_env()
+            env = self.setup_fallback_env()
 
         # Customize env: add custom tests, lstrip & trim blocks
         def defined_and_equalto(a,b):
@@ -300,6 +301,27 @@ class DactylBuilder:
 
         env.lstrip_blocks = True
         env.trim_blocks = True
+
+        # Set up internationalization
+        mo_file = self.target.data.get("locale_file", None)
+        if mo_file:
+            logger.debug("Loading strings from locale_file %s"%mo_file)
+            try:
+                with open(mo_file, "rb") as f:
+                    tl = gettext.GNUTranslations(f)
+                # TODO: add_fallback?? maybe a general config option there...
+            except Exception as e:
+                recoverable_error("Failed to load locale_file %s: %s" %
+                                  (mo_file, e), self.config.bypass_errors,
+                                  error=e)
+                tl = gettext.NullTranslations()
+        else:
+            logger.debug("No locale_file setting found.")
+            tl = gettext.NullTranslations()
+        env.install_gettext_translations(tl, newstyle=True)
+        # env.install_gettext_callables(gettext.gettext, gettext.ngettext, newstyle=True)
+
+
         self.html_env = env
         return env
 
@@ -308,10 +330,12 @@ class DactylBuilder:
         Set up a Jinja env to load templates from the Dactyl package. These
         templates assume that we're not using StrictUndefined.
         """
-        env = jinja2.Environment(loader=jinja2.PackageLoader(__name__))
+        env = jinja2.Environment(loader=jinja2.PackageLoader(__name__),
+                                 extensions=['jinja2.ext.i18n'])
         env.lstrip_blocks = True
         env.trim_blocks = True
         self.fallback_env = env
+        # env.install_gettext_callables(gettext.gettext, gettext.ngettext, newstyle=True)
         return env
 
     def get_template(self, template_name):
@@ -319,11 +343,6 @@ class DactylBuilder:
         Gets the named Jinja template from the user-specified template folder,
         and falls back to the Dactyl built-in templates if it doesn't.
         """
-        # Nevermind - these should always be filled in during __init__
-        # if self.html_env is None:
-        #     self.setup_html_env()
-        # if self.fallback_env is None:
-        #     self.setup_fallback_env()
 
         try:
             t = self.html_env.get_template(template_name)
@@ -336,17 +355,20 @@ class DactylBuilder:
         """
         Loads an ElasticSearch template (as JSON)
         """
-        template_path = os.path.join(self.config["template_path"], filename)
         try:
+            template_path = os.path.join(self.config["template_path"], filename)
             with open(template_path, encoding="utf-8") as f:
                 es_template = json.load(f)
-        except (FileNotFoundError, json.decoder.JSONDecodeError) as e:
+        except (FileNotFoundError, json.decoder.JSONDecodeError, KeyError) as e:
             if type(e) == FileNotFoundError:
                 logger.debug("Didn't find ES template (%s), falling back to default" %
                     template_path)
             elif type(e) == json.decoder.JSONDecodeError:
                 recoverable_error(("Error JSON-decoding ES template (%s)" %
-                    template_path), self.config.bypass_errors)
+                    template_path), self.config.bypass_errors,
+                    error=e)
+            elif type(e) == KeyError:
+                logger.debug("template_path isn't defined. No config file?")
             with resource_stream(__name__, BUILTIN_ES_TEMPLATE) as f:
                 es_template = json.load(f)
         return es_template

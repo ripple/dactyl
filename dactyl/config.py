@@ -37,7 +37,8 @@ class DactylConfig:
             self.load_config_from_file(DEFAULT_CONFIG_FILE)
         self.check_consistency()
         self.load_filters()
-        #self.load_pages()
+
+        self.page_cache = []
 
 
     def set_logging(self):
@@ -123,14 +124,15 @@ class DactylConfig:
     def load_pages(self):
         """
         Preload all config'd pages, not just target pages, to get them
-        default name values. Except openapi specs, 'cause that's work.
-        TODO: make this less of a hack
+        default name values.
         """
+
         for page_data in self.config["pages"]:
             if OPENAPI_SPEC_KEY not in page_data:
-                DactylPage(self, page_data)
-                # we throw away the instance but the updates to the page data
-                # persist.
+                self.page_cache.append(DactylPage(self, page_data))
+            else:
+                # OpenAPI specs are too much work to load at this time
+                self.page_cache.append(OPENAPI_SPEC_PLACEHOLDER)
 
     def load_filters(self):
         # Figure out which filters we need
