@@ -513,4 +513,4 @@ class DactylPage:
         strdata = str(self.data)
         if len(strdata) > 30:
             strdata = strdata[:27]+"..."
-        return "<Page \{{strdata}\}>".format(strdata=strdata)
+        return "<Page {{{strdata}}}>".format(strdata=strdata)
