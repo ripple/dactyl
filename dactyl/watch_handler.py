@@ -19,6 +19,7 @@ class UpdaterHandler(PatternMatchingEventHandler):
         # Set builder to bypass errors, because a file temporarily not existing
         #  should not cause watch mode to fail
         self.builder.config.bypass_errors=True
+        self.builder.config.load_pages()
         self.builder.build_all()
         logger.info("done rendering")
-        builder.copy_static()
+        self.builder.copy_static()

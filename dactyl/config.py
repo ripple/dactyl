@@ -111,25 +111,17 @@ class DactylConfig:
                             (page, set(page["targets"]).difference(targetnames)),
                             self.bypass_errors)
 
-            # Provide a default "html" filename if one was omitted. Frontmatter
-            # can overwrite this value, but code won't see the
-            # frontmatter-provided "html" value outside of the current target.
-            # if "html" not in page.keys():
-            #     print("Need default 'html' value for page", page)
-            #     self.provide_default_filename(page)
-            # same for page name
-            # if "name" not in page:
-                # self.provide_page_name()
-
     def load_pages(self):
         """
         Preload all config'd pages, not just target pages, to get them
         default name values.
         """
 
+        self.page_cache = []
+        skip_pp = self.config.get("skip_preprocessor", False)
         for page_data in self.config["pages"]:
             if OPENAPI_SPEC_KEY not in page_data:
-                self.page_cache.append(DactylPage(self, page_data))
+                self.page_cache.append(DactylPage(self, page_data, skip_pp))
             else:
                 # OpenAPI specs are too much work to load at this time
                 self.page_cache.append(OPENAPI_SPEC_PLACEHOLDER)

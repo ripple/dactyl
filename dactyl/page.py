@@ -16,7 +16,7 @@ from dactyl.common import *
 from dactyl.jinja_loaders import FrontMatterRemoteLoader, FrontMatterFSLoader
 
 class DactylPage:
-    def __init__(self, config, data, preprocess=True):
+    def __init__(self, config, data, skip_pp=False):
         self.config = config
         self.data = data
         self.rawtext = None
@@ -24,22 +24,12 @@ class DactylPage:
         self.twolines = None
         self.toc = []
         self.ffp = None
-
-        logger.debug("Loading page %s" % self)
-        # TODO: if bypass_errors, do we retry w/out preprocessing?
-        if "md" in self.data:
-            if (self.data["md"][:5] == "http:" or
-                    self.data["md"][:6] == "https:"):
-                self.load_from_url(preprocess)
-            else:
-                self.load_from_disk(preprocess)
-        elif "__md_generator" in self.data:
-            self.load_from_generator(preprocess)
-
+        self.skip_pp = skip_pp
         self.md = None
         self.html = None
         self.soup = None
 
+        self.load_content()
         self.provide_default_filename()
         self.provide_name()
         # self.html_content({"currentpage":data, **context})
@@ -75,7 +65,21 @@ class DactylPage:
 
         return pp_env
 
-    def load_from_url(self, preprocess):
+    def load_content(self):
+        """
+        Dispatcher for loading this page's content based on the "md" field.
+        """
+        logger.debug("Loading page %s" % self)
+        if "md" in self.data:
+            if (self.data["md"][:5] == "http:" or
+                    self.data["md"][:6] == "https:"):
+                self.load_from_url()
+            else:
+                self.load_from_disk()
+        elif "__md_generator" in self.data:
+            self.load_from_generator()
+
+    def load_from_url(self):
         """
         Read file over HTTP(S),
         as either raw text or as a Jinja template,
@@ -84,7 +88,7 @@ class DactylPage:
         url = self.data["md"]
         logger.info("Loading page from URL: %s"%url)
         assert (url[:5] == "http:" or url[:6] == "https:")
-        if preprocess:
+        if not self.skip_pp:
             pp_env = self.get_pp_env(loader=FrontMatterRemoteLoader())
             self.pp_template = pp_env.get_template(self.data["md"])
             frontmatter = pp_env.loader.fm_map[self.data["md"]]
@@ -105,14 +109,14 @@ class DactylPage:
             else:
                 raise requests.RequestException("Status code for page was not 200")
 
-    def load_from_disk(self, preprocess):
+    def load_from_disk(self):
         """
         Read the file from the filesystem,
         as either raw text or as a Jinja template,
         and load frontmatter, if any, either way.
         """
         assert "md" in self.data
-        if preprocess:
+        if not self.skip_pp:
             logger.debug("... loading markdown from filesystem")
             path = self.config["content_path"]
             pp_env = self.get_pp_env(loader=FrontMatterFSLoader(path))
@@ -125,7 +129,8 @@ class DactylPage:
             self.twolines = pp_env.loader.twolines[self.data["md"]]
         else:
             logger.info("... reading markdown from file")
-            with open(self.data["md"], "r", encoding="utf-8") as f:
+            fullpath = os.path.join(self.config["content_path"], self.data["md"])
+            with open(fullpath, "r", encoding="utf-8") as f:
                 ftext = f.read()
             self.rawtext, frontmatter = parse_frontmatter(ftext)
             merge_dicts(frontmatter, self.data)
@@ -135,13 +140,13 @@ class DactylPage:
             self.twolines = self.rawtext.split("\n", 2)[:2]
 
 
-    def load_from_generator(self, preprocess):
+    def load_from_generator(self):
         """
         Load the text from a generator function,
         as either raw text or a jinja template.
         Assume no frontmatter in this case.
         """
-        if preprocess:
+        if not self.skip_pp:
             pp_env = self.get_pp_env(
                 loader=jinja2.DictLoader({"_": self.data["__md_generator"]()}) )
             self.pp_template = pp_env.get_template("_")
@@ -210,7 +215,15 @@ class DactylPage:
 
 
     def preprocess(self, context):
-        md = self.pp_template.render(**context)
+        try:
+            md = self.pp_template.render(**context)
+        except Exception as e:
+            recoverable_error("Preprocessor error in page %s: %s."%(self, e),
+                              self.config.bypass_errors, error=e)
+            # Preprocessing failed. Skip this step and reload.
+            self.skip_pp = True
+            self.load_content()
+            return self.md_content(context)
         # Apply markdown-based filters here
         for filter_name in self.filters():
             if "filter_markdown" in dir(self.config.filters[filter_name]):
@@ -231,7 +244,7 @@ class DactylPage:
             return self.md
         elif self.rawtext is not None:
             return self.rawtext
-        elif self.pp_template is not None:
+        elif not self.skip_pp and self.pp_template is not None:
             return self.preprocess(context)
         else:
             logger.debug("page %s has no rawtext or pp_template"%self.data)
@@ -271,16 +284,12 @@ class DactylPage:
         self.update_toc()
 
         # Add a "blurb" attribute to the page
-        #TODO: try to migrate this and other "bonus fields" to the "load" step,
-        # maybe by having a preliminary build that parses the HTML before the
-        # final build?
         self.provide_blurb()
 
         # Add this page's plaintext field. ElasticSearch upload uses this.
         self.data["plaintext"] = soup.get_text()
 
         # Apply soup-based filters here
-        logger.warning("Filters to run: %s"%self.filters())
         for filter_name in self.filters():
             if "filter_soup" in dir(self.config.filters[filter_name]):
                 logger.info("... applying soup filter %s" % filter_name)

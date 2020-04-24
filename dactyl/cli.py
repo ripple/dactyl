@@ -89,7 +89,7 @@ class DactylCLIParser:
             parser.add_argument("--vars", type=str, help="A YAML or JSON file with vars "+
                                 "to add to the target so the preprocessor and "+
                                 "templates can reference them.")
-            parser.add_argument("--watch", "-w", action="store_true",
+            parser.add_argument("--watch", "-w", action="store_true", default=False,
                                 help="Watch for changes and re-generate output. "+\
                                 "This runs until force-quit.")
 

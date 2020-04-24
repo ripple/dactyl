@@ -367,6 +367,15 @@ class ApiDef:
 
         return pages
 
+    def add_metadata(self, target_data):
+        """
+        Extend the provided target_data dictionary with metadata pulled from
+        the spec.
+        """
+        info = self.swag.get("info", {"title":self.api_title, "version":"0.0.0"})
+        target_data["info"] = info
+
+
     def new_context(self):
         return {
             "api_title": self.api_title,

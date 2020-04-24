@@ -37,12 +37,6 @@ from dactyl.page import DactylPage
 from dactyl.watch_handler import UpdaterHandler
 
 
-
-HOW_FROM_URL = 1
-HOW_FROM_GENERATOR = 2
-HOW_FROM_FILE = 3
-
-
 class DactylBuilder:
     def __init__(self, target, config, mode="html", only_page=None):
         assert isinstance(target, DactylTarget)
@@ -151,6 +145,8 @@ class DactylBuilder:
                     logger.debug("only_page mode: skipping page %s" % page)
                     continue
 
+            logger.info("Building page: %s"%page)
+
             page_context = {"currentpage":page.data, **context}
 
             if self.mode == "es" or self.es_upload != NO_ES_UP:
@@ -224,6 +220,9 @@ class DactylBuilder:
             logger.info("creating output folder %s" % out_folder)
             os.makedirs(out_folder)
         fileout = os.path.join(base_folder, filepath)
+        if os.path.isdir(fileout):
+            logger.info("Writing index file for out-file '%s'" % fileout)
+            fileout = fileout+"index.html"
         with open(fileout, "w", encoding="utf-8") as f:
             logger.info("writing to file: %s..." % fileout)
             f.write(page_text)
@@ -349,6 +348,10 @@ class DactylBuilder:
         except jinja2.exceptions.TemplateNotFound:
             logger.warning("falling back to Dactyl built-ins for template %s" % template_name)
             t = self.fallback_env.get_template(template_name)
+        except jinja2.exceptions.TemplateError as e:
+            recoverable_error("Error parsing template '%s': %s." %
+                              (template_name, e), self.config.bypass_errors, error=e)
+            t = jinja2.Template("Failed to load template '%s'."%template_name)
         return t
 
     def get_es_template(self, filename):
@@ -516,6 +519,7 @@ def main(cli_args, config):
         exit(0)
 
     if cli_args.pages:
+        config["content_path"] = "./" # page paths will be relative to CWD
         target = DactylTarget(config, inpages=cli_args.pages)
     elif cli_args.openapi:
         target = DactylTarget(config, spec_path=cli_args.openapi)

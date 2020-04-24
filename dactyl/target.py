@@ -101,8 +101,9 @@ class DactylTarget:
             "api_slug": openapi.api_slug,
             "targets": [openapi.api_slug],
         }]
-        self.config["targets"].append(t)
         self.data = t
+        openapi.add_metadata(self.data)
+        self.config["targets"].append(t)
 
     def slug_name(self, fields_to_use=[], separator="-"):
         """Make a name for the target that's safe for use in URLs & filenames,
@@ -128,8 +129,8 @@ class DactylTarget:
         """
         coverpage_data = self.config["cover_page"]
         coverpage_data["targets"] = [self.name]
-        # self.config["pages"].insert(0, coverpage)
-        self.cover = DactylPage(self.config, coverpage_data)
+        skip_pp = self.config.get("skip_preprocessor", False)
+        self.cover = DactylPage(self.config, coverpage_data, skip_pp)
 
     def default_pdf_name(self):
         """Choose a reasonable name for a PDF file in case one isn't specified."""
@@ -167,7 +168,9 @@ class DactylTarget:
         template_path = page_data.get(OPENAPI_TEMPLATE_PATH_KEY, None)
         swagger = ApiDef.from_path(page_data[OPENAPI_SPEC_KEY], api_slug,
                                        extra_fields, template_path)
-        return [DactylPage(self.config, p) for p in swagger.create_pagelist()]
+        skip_pp = self.config.get("skip_preprocessor", False)
+        return [DactylPage(self.config, p, skip_pp)
+                for p in swagger.create_pagelist()]
 
     def load_pages(self):
         """
@@ -245,8 +248,10 @@ class DactylTarget:
                         logger.warning("hierarchy: page '%s' has explicit children field, not modifying."%parent.data["html"])
                         continue
                     else:
-                        # Add this child to the parent's existing list
-                        parent.data["children"].append(p.data)
+                        # Add this child to the parent's existing list if it's
+                        # not already there.
+                        if p.data not in parent.data["children"]:
+                            parent.data["children"].append(p.data)
                 else:
                     # Start a new child list at the parent
                     parent.data["children"] = [p.data]

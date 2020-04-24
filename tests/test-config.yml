@@ -1,4 +1,4 @@
-content_path: test_files
+content_path: ../examples/content
 pdf_filename_fields:
     -   display_name
 pdf_filename_separator: '-'
