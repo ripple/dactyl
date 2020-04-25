@@ -16,7 +16,7 @@ from dactyl.common import *
 from dactyl.jinja_loaders import FrontMatterRemoteLoader, FrontMatterFSLoader
 
 class DactylPage:
-    def __init__(self, config, data, skip_pp=False):
+    def __init__(self, config, data, skip_pp=False, more_filters=[]):
         self.config = config
         self.data = data
         self.rawtext = None
@@ -29,6 +29,7 @@ class DactylPage:
         self.html = None
         self.soup = None
 
+        self.gain_filters(more_filters)
         self.load_content()
         self.provide_default_filename()
         self.provide_name()
@@ -53,7 +54,7 @@ class DactylPage:
         pp_env.tests["undefined_or_ne"] = undefined_or_ne
 
         # Pull exported values (& functions) from page filters into the pp_env
-        for filter_name in self.filters():
+        for filter_name in self.filters(save=False):
             if filter_name not in self.config.filters.keys():
                 logger.debug("Skipping unloaded filter '%s'" % filter_name)
                 continue
@@ -508,22 +509,35 @@ class DactylPage:
             # for pdf or html just use the html field as-is
             return self.data["html"]
 
+    def gain_filters(self, filterlist):
+        """
+        Called by target to add its filters to this page's.
+        """
+        if "filters" in self.data:
+            self.data["filters"] = filterlist + self.data["filters"]
+        else:
+            self.data["filters"] = filterlist
 
-    def filters(self):
+    def filters(self, save=True):
         """
         Returns the names of filters to use when processing this page.
         """
         if self.ffp:
             # Return saved results
             return self.ffp
-        ffp = set(self.config["default_filters"])
-        if "filters" in self.data:
-            # self.data should already include filters inherited from target
-            ffp.update(self.data["filters"])
-        loaded_filters = set(self.config.filters.keys())
-        ffp &= loaded_filters
+
+        # Create de-duplicated list of loaded filters only
+        ffp = []
+        for f in self.config["default_filters"]:
+            if f not in ffp and f in self.config.filters:
+                ffp.append(f)
+        for f in self.data.get("filters", [])    :
+            if f not in ffp and f in self.config.filters:
+                ffp.append(f)
+
         logger.debug("...filters for page: %s"%ffp)
-        self.ffp = ffp
+        if save:
+            self.ffp = ffp
         return ffp
 
     def __repr__(self):

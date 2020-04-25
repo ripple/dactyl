@@ -130,7 +130,8 @@ class DactylTarget:
         coverpage_data = self.config["cover_page"]
         coverpage_data["targets"] = [self.name]
         skip_pp = self.config.get("skip_preprocessor", False)
-        self.cover = DactylPage(self.config, coverpage_data, skip_pp)
+        more_filters = self.data.get("filters", [])
+        self.cover = DactylPage(self.config, coverpage_data, skip_pp, more_filters)
 
     def default_pdf_name(self):
         """Choose a reasonable name for a PDF file in case one isn't specified."""
@@ -155,6 +156,7 @@ class DactylTarget:
         if "display_name" in fields: # Exception to reserved key rule
             self.data["display_name"] = fields["display_name"]
 
+
     def expand_openapi_spec(self, page_data):
         """Expand OpenAPI Spec placeholders into a full page list"""
         assert OPENAPI_SPEC_KEY in page_data.keys()
@@ -169,8 +171,16 @@ class DactylTarget:
         swagger = ApiDef.from_path(page_data[OPENAPI_SPEC_KEY], api_slug,
                                        extra_fields, template_path)
         skip_pp = self.config.get("skip_preprocessor", False)
-        return [DactylPage(self.config, p, skip_pp)
-                for p in swagger.create_pagelist()]
+        made_pages = []
+        for p in swagger.create_pagelist():
+            more_filters = self.data.get("filters", [])
+            po = DactylPage(self.config, p, skip_pp, more_filters)
+            # Special case for filters; concatenate filter lists,
+            # with target's filters first.
+            if "filters" in self.data:
+                po.gain_filters(self.data["filters"])
+            made_pages.append(po)
+        return made_pages
 
     def load_pages(self):
         """
@@ -215,6 +225,10 @@ class DactylTarget:
             # then add it to the list
             else:
                 merge_dicts(self.data, page_data, RESERVED_KEYS_TARGET)
+                # Special case for filters; concatenate filter lists,
+                # with target's filters first.
+                if "filters" in self.data:
+                    page_candidate.gain_filters(self.data["filters"])
                 pages.append(page_candidate)
 
         # Check for pages that would overwrite each other
