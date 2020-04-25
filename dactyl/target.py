@@ -185,11 +185,19 @@ class DactylTarget:
             if page_candidate == OPENAPI_SPEC_PLACEHOLDER:
                 page_data = self.config["pages"][i]
                 logger.debug("loading API spec: {pg}".format(pg=page_data))
+            elif page_candidate == NOT_LOADED_PLACEHOLDER:
+                page_data = self.config["pages"][i]
+                # A not-loaded page is fine as long as this target doesn't
+                # need it.
             else:
                 page_data = page_candidate.data
 
             if not self.should_include(page_data):
-                continue # Skip out-of-target pages
+                continue # Skip out-of-target pages;
+            if page_candidate == NOT_LOADED_PLACEHOLDER:
+                recoverable_error("Requires a page that failed to load: %s" %
+                                  page_data, self.config.bypass_errors)
+                continue # If we bypass errors, just omit the unloaded page
 
             # Expand OpenAPI Spec placeholders into full page lists
             if OPENAPI_SPEC_KEY in page_data.keys():
@@ -255,6 +263,10 @@ class DactylTarget:
                 else:
                     # Start a new child list at the parent
                     parent.data["children"] = [p.data]
+
+            if "children" not in p.data.keys():
+                # Start an empty list of children
+                p.data["children"] = []
 
             p.data["is_ancestor_of"] = self.make_ancestor_lookup(p)
 

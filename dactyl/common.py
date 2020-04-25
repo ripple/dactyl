@@ -41,6 +41,7 @@ ES_EVAL_KEY = "__dactyl_eval__"
 OPENAPI_SPEC_KEY = "openapi_specification"
 OPENAPI_TEMPLATE_PATH_KEY = "openapi_md_template_path"
 OPENAPI_SPEC_PLACEHOLDER = "__OPENAPI_SPEC_PLACEHOLDER__"
+NOT_LOADED_PLACEHOLDER = "__NOT_LOADED_PLACEHOLDER__"
 API_SLUG_KEY = "api_slug"
 BUILTIN_ES_TEMPLATE = "templates/template-es.json"
 

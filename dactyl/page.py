@@ -202,7 +202,9 @@ class DactylPage:
                 return
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
-                logger.warning("Couldn't guess title of page from twolines: %s" % e)
+                logger.warning(("Couldn't guess title of page '%s' from its "+
+                                "first two lines:\n%s") % (self,
+                                    "\n".join(self.twolines)))
 
         if "md" in self.data:
             self.data["name"] = self.data["md"]
@@ -228,11 +230,16 @@ class DactylPage:
         for filter_name in self.filters():
             if "filter_markdown" in dir(self.config.filters[filter_name]):
                 logger.info("... applying markdown filter %s" % filter_name)
-                md = self.config.filters[filter_name].filter_markdown(
-                    md,
-                    logger=logger,
-                    **context,
-                )
+                try:
+                    md = self.config.filters[filter_name].filter_markdown(
+                        md,
+                        logger=logger,
+                        **context,
+                    )
+                except Exception as e:
+                    recoverable_error("Markdown filter '%s' failed on page %s: %s" %
+                                  (filter_name, self, e),
+                                  self.config.bypass_errors, error=e)
 
         logger.info("... markdown is ready")
         self.md = md
@@ -269,11 +276,16 @@ class DactylPage:
         for filter_name in self.filters():
             if "filter_html" in dir(self.config.filters[filter_name]):
                 logger.info("... applying HTML filter %s" % filter_name)
-                html = self.config.filters[filter_name].filter_html(
-                        html,
-                        logger=logger,
-                        **context,
-                )
+                try:
+                    html = self.config.filters[filter_name].filter_html(
+                            html,
+                            logger=logger,
+                            **context,
+                    )
+                except Exception as e:
+                    recoverable_error("HTML filter '%s' failed on page %s: %s" %
+                            (filter_name, self, e), self.config.bypass_errors,
+                            error=e)
 
         # Some filters would rather operate on a soup than a string.
         # May as well parse once and re-serialize once.
@@ -293,12 +305,17 @@ class DactylPage:
         for filter_name in self.filters():
             if "filter_soup" in dir(self.config.filters[filter_name]):
                 logger.info("... applying soup filter %s" % filter_name)
-                self.config.filters[filter_name].filter_soup(
-                        soup,
-                        logger=logger,
-                        **context,
-                )
-                # ^ the soup filters apply to the same object, passed by reference
+                try:
+                    self.config.filters[filter_name].filter_soup(
+                            soup,
+                            logger=logger,
+                            **context,
+                    )
+                    # ^ the soup filters apply to the same object, passed by reference
+                except Exception as e:
+                    recoverable_error("Soup filter '%s' failed on page %s: %s" %
+                                  (filter_name, self, e),
+                                  self.config.bypass_errors, error=e)
 
         logger.info("... re-rendering HTML from soup...")
         html2 = str(soup)

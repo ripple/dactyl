@@ -23,6 +23,9 @@ from logging import warning
 # dropping any excess whitespace
 xref_regex = re.compile(r"^\s*xref:\s*(?P<xref_file>[^#]+)(?P<xref_frag>#\S+)?\s*?$", re.I)
 
+class BadXref(Exception):
+    pass
+
 def find_file_in_target(fname, targetname, config):
     if fname[-3:] == ".md":
         # look by markdown file first
@@ -94,13 +97,12 @@ def lookup_display_name(targetname, config):
         return targetname
 
 def filter_soup(soup, target={"name":""}, currentpage={},
-        config={"pages":[]}, **kwargs):
+        config={"pages":[]}, logger=None, **kwargs):
     """Look for cross-references and replace them with not-hyperlinks if they
        don't exist in the current target."""
 
+    prefix = target.get("prefix", "")
     xrefs = soup.find_all(href=xref_regex)
-    #print("Crossreferences:", xrefs)
-    #print("Target pages:", target["pages"])
 
     for xref in xrefs:
         m = xref_regex.match(xref.attrs["href"])
@@ -116,7 +118,7 @@ def filter_soup(soup, target={"name":""}, currentpage={},
                     page_name = currentpage["md"]
                 else:
                     page_name = currentpage
-                raise KeyError(("xref to missing file: '%s' in page '%s'. "+
+                raise BadXref(("xref to missing file: '%s' in page '%s'. "+
                 "Maybe it's not in the Dactyl config file?")%(xref_file, page_name))
             xref_target_shortname = xref_page["targets"][0]
 
@@ -125,7 +127,21 @@ def filter_soup(soup, target={"name":""}, currentpage={},
             link_label = " ".join([s for s in xref.stripped_strings])
             # If a link label wasn't provided, generate one from the page name
             if not link_label.strip():
-                link_label = xref_page["name"]
+                link_label = xref_page.get("name", None)
+                if link_label is None:
+                    if currentpage and "md" in currentpage:
+                        page_name = currentpage["md"]
+                    else:
+                        page_name = currentpage
+                    if config.bypass_errors:
+                        logger.warning(("Xref without label from page "+
+                        "'%s' to '%s'. Either provide link text or make sure "+
+                        "the target page's name is defined.")%(page_name,m.group(0)))
+                        link_label = xref_page.get("html","(Unknown)")
+                    else:
+                        raise BadXref(("Couldn't get label for xref from page "+
+                        "'%s' to '%s'. Either provide link text or make sure "+
+                        "the target page's name is defined.")%(page_name,m.group(0)))
             link_label = link_label.strip()
 
             # "Link Label" in _Target Display Name_
@@ -140,7 +156,7 @@ def filter_soup(soup, target={"name":""}, currentpage={},
         else:
             # The xref is on-target
             # First fix the hyperlink. Use the HTML (in case of link-by-md):
-            xref.attrs["href"] = xref_page["html"]+xref_frag
+            xref.attrs["href"] = prefix+xref_page["html"]+xref_frag
             # If this link's label is only whitespace, fix it
             if not [s for s in xref.stripped_strings]:
                 #print("replacing label for xref", xref)

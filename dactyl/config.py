@@ -121,7 +121,13 @@ class DactylConfig:
         skip_pp = self.config.get("skip_preprocessor", False)
         for page_data in self.config["pages"]:
             if OPENAPI_SPEC_KEY not in page_data:
-                self.page_cache.append(DactylPage(self, page_data, skip_pp))
+                # Try loading page now; but if it fails, that might be OK
+                # depending on whether we need the file later.
+                try:
+                    self.page_cache.append(DactylPage(self, page_data, skip_pp))
+                except Exception as e:
+                    logger.warning("Couldn't load page '%s': %s"%(page_data,e))
+                    self.page_cache.append(NOT_LOADED_PLACEHOLDER)
             else:
                 # OpenAPI specs are too much work to load at this time
                 self.page_cache.append(OPENAPI_SPEC_PLACEHOLDER)
