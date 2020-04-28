@@ -19,6 +19,8 @@ DEFAULT_CALLOUT_TYPES = [
 ]
 DEFAULT_CALLOUT_CLASS = "dactyl-callout"
 
+from bs4.element import Tag
+
 def filter_soup(soup, currentpage={}, config={}, **kwargs):
     """
     Find patterns that look like callouts, for example **Note:**, and add
@@ -38,4 +40,11 @@ def filter_soup(soup, currentpage={}, config={}, **kwargs):
         if not c.previous_sibling: #This callout starts a block
             callout_type = c.string.replace(":","").lower()
             if callout_type in callout_classes:
-                c.parent["class"] = [callout_base_class, callout_type]
+                if (c.parent.parent.name == "blockquote" and Tag not in
+                    [type(u) for u in c.parent.previous_siblings]):
+                    # Special case for blockquotes, to allow multiline callouts.
+                    # First element of BQ must start with a callout keyword
+                    callout_el = c.parent.parent
+                else:
+                    callout_el = c.parent
+                callout_el["class"] = [callout_base_class, callout_type]

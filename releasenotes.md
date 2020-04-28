@@ -212,6 +212,26 @@ This release improves several aspects of OpenAPI (Swagger) specification parsing
 
 However, OpenAPI spec parsing should still be considered experimental.
 
+### Multiline Callouts
+
+The built-in callouts filter now supports multi-line callouts using Markdown's blockquote syntax. A blockquote must be set off from paragraph text by blank lines before and after. Within the blockquote, each line must start with `> `. (The space is optional but recommended.) For example:
+
+```md
+Some paragraph text.
+
+> **Tip:** This begins a multiline callout.
+>
+> - It can have lists.
+>     - Indentation does not count the space in the `> ` as part of its
+>       requirements, so things that would normally need to be indented 4 spaces
+>       must be indented 5 instead.
+> - That's just Markdown syntax for you.
+
+More paragraph text
+```
+
+Build the [examples](examples/) to see it in action and to see some samples of specific edge cases.
+
 ## Bug Fixes and Other Cleanup
 
 - `--skip_preprocessor` (when using a config file) works again. It had been broken since v0.40.0.

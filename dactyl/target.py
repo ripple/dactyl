@@ -124,8 +124,7 @@ class DactylTarget:
 
     def add_cover(self):
         """
-        Add the default cover page to the pagelist where self.load_pages()
-        will find it.
+        Instantiate the default cover page so self.load_pages() can include it.
         """
         coverpage_data = self.config["cover_page"]
         coverpage_data["targets"] = [self.name]

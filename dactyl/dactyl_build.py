@@ -539,7 +539,7 @@ def main(cli_args, config):
             exit("FATAL: --vars value was improperly formatted: %s" % repr(e))
 
     if cli_args.title:
-        target.gain_keys({"display_name": cli_args.title})
+        target.gain_fields({"display_name": cli_args.title})
 
     if not cli_args.no_cover and not target.data.get("no_cover", False):
         target.add_cover()
