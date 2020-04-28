@@ -1,3 +1,7 @@
+# v0.10.1 Release Notes
+
+Fixes a bug that caused Dactyl to fail on Python 3.5.
+
 # v0.10.0 Release Notes
 
 Dactyl v0.10.0 is a major refactor of Dactyl that includes some breaking changes and new functionality.

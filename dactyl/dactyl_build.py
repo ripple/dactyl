@@ -373,7 +373,8 @@ class DactylBuilder:
             elif type(e) == KeyError:
                 logger.debug("template_path isn't defined. No config file?")
             with resource_stream(__name__, BUILTIN_ES_TEMPLATE) as f:
-                es_template = json.load(f)
+                # es_template = json.load(f) # Doesn't work on Python 3.5
+                es_template = json.loads(f.read().decode())
         return es_template
 
     def upload_es(self, data):
