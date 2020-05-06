@@ -384,7 +384,7 @@ class DactylBuilder:
         es_base = self.cleanup_es_url()
         es_index = self.target.es_index_name()
 
-        for id, json_s in data.values():
+        for id, json_s in data.items():
             doc_type="article"## TODO: other options?
 
             url = "{es_base}/{index}/{doc_type}/{id}".format(

@@ -1,3 +1,7 @@
+# v0.10.2 Release Notes
+
+Fixes a bug that caused ElasticSearch uploads to fail.
+
 # v0.10.1 Release Notes
 
 Fixes a bug that caused Dactyl to fail on Python 3.5.
