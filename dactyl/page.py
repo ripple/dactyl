@@ -270,8 +270,8 @@ class DactylPage:
         md = self.md_content(context)
 
         logger.info("... parsing markdown...")
-        html = markdown(md, extensions=["markdown.extensions.extra"],
-                        lazy_ol=False)
+        html = markdown(md, extensions=["markdown.extensions.extra",
+                                        "markdown.extensions.sane_lists"])
 
         # Apply raw-HTML-string-based filters here
         for filter_name in self.filters():
