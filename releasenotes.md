@@ -1,3 +1,7 @@
+# v0.10.3 Release Notes
+
+Updates compatibility with Python-Markdown so that ordered lists start with the intended number again.
+
 # v0.10.2 Release Notes
 
 Fixes a bug that caused ElasticSearch uploads to fail.
