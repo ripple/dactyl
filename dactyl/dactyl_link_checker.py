@@ -258,7 +258,7 @@ def check_directory(top_dir, offline=False, site_prefix=None):
                             site_prefix=site_prefix, hreftype=TYPE_IMAGE)
                     num_links_checked += was_checked
                     if was_checked and not was_good:
-                        broken_links.append( (in_file, link['href']) )
+                        broken_links.append( (in_file, img["src"]) )
 
     return broken_links, num_links_checked
 
@@ -271,7 +271,7 @@ def final_retry_links(broken_links):
         logger.info("(no http/https broken links to retry)")
         return
 
-    print("Waiting %d seconds to retry broken %d remote links..."
+    print("Waiting %d seconds to retry %d broken remote links..."
                 % (FINAL_RETRY_DELAY, len(broken_remote_links)))
     start_wait = time()
     elapsed = 0

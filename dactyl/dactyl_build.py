@@ -430,6 +430,12 @@ class DactylBuilder:
             os.makedirs(self.out_path)
         abs_pdf_path = os.path.abspath(os.path.join(self.out_path, pdf_filename))
 
+
+        # Change dir to the tempfiles path. This helps Prince and also lets us
+        # use os.path.isdir()
+        old_cwd = os.getcwd()
+        os.chdir(self.staging_folder)
+
         # Start preparing the prince command
         args = [self.config["prince_executable"], '--javascript', '-o', abs_pdf_path, '--no-warn-css']
 
@@ -441,11 +447,16 @@ class DactylBuilder:
                     self.config.bypass_errors)
                 return
         # Each HTML output file in the target is another arg to prince
-        args += [p.data["html"] for p in pages]
+        for p in pages:
+            phtml = p.data["html"]
+            if os.path.isdir(phtml):
+                phtml = phtml+"index.html"
+            args.append(phtml)
 
-        # Change dir to the tempfiles path; this may avoid a bug in Prince
-        old_cwd = os.getcwd()
-        os.chdir(self.staging_folder)
+        # Prince says --fileroot is deprecated, but I haven't been able to make
+        # --remap do the same thing. Anyway, this makes absolute URLs work:
+        args.append("--fileroot="+os.path.abspath(self.staging_folder))
+
 
         logger.info("generating PDF: running %s..." % " ".join(args))
         prince_resp = subprocess.check_output(args, universal_newlines=True)
