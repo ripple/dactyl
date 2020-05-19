@@ -12,8 +12,7 @@
 
     <!-- Stylesheet -->
     {% if currentpage.stylesheet is undefined %}
-      {% set stylesheet = "http://dsk.local/assets/css/dactyl.css" %}
-      {# TODO: use a permanent URL for stylesheet #}
+      {% set stylesheet = "https://dactyl.link/template_assets/dactyl.css" %}
     {% else %}
       {% set stylesheet = currentpage.stylesheet %}
     {% endif %}
@@ -93,8 +92,7 @@
 <script src="{{bootstrapjs}}"></script>
 <!-- Dactyl JS -->
 {% if currentpage.dactyljs is undefined %}
-  {# TODO: use a final URL for this #}
-  {% set dactyljs = "http://dsk.local/assets/js/dactyl.js" %}
+  {% set dactyljs = "https://dactyl.link/template_assets/dactyl.js" %}
 {% else %}
   {% set dactyljs = currentpage.dactyljs %}
 {% endif %}

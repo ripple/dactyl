@@ -1,5 +1,5 @@
 <nav class="navbar fixed-top navbar-expand-lg navbar-light bg-white px-2">
-  <a href="{{ target.prefix }}" class="navbar-brand"><img src="{{target.logo}}" class="logo"  height="44" alt="{{target.display_name}}" /></a>
+  <a href="{% if target.prefix is defined %}{{ target.prefix }}{% else %}/{% endif %}" class="navbar-brand">{% if target.logo is defined %}<img src="{{target.logo}}" class="logo"  height="44" alt="{{target.display_name}}" />{% else %}<h1>{{target.display_name}}</h1>{% endif %}</a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHolder" aria-controls="navbarHolder" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
