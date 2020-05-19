@@ -1,0 +1,16 @@
+{% if config.languages is defined and config.languages|length > 1 and target.lang is defined %}
+<div class="nav navbar-nav language-selector my-2 my-lg-0">
+  <div class="dropdown">
+    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="language_selector_header_btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      {% if target.lang is defined %}
+      {{(config.languages|selectattr('code', 'eq', target.lang)|first).display_name}}
+      {% endif %}
+    </button>
+    <div class="dropdown-menu" aria-labelledby="language_selector_header_btn">
+      {% for lang in config.languages %}
+      <a class="dropdown-item" href="{{lang.prefix}}{{currentpage.html}}">{{lang.display_name}}</a>
+      {% endfor %}
+    </div><!--/.dropdown-menu-->
+  </div><!--/.dropdown-->
+</div><!--/.language-selector-->
+{% endif %}

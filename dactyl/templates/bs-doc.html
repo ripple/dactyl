@@ -1,0 +1,38 @@
+{% extends "bs-base.html" %}
+{% block head %}
+
+    <!-- syntax highlighting -->
+    {% if currentpage.highlightcss is undefined %}
+      {% set highlightcss = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css" %}
+    {% else %}
+      {% set highlightcss = currentpage.highlightjs %}
+    {% endif %}
+    <link rel="stylesheet" href="{{highlightcss}}" />
+    {% if currentpage.highlightjs is undefined %}
+      {% set highlightjs = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js" %}
+    {% else %}
+      {% set highlightjs = currentpage.highlightjs %}
+    {% endif %}
+    <script src="{{highlightjs}}"></script>
+
+    <script>
+        $(document).ready(function() {
+            $(".multicode").minitabs();
+            hljs.initHighlighting();
+            make_code_expandable();
+        });
+    </script>
+
+{% endblock %}
+
+{% block right_sidebar %}
+{% include 'bs-page-toc.html' %}
+{% endblock %}
+
+{% block endbody %}
+{% if target.google_analytics_tag is defined %}
+<script type="application/javascript">
+  gtag('set', {'content_group1': 'Content Docs'});
+</script>
+{% endif %}
+{% endblock %}

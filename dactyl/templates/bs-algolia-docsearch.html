@@ -1,0 +1,19 @@
+<form class="navbar-form navbar-right" id="navbar-search" role="search">
+  <div class="form-inline my-2 my-lg-0">
+    <label class="sr-only" for="topsearchbar">{% trans %}Search{% endtrans %}</label>
+    <input id="topsearchbar" name="q" type="text" class="form-control top-search" placeholder="{% trans %}Search{% endtrans %}">
+    <label for="topsearchbar" class="search-icon"><i class="fa fa-search"></i></label>
+  </div>
+</form>
+
+<!-- Algolia DocSearch -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.css" />
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.js"></script>
+<script type="text/javascript"> docsearch({
+  apiKey: '{{target.algolia_api_key}}',
+  indexName: '{{target.algolia_index_name}}',
+  inputSelector: '#topsearchbar',
+  algoliaOptions: { 'facetFilters': ["lang:{{target.lang}}"] },
+  debug: false
+});
+</script>

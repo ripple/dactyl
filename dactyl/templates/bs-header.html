@@ -1,0 +1,35 @@
+<nav class="navbar fixed-top navbar-expand-lg navbar-light bg-white px-2">
+  <a href="{{ target.prefix }}" class="navbar-brand"><img src="{{target.logo}}" class="logo"  height="44" alt="{{target.display_name}}" /></a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHolder" aria-controls="navbarHolder" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse justify-content-end" id="navbarHolder">
+    {% block topnavbar %}
+    <ul class="nav navbar-nav">
+      {% for page in pages %}
+        {% if page.parent is defined and page.parent == "index.html" %}
+          <li class="nav-item {% if currentpage == page %}active{% elif page.is_ancestor_of(currentpage.html) %}active-parent{% endif %}">
+            <a class="nav-link" href="{{ target.prefix }}{{ page.html }}">{{ page.name }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul><!-- /.navbar-nav -->
+    {% endblock %}
+
+    {% block githubedit %}
+      {% include 'bs-github-edit.html' %}
+    {% endblock %}
+
+    {% block searchbar %}
+    {% if target.algolia_api_key is defined %}
+      {% include 'bs-algolia-docsearch.html' %}
+    {% else %}
+      {% include 'bs-google-search.html' %}
+    {% endif %}
+    {% endblock %}
+
+    {% block languagedropdown %}
+      {% include 'bs-language-dropdown.html' %}
+    {% endblock %}
+  </div><!--/#navbarHolder-->
+</nav>

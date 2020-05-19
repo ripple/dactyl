@@ -1,0 +1,46 @@
+{% if tree_top is undefined %}
+  {% set tree_top = pages|list|first %}
+{% endif %}
+
+{% macro page_w_children(pg, n, depth) %}
+<div class="card active">
+  <div class="card-header" role="tab" id="sidenav_cat_head_{{depth}}_{{n}}">
+    {% if pg.children %}
+      {% if pg.is_ancestor_of(currentpage.html) %}
+        {% set active_parent=True %}
+      {% else %}
+        {% set active_parent=False %}
+      {% endif %}
+    <a class="{% if not active_parent and currentpage != pg %}collapsed{% endif %} sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_{{depth}}_{{n}}" aria-expanded="{% if active_parent or currentpage == pg %}true{% else %}false{% endif %}" aria-controls="sidenav_collapse_{{depth}}_{{n}}"></a>
+    {% endif %}
+    <h5 class="card-title">
+        <a class="sidenav_cat_title {% if currentpage == pg %}active{% elif active_parent%}active-parent{% endif %}" href="{{target.prefix}}{{ pg.html }}">{{ pg.name }}</a>
+    </h5>
+  </div><!-- /.card-header -->
+
+  {% if pg.children %}
+  <div class="card-body card-body-single collapse {% if active_parent or currentpage == pg %}show{% endif %}" role="tabpanel" id="sidenav_collapse_{{depth}}_{{n}}">
+    <ul class="sidebar_pagelist">
+      {% for child in pg.children %}
+        {% if child.children %}
+          <li class="grandchildren-container">{{ page_w_children(child, loop.index, depth+1) }}</li>
+        {% else %}
+          <li class="leaf-child"><a class="{% if currentpage == (child) %} active{% endif %}" href="{{ target.prefix}}{{ child.html }}">{{ child.name }}</a></li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </div><!--/.card-body-->
+  {% endif %}
+</div><!--/.card-->
+{% endmacro %}
+
+<div class="dactyl-tree-nav">
+  <div class="sidenav-parent">
+    <a href="{{target.prefix}}{{tree_top.html}}">{{tree_top.name}}</a>
+  </div>
+  <div id="sidenav" role="tablist" aria-multiselectable="true">
+    {% for page in tree_top.children %}
+      {{ page_w_children(page, loop.index, 1) }}
+    {% endfor %}
+  </div><!--/.sidenav-->
+</div><!-- /.dactyl-tree-nav -->

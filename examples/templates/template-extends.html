@@ -1,0 +1,6 @@
+{% extends 'bs-doc.html' %}
+
+{% block footer %}
+<p><small>(Part of {{target.display_name}}. Exported {{ current_time }})</small></p>
+{% if currentpage.copyright %}<p>© {{currentpage.copyright}}</p>{% endif %}
+{% endblock %}
