@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html >
+<head>
+    <title>Includes Test - Target with ALL THE EXAMPLES™</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width">
+
+    <!-- Blocking JS resources -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- Stylesheet -->
+    <link href="http://dsk.local/assets/css/dactyl.css" rel="stylesheet" />
+
+
+
+    <!-- syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            $(".multicode").minitabs();
+            hljs.initHighlighting();
+            make_code_expandable();
+        });
+    </script>
+
+</head>
+
+<body class="sidebar-primary  lang- " data-spy="scroll" data-target="#page-toc-wrapper" data-offset="0">
+<nav class="navbar fixed-top navbar-expand-lg navbar-light bg-white px-2">
+  <a href="" class="navbar-brand"><img src="" class="logo"  height="44" alt="Target with ALL THE EXAMPLES™" /></a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHolder" aria-controls="navbarHolder" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse justify-content-end" id="navbarHolder">
+    <ul class="nav navbar-nav">
+    </ul><!-- /.navbar-nav -->
+
+
+<form class="navbar-form navbar-right my-2 my-lg-0 mx-0 mr-lg-2" id="navbar-search" role="search" method="get" action="https://www.google.com/search">
+  <div class="form-inline">
+    <label class="sr-only" for="topsearchbar">Search</label>
+    <input name="q" value="site:" type="hidden">
+    <input id="topsearchbar" name="q" type="text" class="form-control top-search" placeholder="Search">
+    <button type="submit" class="btn btn-default fa fa-search">&nbsp;</button>
+  </div>
+</form>
+  </div><!--/#navbarHolder-->
+</nav>
+  <div class="container-fluid" role="document" id="main_content_wrapper">
+    <div class="row">
+      <!-- Right sidebar first so it's at the beginning for mobile layouts -->
+      <aside class="right-sidebar col-lg-3 order-lg-4 p-3" role="complementary">
+<div class="card" id="page-toc-wrapper">
+  <div class="card-header">
+    <h4>In this page:</h4>
+  </div>
+  <ul id="page-toc" class="list-group card-body" role="directory">
+    <li class="level-1"><a class="nav-link" href="#includes-test">Includes Test</a></li>
+    <li class="level-1"><a class="nav-link" href="#includes-and-filters">Includes and Filters</a></li>
+    <li class="level-1"><a class="nav-link" href="#callouts-demonstration">Callouts Demonstration</a></li>
+    <li class="level-2"><a class="nav-link" href="#finer-points">Finer points</a></li>
+    <li class="level-1"><a class="nav-link" href="#other-stuff">Other Stuff</a></li>
+  </ul>
+</div>      </aside>
+
+      <!-- main column -->
+      <main class="main col-md-7 col-lg-6 order-md-3  " role="main" id="main_content_body">
+<nav class="breadcrumbs-wrap p-0 p-md-3" aria-label="breadcrumb">
+  <ul class="breadcrumb bg-white">
+    
+
+    <li class="active breadcrumb-item"><a href="index.html">Index</a></li>
+    <li class="active breadcrumb-item"><a href="hierarchy_demo.html">Hierarchy Demo</a></li>
+    <li class="active breadcrumb-item"><a href="tests-index.html">Tests</a></li>
+    <li class="active breadcrumb-item">Includes Test</li>
+  </ul>
+</nav><!--/.breadcrumbs-wrap-->            <section class="pt-3 p-md-3">
+              <article class="dactyl-content">
+                <h1 id="includes-test">Includes Test</h1>
+<p>This page demonstrates including a file using the preprocessor syntax. The path to including a file is always relative to the <strong>content_path</strong> from the config.</p>
+<h1 id="includes-and-filters">Includes and Filters</h1>
+<p>If you include a page that is written to use a filter, you might get weird results if the current page / target don't run the filter. For example...</p>
+<h1 id="callouts-demonstration">Callouts Demonstration</h1>
+<p><strong>Tip:</strong> Callouts are a great way to call attention to particular bits of information.</p>
+<p>In order to use callouts, the page (or target) has to have the <code>callouts</code> filter enabled.</p>
+<p><strong>Note:</strong> Callouts have four types, "Note", "Tip", "Caution", and "Warning".</p>
+<p><strong>Caution:</strong> Be sure not to overuse callouts.</p>
+<p><strong>Warning:</strong> Callouts are very specific. <code>**Note:**</code> triggers a callout; <code>**Notes:**</code> doesn't.</p>
+<h2 id="finer-points">Finer points</h2>
+<p><strong>Tip</strong> The colon is optional, though.</p>
+<ul>
+<li><strong>Note:</strong> Callouts can only contain a single element of text. You can't have multiple paragraphs or a list nested in a callout.</li>
+<li>The callout applies to the whole list item.<ul>
+<li><strong>Tip:</strong> You can have callouts nested in a list.<ul>
+<li><strong>Warning:</strong> Don't nest callouts in list items that are already callouts, because that's ugly and confusing.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>And more stuff. <strong>Note:</strong> The callout doesn't trigger if it's not at the start of the element.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Stuff</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Warning:</strong> Callout syntax in table cells is weird.</td>
+<td>So it's probably best not to do that.</td>
+</tr>
+<tr>
+<td>Probably.</td>
+<td><strong>Caution:</strong> It could maybe work better with better CSS.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Tip:</strong> Multiline callouts with blockquotes are now possible.</p>
+<ul>
+<li>Do this to include bulleted lists.</li>
+<li>Or other types of lists.
+</li>
+</ul>
+</blockquote>
+<p>If you have a callout word like <strong>tip</strong> bolded mid-paragraph, it should not become a callout.</p>
+<blockquote>
+<p>Please <strong>note</strong> that this also applies to blockquotes.</p>
+</blockquote>
+<p>There is a difficult edge case for blockquotes where a paragraph other than the first one starts with a callout keyword:</p>
+<blockquote>
+<p>This is the start of a blockquote that is not, itself, a callout.</p>
+<p><strong>Note:</strong> This callout occurs in the middle of a blockquote.</p>
+<p>But the blockquote containing it is not, itself, a callout.</p>
+</blockquote>
+<p>Also, note that you can cannot use code fences in blockquotes.</p>
+<blockquote>
+<p><strong>Caution:</strong> Code fences in blockquotes don't work right.</p>
+<p><code>js
+if (true) {
+    console.log('this line of code should be indented');
+}</code></p>
+<p>The code fence gets treated as inlined code text instead. This is a limitation of Python-Markdown.</p>
+</blockquote>
+<p>You can, however, use indented code blocks in blockquotes:</p>
+<blockquote>
+<p><strong>Tip:</strong> To get a proper code block in a blockquote, provide a single
+line of just the blockquote intro <code>&gt;</code>, and indent the code block 5 spaces.</p>
+<pre><code>print("Hello world!")
+if True:
+    print("Note that extra spaces beyond the initial 5 carry over.")
+</code></pre>
+<p>To continue the block quote afterwords, leave a near-blank line similarly.
+Do not use code fences in a blockquote: they don't work as expected.</p>
+</blockquote>
+<h1 id="other-stuff">Other Stuff</h1>
+<p>Includes are part of preprocessing, so you can do things like making one file that has all your <a href="https://daringfireball.net/projects/markdown/syntax#link">Markdown reference links</a>, and including that in all your pages to make the reference links always available.</p>
+<p>Reader exercise: make your own filter to automatically include a page at the end of another page!</p>
+              </article>
+            </section>
+      </main>
+      <!-- Left sidebar last so it's at the end for mobile -->
+      <aside class="sidebar col-md-5 col-lg-3 p-0 order-md-1" role="complementary">
+
+
+<div class="dactyl-tree-nav">
+  <div class="sidenav-parent">
+    <a href="index.html">Index</a>
+  </div>
+  <div id="sidenav" role="tablist" aria-multiselectable="true">
+  </div><!--/.sidenav-->
+</div><!-- /.dactyl-tree-nav -->      </aside>
+    </div><!--/.row (main layout)-->
+  </div>
+
+<footer class="dactyl-footer px-2" role="contentinfo">
+
+  <section class="container-fluid p-5 pl-sm-0">
+
+
+    <div class="absolute_bottom_footer">
+      <span><a href="/master/LICENSE">LICENSE</a></span>
+    </div><!-- /.absolute_bottom_footer -->
+
+  </section>
+</footer>
+
+<!-- Jump to top button -->
+<a href="#main_content_wrapper" class="jump-to-top btn btn-primary btn-lg" role="button" title="Return to top of page">Top</a>
+<!-- Non-blocking resources -->
+<!-- Bootstrap JS -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+<!-- Dactyl JS -->
+<script src="http://dsk.local/assets/js/dactyl.js"></script>
+<!-- fontawesome icons -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+
+</body>
+</html>

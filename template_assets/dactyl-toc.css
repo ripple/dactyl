@@ -1,0 +1,31 @@
+.dactyl-toc-entry {
+    padding-left: 20px;
+}
+
+.dactyl-sidebar {
+    float: right;
+    margin: 20px;
+    padding: 20px;
+    border: 1px dashed black;
+    background: #fff;
+}
+.dactyl-sidebar ul {
+    padding-left: 20px;
+    margin-left: 0;
+}
+.dactyl-sidebar h4 {
+    margin-top: 0;
+}
+
+@media screen {
+    footer {
+        position: fixed;
+        bottom: 0;
+        font-size: 10px;
+        background: white;
+    }
+
+    main {
+        padding-bottom: 20px;
+    }
+}

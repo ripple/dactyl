@@ -1,0 +1,55 @@
+@media print {
+    .dactyl-pdf-cover {
+        page-break-after: always;
+    }
+    .dactyl-pdf-toc {
+        page-break-after: always;
+    }
+    .dactyl-pdf-cover .dactyl-pdf-title-area {
+        position: absolute;
+        top: 26%;
+        left: 8%;
+        font-size: 60px;
+        max-width: 650px;
+    }
+    .dactyl-pdf-cover h1,
+    .dactyl-pdf-cover p {
+        padding: 0;
+        margin: 10px 0 0 0;
+    }
+
+    .dactyl-toc-cat a {
+        font-size: 18pt;
+        text-decoration: none;
+        color: black;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .dactyl-section-cover {
+        page-break-before: always;
+    }
+
+    .dactyl-section-cover h1 {
+        font-size: 90pt;
+        margin-top: 40%;
+        padding-bottom: 10px;
+        border-bottom: 4px dashed black;
+    }
+
+    @page {
+      @bottom-left {
+        content: flow(footer);
+      }
+
+      @bottom-right {
+        content: counter(page);
+        font-size: 10px;
+      }
+    }
+
+    footer {
+      flow: static(footer);
+      font-size: 10px;
+    }
+}
