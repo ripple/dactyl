@@ -23,7 +23,7 @@
     {% block searchbar %}
     {% if target.algolia_api_key is defined %}
       {% include 'algolia-docsearch.html' %}
-    {% else %}
+    {% elif target.url is defined %}
       {% include 'google-search.html' %}
     {% endif %}
     {% endblock %}

@@ -189,6 +189,7 @@ class DactylTarget:
         """
         pages = []
         if self.cover:
+            merge_dicts(self.data, self.cover.data, RESERVED_KEYS_TARGET)
             pages.append(self.cover)
         for i, page_candidate in enumerate(self.config.page_cache):
             if page_candidate == OPENAPI_SPEC_PLACEHOLDER:
