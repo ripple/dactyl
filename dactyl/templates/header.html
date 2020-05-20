@@ -17,19 +17,19 @@
     {% endblock %}
 
     {% block githubedit %}
-      {% include 'bs-github-edit.html' %}
+      {% include 'github-edit.html' %}
     {% endblock %}
 
     {% block searchbar %}
     {% if target.algolia_api_key is defined %}
-      {% include 'bs-algolia-docsearch.html' %}
+      {% include 'algolia-docsearch.html' %}
     {% else %}
-      {% include 'bs-google-search.html' %}
+      {% include 'google-search.html' %}
     {% endif %}
     {% endblock %}
 
     {% block languagedropdown %}
-      {% include 'bs-language-dropdown.html' %}
+      {% include 'language-dropdown.html' %}
     {% endblock %}
   </div><!--/#navbarHolder-->
 </nav>
