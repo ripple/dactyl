@@ -1,6 +1,5 @@
 {% if config.languages is defined and config.languages|length > 1 and target.lang is defined %}
 <nav role="navigation" class="d-flex mb-3 language-selector">
-  <img class="language_selector_icon" src="{{target.prefix}}assets/img/icon-language-selector.svg" width="32" height="40" alt="language selection icon" />
   <ul class="nav">
     {% for lang in config.languages %}
     <li class="nav-item">
