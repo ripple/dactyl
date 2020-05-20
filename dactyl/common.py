@@ -21,6 +21,7 @@ import gettext
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
+logger.propagate = False
 
 PDF_USE_DEFAULT = "__DEFAULT_FILENAME__"
 NO_PDF = "__NO_PDF__"
