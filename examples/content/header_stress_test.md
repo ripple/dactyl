@@ -24,7 +24,7 @@ Formatting probably doesn't contribute to the header text?
 
 ## n>1
 
-How do you link that "[n>1](#n>1)" header, anyway? Turns out on GitHub it's `#n1`.
+How do you link that "[n>1](#n1)" header, anyway? Turns out on GitHub it's `#n1`.
 
 ## XRP Ledgerの概要
 XRP Ledgerは、ピアツーピア・サーバーのネットワーク機能を備えた分散型の暗号台帳です。XRP LedgerはXRPの土台となるものであり、世界中で使用されている様々な通貨の橋渡しをするために設計されたデジタル資産です。RippleはXRP Ledgerの開発を主導し、「価値のインターネット」（情報が移動するようにお金が移動する世界）の実現に向けて鍵となる役割を果たすと期待されるXRPを推進しています。

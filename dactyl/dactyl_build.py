@@ -76,7 +76,6 @@ class DactylBuilder:
             self.strict_undefined = False
 
         self.setup_html_env() # sets self.html_env
-        self.setup_fallback_env() # sets self.fallback_env
 
         self.default_pdf_template = self.get_template(self.config["default_pdf_template"])
         self.default_html_template = self.get_template(self.config["default_template"])
@@ -282,13 +281,14 @@ class DactylBuilder:
         if self.strict_undefined:
             preferred_undefined = jinja2.StrictUndefined
         else:
-            preferred_undefined = jinja2.Undefined
+            preferred_undefined = jinja2.ChainableUndefined
+
+        loaderset = [jinja2.PackageLoader(__name__)]
         if "template_path" in self.config:
-            env = jinja2.Environment(undefined=preferred_undefined,
+            loaderset.insert(0, jinja2.FileSystemLoader(self.config["template_path"]))
+        env = jinja2.Environment(undefined=preferred_undefined,
                     extensions=['jinja2.ext.i18n'],
-                    loader=jinja2.FileSystemLoader(self.config["template_path"]))
-        else:
-            env = self.setup_fallback_env()
+                    loader=jinja2.ChoiceLoader(loaderset))
 
         # Customize env: add custom tests, lstrip & trim blocks
         def defined_and_equalto(a,b):
@@ -318,24 +318,10 @@ class DactylBuilder:
             logger.debug("No locale_file setting found.")
             tl = gettext.NullTranslations()
         env.install_gettext_translations(tl, newstyle=True)
-        # env.install_gettext_callables(gettext.gettext, gettext.ngettext, newstyle=True)
-
 
         self.html_env = env
         return env
 
-    def setup_fallback_env(self):
-        """
-        Set up a Jinja env to load templates from the Dactyl package. These
-        templates assume that we're not using StrictUndefined.
-        """
-        env = jinja2.Environment(loader=jinja2.PackageLoader(__name__),
-                                 extensions=['jinja2.ext.i18n'])
-        env.lstrip_blocks = True
-        env.trim_blocks = True
-        self.fallback_env = env
-        # env.install_gettext_callables(gettext.gettext, gettext.ngettext, newstyle=True)
-        return env
 
     def get_template(self, template_name):
         """
@@ -345,12 +331,9 @@ class DactylBuilder:
 
         try:
             t = self.html_env.get_template(template_name)
-        except jinja2.exceptions.TemplateNotFound:
-            logger.warning("falling back to Dactyl built-ins for template %s" % template_name)
-            t = self.fallback_env.get_template(template_name)
         except jinja2.exceptions.TemplateError as e:
             recoverable_error("Error parsing template '%s': %s." %
-                              (template_name, e), self.config.bypass_errors, error=e)
+                         (template_name, e), self.config.bypass_errors, error=e)
             t = jinja2.Template("Failed to load template '%s'."%template_name)
         return t
 
@@ -447,6 +430,12 @@ class DactylBuilder:
             os.makedirs(self.out_path)
         abs_pdf_path = os.path.abspath(os.path.join(self.out_path, pdf_filename))
 
+
+        # Change dir to the tempfiles path. This helps Prince and also lets us
+        # use os.path.isdir()
+        old_cwd = os.getcwd()
+        os.chdir(self.staging_folder)
+
         # Start preparing the prince command
         args = [self.config["prince_executable"], '--javascript', '-o', abs_pdf_path, '--no-warn-css']
 
@@ -458,11 +447,16 @@ class DactylBuilder:
                     self.config.bypass_errors)
                 return
         # Each HTML output file in the target is another arg to prince
-        args += [p.data["html"] for p in pages]
+        for p in pages:
+            phtml = p.data["html"]
+            if os.path.isdir(phtml):
+                phtml = phtml+"index.html"
+            args.append(phtml)
 
-        # Change dir to the tempfiles path; this may avoid a bug in Prince
-        old_cwd = os.getcwd()
-        os.chdir(self.staging_folder)
+        # Prince says --fileroot is deprecated, but I haven't been able to make
+        # --remap do the same thing. Anyway, this makes absolute URLs work:
+        args.append("--fileroot="+os.path.abspath(self.staging_folder))
+
 
         logger.info("generating PDF: running %s..." % " ".join(args))
         prince_resp = subprocess.check_output(args, universal_newlines=True)

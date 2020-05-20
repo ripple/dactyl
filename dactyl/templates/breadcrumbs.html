@@ -1,0 +1,23 @@
+<nav class="breadcrumbs-wrap {% if currentpage.sidebar is defined and currentpage.sidebar == 'disabled' %} px-0 pt-5 pb-3 {% else %}p-0 p-md-3{% endif %}" aria-label="breadcrumb">
+  <ul class="breadcrumb bg-white">
+    {% set ns=namespace(crumbs = []) -%}
+    {%- macro get_crumbs(page) %}
+      {% if page.parent is undefined or page.parent == "index.html" %}
+        {% set homepage = pages|selectattr('html', 'defined_and_equalto', 'index.html')|list|first %}
+        {% set _ = ns.crumbs.insert(0, homepage) %}
+      {% else %}
+        {% set parent = pages|selectattr('html', 'defined_and_equalto', page.parent)|list|first %}
+        {% set _ = ns.crumbs.insert(0, parent) -%}
+        {{ get_crumbs(parent) }}
+      {%- endif -%}
+    {%- endmacro %}
+    {{ get_crumbs(currentpage) }}
+
+    {% if currentpage.html != "index.html" %}
+    {%- for page in ns.crumbs %}
+    <li class="active breadcrumb-item"><a href="{{ target.prefix }}{{ page.html }}">{{ page.name }}</a></li>
+    {% endfor %}
+    {% endif %}
+    <li class="active breadcrumb-item">{{ currentpage.name }}</li>
+  </ul>
+</nav><!--/.breadcrumbs-wrap-->

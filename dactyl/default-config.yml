@@ -55,8 +55,8 @@ preprocessor_allow_undefined: true
 flatten_default_html_paths: true
 
 ## Default templates.
-default_template: template-default.html
-default_pdf_template: template-default.html
+default_template: doc.html
+default_pdf_template: simple.html
 default_es_template: template-es.json
 
 time_format: "%Y-%m-%d" # Used to be "%B %d, %Y"
@@ -65,8 +65,8 @@ time_format: "%Y-%m-%d" # Used to be "%B %d, %Y"
 cover_page:
     html: index.html
     name: Index
-    pdf_template: template-pdf_cover.html
-    template: template-index.html
+    pdf_template: pdf-cover.html
+    template: landing.html
 
 ## List of targets you can build. Each target corresponds to a single PDF file
 targets: []

@@ -95,10 +95,18 @@ class DactylCLIParser:
 
         elif utility == self.UTIL_LINKS:
             parser.add_argument("-o", "--offline", action="store_true",
-               help="Check local anchors only")
+                help="Check local anchors only")
+            parser.add_argument("-d", "--dir", type=str, default=None,
+                help="Check the specified dir (otherwise use configured out_dir)")
             parser.add_argument("-s", "--strict", action="store_true",
                 help="Exit with error even on known problems")
             parser.add_argument("-n", "--no_final_retry", action="store_true",
                 help="Don't wait and retry failed remote links at the end.")
+            prefixes = parser.add_mutually_exclusive_group(required=False)
+            prefixes.add_argument("-p", "--prefix", type=str, default="/",
+                help="Assume site starts at this path. Must start with '/'")
+            prefixes.add_argument("--no_prefix", action="store_true", default=False,
+                help="Don't check absolute links")
+
 
         self.cli_args = parser.parse_args()

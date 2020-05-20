@@ -1,0 +1,16 @@
+<footer class="dactyl-footer px-2" role="contentinfo">
+
+  <section class="container-fluid p-5 pl-sm-0">
+
+    {% include 'language-nav.html' %}
+
+    <div class="absolute_bottom_footer">
+      {% if currentpage.copyright is defined %}<span>&copy; {{currentpage.copyright}}</span>{% endif %}
+      {% if target.repository is defined %}<span><a href="{{target.repository}}/blob/master/LICENSE">{% trans %}LICENSE{% endtrans %}</a></span>{% endif %}
+    </div><!-- /.absolute_bottom_footer -->
+
+  </section>
+</footer>
+
+<!-- Jump to top button -->
+<a href="#main_content_wrapper" class="jump-to-top btn btn-primary btn-lg" role="button" title="{% trans %}Return to top of page{% endtrans %}">{% trans %}Top{% endtrans %}</a>

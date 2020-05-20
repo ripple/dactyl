@@ -1,0 +1,39 @@
+{% if parent_html is undefined %}
+  {% set parent_page = currentpage %}
+  {% set parent_html = currentpage.html %}
+{% else %}
+  {% set parent_page = pages|selectattr('html', 'defined_and_equalto', parent_html)|list|first %}
+{% endif %}
+{% if depth is undefined %}
+  {% set depth = 5 %}
+{% endif %}
+{% if count is undefined %}
+  {# count controls how many direct children to print at each level #}
+  {% set count = 9999 %}
+{% endif %}
+
+{% if show_blurbs is undefined %}
+  {% set show_blurbs = False %}
+{% endif %}
+
+{% macro print_children(parent, indent_level, depth_limit, count_limit) %}
+  {% set printed_next_levels = [] %}
+  {% set ns=namespace(count_printed = 0) %}
+  {% for child in parent.children %}
+    {% if child.nav_omit is defined and child.nav_omit %}{# skip pages that are omitted from navigation #}
+    {% elif ns.count_printed < count_limit %}
+      <li class="level-{{indent_level}}"><a href="{{target.prefix}}{{child.html}}">{{child.name}}</a>{% if show_blurbs and child.blurb is defined and indent_level == 1%}<p class="blurb child-blurb">{{child.blurb}}</p>{% endif %}</li>
+      {% set ns.count_printed = ns.count_printed + 1 %}
+      {% if indent_level+1 <= depth_limit %}
+        {# recursively print descendants #}
+        {{ print_children(child, indent_level+1, depth_limit, count_limit) }}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
+
+<div class="children-display">
+  <ul>
+    {{ print_children(parent_page, 1, depth, count) }}
+  </ul>
+</div>

@@ -12,14 +12,17 @@ TIMEOUT_SECS = 9.1
 CHECK_IN_INTERVAL = 30
 FINAL_RETRY_DELAY = 4 * CHECK_IN_INTERVAL
 
+TYPE_LINK = "link"
+TYPE_IMAGE = "image"
+
 soupsCache = {}
-def getSoup(fullPath):
-    if fullPath in soupsCache.keys():
-        soup = soupsCache[fullPath]
+def getSoup(in_file):
+    if in_file in soupsCache.keys():
+        soup = soupsCache[in_file]
     else:
-        with open(fullPath, 'r', encoding="utf-8") as f:
+        with open(in_file, 'r', encoding="utf-8") as f:
             soup = BeautifulSoup(f.read(), "html.parser")
-            soupsCache[fullPath] = soup
+            soupsCache[in_file] = soup
     return soup
 
 
@@ -34,53 +37,170 @@ def check_for_unparsed_reference_links(soup):
     return unparsed_links
 
 
-def check_remote_url(endpoint, fullPath, broken_links, externalCache, isImg=False):
-    if isImg:
-        linkword = "image"
-    else:
-        linkword = "link"
-    if endpoint in [v for k,v in broken_links]:
-        # We already confirmed this was broken, so just add another instance
-        logger.warning("Broken %s %s appears again in %s" % (linkword, endpoint, fullPath))
-        broken_links.append( (fullPath, endpoint) )
-        return False
-    if endpoint in externalCache:
-        logger.debug("Skipping cached %s %s" % (linkword, endpoint))
-        return True
-    if endpoint in config["known_broken_links"]:
-        logger.warning("Skipping known broken %s %s in %s" % (linkword, endpoint, fullPath))
-        return True
+remote_url_cache = {
+    #str url: bool was_good
+}
+def check_remote_url(endpoint, in_file, hreftype=TYPE_LINK):
+    if endpoint in remote_url_cache.keys():
+        if remote_url_cache[endpoint]:
+            logger.debug("Skipping cached %s %s" % (hreftype, endpoint))
+            return (1, True)
+        else:
+            # We already confirmed this was broken, so just add another instance
+            logger.warning("Broken %s '%s' appears again in %s" %
+                    (hreftype, endpoint, in_file))
+            return (1, False)
 
-    logger.info("Testing remote %s URL %s"%(linkword, endpoint))
+    if endpoint in config["known_broken_links"]:
+        logger.warning("Skipping known broken %s '%s' in %s" %
+                (hreftype, endpoint, in_file))
+        return (0, False)
+
+    logger.info("Testing remote %s '%s'" % (hreftype, endpoint))
     try:
         code = requests.head(endpoint, timeout=TIMEOUT_SECS).status_code
     except Exception as e:
         logger.warning("Error occurred: %s" % repr(e))
         code = 500
+
     if code == 405 or code == 404:
         #HEAD didn't work, maybe GET will?
         try:
             code = requests.get(endpoint, timeout=TIMEOUT_SECS).status_code
         except Exception as e:
-          logger.warning("Error occurred: %s" % repr(e))
+          logger.warning("... Error occurred: %s" % repr(e))
           code = 500
 
     if code < 200 or code >= 400:
-        logger.warning("Broken remote %s in %s to %s"%(linkword, fullPath, endpoint))
-        broken_links.append( (fullPath, endpoint) )
-        return False
+        logger.warning("... Broken remote %s in %s to '%s'" %
+                (hreftype, in_file, endpoint))
+        remote_url_cache[endpoint] = False
+        return (1, False)
     else:
-        logger.info("...success.")
-        externalCache.append(endpoint)
-        return True
+        logger.info("... success.")
+        remote_url_cache[endpoint] = True
+        return (1, True)
 
 
-def checkLinks(offline=False):
+def check_href(endpoint, in_file, dirpath, top_dir, offline, hreftype=TYPE_LINK, site_prefix=None):
+    """
+    Check a given href to see if it's a working link (coming from )
+    Use hreftype=TYPE_IMAGE for modified behavior/logging for images.
+    Returns (int was_checked, bool was_good) where was_checked indicates how
+        many links were actually checked (1 or 0) and was_good indicates
+        whether the link was found if checked.
+        If the link was not checked, was_good is False.
+    """
+
+    if not endpoint.strip():
+        logger.warning("Empty %s in %s" % (hreftype,in_file))
+        return (1, False)
+
+    if endpoint == "#":
+        if hreftype == TYPE_IMAGE:
+            logger.warning("Invalid image URL: '#' in %s" % in_file)
+            return (1, False)
+        logger.debug("Skipping empty anchor link in %s" % in_file)
+        return (0, False)
+
+    if "mailto:" in endpoint:
+        if hreftype == TYPE_IMAGE:
+            logger.warning("Invalid image URL: '%s' in %s" % (endpoint, in_file))
+            return (1, False)
+        logger.warning("Skipping email link in %s to %s" %
+                (in_file, endpoint))
+        return (0, False)
+
+    if "://" in endpoint or endpoint[:2] == "//":
+        # Remote link.
+        if offline:
+            logger.info("Offline - Skipping remote URL %s" % (endpoint))
+            return (0, False)
+
+        return check_remote_url(endpoint, in_file, hreftype)
+    else:
+        # Local Anchor link; check presence of target file & anchor too.
+        return check_local_file(endpoint, in_file, dirpath, top_dir, site_prefix)
+
+
+def check_local_file(endpoint, in_file, dirpath, top_dir, site_prefix):
+    # First, split the link up into parts
+    if "#" in endpoint:
+        filename, anchor = endpoint.split("#",1)
+    else:
+        filename, anchor = endpoint,""
+    if "?" in filename:
+        filename, query = filename.split("?", 1)
+    else:
+        filename, query = filename, ""
+
+    if filename == "":
+        # Anchor only; linked file is the current one.
+        full_file_path = in_file
+    elif filename[0] == "/":
+        # Absolute path.
+        if site_prefix and filename.startswith(site_prefix):
+            logger.debug("Trimming site prefix (%s) from absolute link..." %
+                    site_prefix)
+            full_file_path = os.path.join(top_dir, filename[len(site_prefix):])
+        else:
+            # Can't properly test absolute links without knowing where the
+            #   server root will be, so skip this
+            logger.warning("Skipping absolute link in %s to '%s'" %
+                    (in_file, endpoint))
+            return (0, False)
+    else:
+        # Relative path.
+        full_file_path = os.path.join(dirpath, filename)
+
+    # Assume index.html if path is a directory.
+    # This won't work for certain unusual server configurations or if you're
+    # building PHP files or something weird like that
+    if full_file_path[-1:] == "/":
+        full_file_path = full_file_path + "index.html"
+
+    logger.info("Testing local link in %s to '%s'" %
+            (in_file, endpoint))
+
+    # See if the file is even there...
+    if not os.path.exists(full_file_path):
+        logger.warning("... Broken local link in %s to '%s' (file not found)" %
+                (in_file, endpoint))
+        return (1, False)
+
+    if not anchor:
+        # No anchor to check? Then we're done.
+        logger.info("... success.")
+        return (1, True)
+
+    # Skip the anchor if this is a configured "ignore anchors" file.
+    # This is mostly useful if the linked page has its anchors dynamically
+    # populated by JavaScript or something.
+    if filename in config["ignore_anchors_in"]:
+        logger.warning("Ignoring anchor '%s' in page %s" %
+                (endpoint,filename))
+        return (0, False)
+
+    targetSoup = getSoup(full_file_path)
+    if not targetSoup.find(id=anchor) and not targetSoup.find(
+                "a",attrs={"name":anchor}):
+        logger.warning("... Broken anchor link in %s to %s" %
+                (in_file, endpoint))
+        return (1, False)
+    else:
+        logger.info("... anchor found.")
+        return (1, True)
+
+
+def check_directory(top_dir, offline=False, site_prefix=None):
+    """
+    Walk the given out_path for .html files and check links in each of them.
+    """
     externalCache = []
     broken_links = []
     num_links_checked = 0
     last_checkin = time()
-    for dirpath, dirnames, filenames in os.walk(config["out_path"]):
+    for dirpath, dirnames, filenames in os.walk(top_dir):
         if time() - last_checkin > CHECK_IN_INTERVAL:
             ## Print output periodically so Jenkins/etc. don't kill the job
             last_checkin = time()
@@ -95,17 +215,19 @@ def checkLinks(offline=False):
                 last_checkin = time()
                 print("... still working (file: %s) ..." % fname)
 
-            fullPath = os.path.join(dirpath, fname)
-            if "/node_modules/" in fullPath or ".git" in fullPath:
-                logger.debug("skipping ignored dir: %s" % fullPath)
+            in_file = os.path.join(dirpath, fname)
+            if "/node_modules/" in in_file or ".git" in in_file:
+                logger.debug("skipping ignored dir: %s" % in_file)
                 continue
-            if fullPath.endswith(".html"):
-                soup = getSoup(fullPath)
+            if in_file.endswith(".html"):
+                soup = getSoup(in_file)
                 unparsed_links = check_for_unparsed_reference_links(soup)
                 if unparsed_links:
                     logger.warning("Found %d unparsed Markdown reference links: %s" %
                             (len(unparsed_links), "\n... ".join(unparsed_links)))
-                    [broken_links.append( (fullPath, u) ) for u in unparsed_links]
+                    [broken_links.append( (in_file, u) ) for u in unparsed_links]
+
+                # Check <a> tags
                 links = soup.find_all('a')
                 for link in links:
                     if time() - last_checkin > CHECK_IN_INTERVAL:
@@ -115,116 +237,29 @@ def checkLinks(offline=False):
                         #probably an <a name> type anchor, skip
                         continue
 
-                    endpoint = link['href']
-                    if not endpoint.strip():
-                        logger.warning("Empty link in %s" % fullPath)
-                        broken_links.append( (fullPath, endpoint) )
-                        num_links_checked += 1
+                    was_checked, was_good = check_href(link['href'],
+                            in_file, dirpath, top_dir, offline,
+                            site_prefix=site_prefix)
+                    num_links_checked += was_checked
+                    if was_checked and not was_good:
+                        broken_links.append( (in_file, link['href']) )
 
-                    elif endpoint == "#":
+                # Check <img> tags
+                imgs = soup.find_all('img')
+                for img in imgs:
+                    if "src" not in img.attrs or not img["src"].strip():
+                        logger.warning("Broken image with no src in %s" % in_file)
+                        broken_links.append( (in_file, img["src"]) )
+                        num_links_checked += 1
                         continue
 
-                    elif "mailto:" in endpoint:
-                        logger.warning("Skipping email link in %s to %s" %
-                                (fullPath, endpoint))
-                        continue
+                    was_checked, was_good = check_href(img["src"],
+                            in_file, dirpath, top_dir, offline,
+                            site_prefix=site_prefix, hreftype=TYPE_IMAGE)
+                    num_links_checked += was_checked
+                    if was_checked and not was_good:
+                        broken_links.append( (in_file, img["src"]) )
 
-                    elif endpoint[0] == '/':
-                        # Can't properly test absolute links without knowing where the
-                        #   server root will be, so skip this
-                        logger.warning("Skipping absolute link in %s to %s" %
-                                (fullPath, endpoint))
-                        continue
-
-                    elif "://" in endpoint:
-                        if offline:
-                            logger.info("Offline - Skipping remote URL %s" % (endpoint))
-                            continue
-
-                        num_links_checked += 1
-                        check_remote_url(endpoint, fullPath, broken_links, externalCache)
-
-
-                    elif '#' in endpoint:
-                        if fname in config["ignore_anchors_in"]:
-                            logger.warning("Ignoring anchor %s in dynamic page %s" %
-                                    (endpoint,fname))
-                            continue
-                        logger.info("Testing local link %s from %s" %
-                                (endpoint, fullPath))
-                        num_links_checked += 1
-                        filename,anchor = endpoint.split("#",1)
-                        # Strip query parameters
-                        if "?" in filename:
-                            filename, query = filename.split("?", 1)
-                        if filename == "":
-                            fullTargetPath = fullPath
-                        else:
-                            fullTargetPath = os.path.join(dirpath, filename)
-                        if not os.path.exists(fullTargetPath):
-                            logger.warning("Broken local link in %s to %s" %
-                                    (fullPath, endpoint))
-                            broken_links.append( (fullPath, endpoint) )
-
-                        elif filename in config["ignore_anchors_in"]:
-                            #Some pages are populated dynamically, so BeatifulSoup wouldn't
-                            # be able to find anchors in them anyway
-                            logger.info("Skipping anchor link in %s to ignored page %s" %
-                                  (fullPath, endpoint))
-                            continue
-
-                        elif fullTargetPath != "../":
-                            num_links_checked += 1
-                            targetSoup = getSoup(fullTargetPath)
-                            if not targetSoup.find(id=anchor) and not targetSoup.find(
-                                        "a",attrs={"name":anchor}):
-                                logger.warning("Broken anchor link in %s to %s" %
-                                        (fullPath, endpoint))
-                                broken_links.append( (fullPath, endpoint) )
-                            else:
-                                logger.info("...anchor found.")
-                            continue
-
-                    else:
-                        num_links_checked += 1
-                        if "?" in endpoint:
-                            filename, query = endpoint.split("?", 1)
-                        else:
-                            filename = endpoint
-                        if not os.path.exists(os.path.join(dirpath, filename)):
-                            logger.warning("Broken local link in %s to %s" %
-                                    (fullPath, filename))
-                            broken_links.append( (fullPath, filename) )
-
-                    #Now check images
-                    imgs = soup.find_all('img')
-                    for img in imgs:
-                        num_links_checked += 1
-                        if "src" not in img.attrs or not img["src"].strip():
-                            logger.warning("Broken image with no src in %s" % fullPath)
-                            broken_links.append( (fullPath, img["src"]) )
-                            continue
-
-                        src = img["src"]
-                        if src[0] == "/":
-                            logger.warning("Skipping absolute image path %s in %s" %
-                                    (src, fullPath))
-                        elif "://" in src:
-                            if offline:
-                                logger.info("Offline - Skipping remote image %s"%(endpoint))
-                                continue
-
-                            check_remote_url(src, fullPath, broken_links, externalCache, isImg=True)
-
-                        else:
-                            logger.info("Checking local image %s in %s" %
-                                    (src, fullPath))
-                            if os.path.exists(os.path.join(dirpath, src)):
-                                logger.info("...success")
-                            else:
-                                logger.warning("Broken local image %s in %s" %
-                                        (src, fullPath))
-                                broken_links.append( (fullPath, src) )
     return broken_links, num_links_checked
 
 
@@ -236,7 +271,7 @@ def final_retry_links(broken_links):
         logger.info("(no http/https broken links to retry)")
         return
 
-    print("Waiting %d seconds to retry broken %d remote links..."
+    print("Waiting %d seconds to retry %d broken remote links..."
                 % (FINAL_RETRY_DELAY, len(broken_remote_links)))
     start_wait = time()
     elapsed = 0
@@ -245,20 +280,36 @@ def final_retry_links(broken_links):
         print("...")
         elapsed = time() - start_wait
 
-    retry_cache = []
+    global remote_url_cache
+    remote_url_cache = {}
     retry_broken = []
     for page, link in broken_remote_links:
-        link_works = check_remote_url(link, page, retry_broken, retry_cache)
-        if link_works:
-            logger.info("Link %s in page %s is back online" % (link, page))
+        was_checked, was_good = check_remote_url(link, page)
+        if was_good:
+            logger.info("Link '%s' in page %s is back online" % (link, page))
             broken_links.remove( (page,link) )
         else:
-            logger.info("Link %s in page %s is still down." % (link, page))
+            logger.info("Link '%s' in page %s is still down." % (link, page))
 
 
 
 def main(cli_args):
-    broken_links, num_links_checked = checkLinks(cli_args.offline)
+    if cli_args.dir:
+        out_path = cli_args.dir
+        logger.debug("Chose top_dir '%s'" % out_path)
+    else:
+        out_path = config["out_path"]
+
+    if cli_args.prefix:
+        if cli_args.prefix[0] != "/":
+            logger.error("Invalid --prefix value '%s'. Prefixes must start with '/'."
+                    % cli_args.prefix)
+            exit(1)
+        site_prefix = cli_args.prefix
+    elif cli_args.no_prefix:
+        site_prefix = None
+
+    broken_links, num_links_checked = check_directory(out_path, cli_args.offline, site_prefix)
 
     if not cli_args.no_final_retry and not cli_args.offline:
         final_retry_links(broken_links)
@@ -266,7 +317,7 @@ def main(cli_args):
         # Automatically removes from broken_links if they work now
 
     print("---------------------------------------")
-    print("Link check report. %d links checked."%num_links_checked)
+    print("Link check report. %d links checked." % num_links_checked)
 
     if not cli_args.strict:
         unknown_broken_links = [ (page,link) for page,link in broken_links

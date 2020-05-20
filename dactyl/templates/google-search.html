@@ -1,0 +1,8 @@
+<form class="navbar-form navbar-right my-2 my-lg-0 mx-0 mr-lg-2" id="navbar-search" role="search" method="get" action="https://www.google.com/search">
+  <div class="form-inline">
+    <label class="sr-only" for="topsearchbar">{% trans %}Search{% endtrans %}</label>
+    <input name="q" value="site:{{target.url}}" type="hidden">
+    <input id="topsearchbar" name="q" type="text" class="form-control top-search" placeholder="{% trans %}Search{% endtrans %}">
+    <button type="submit" class="btn btn-default fa fa-search">&nbsp;</button>
+  </div>
+</form>

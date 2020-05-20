@@ -125,6 +125,7 @@ def filter_soup(soup, target={"name":""}, currentpage={},
             ref_target = lookup_display_name(xref_target_shortname, config)
 
             link_label = " ".join([s for s in xref.stripped_strings])
+            # TODO: consider preserving non-string contents in the link label
             # If a link label wasn't provided, generate one from the page name
             if not link_label.strip():
                 link_label = xref_page.get("name", None)
@@ -158,7 +159,8 @@ def filter_soup(soup, target={"name":""}, currentpage={},
             # First fix the hyperlink. Use the HTML (in case of link-by-md):
             xref.attrs["href"] = prefix+xref_page["html"]+xref_frag
             # If this link's label is only whitespace, fix it
-            if not [s for s in xref.stripped_strings]:
-                #print("replacing label for xref", xref)
-                #print("stripped_strings was", [s for s in xref.stripped_strings])
-                xref.string = xref_page["name"]
+            xref_contents = "".join([str(c) for c in xref.contents]).strip()
+            # logger.debug("xref contents: '%s'"%xref_contents)
+            if not xref_contents:
+                xref_label = xref_page.get("name", "")
+                xref.string = xref_label

@@ -1,8 +1,6 @@
 content_path: content
 template_path: templates
 template_static_path: template_assets
-default_template: template-web.html
-default_pdf_template: template-pdf.html
 filter_paths:
     - custom_filters
     - more_custom_filters
@@ -70,6 +68,11 @@ pages:
         targets:
             - everything
 
+    -   md: extends.md
+        category: Tests
+        parent: tests-index.html
+        targets:
+            - everything
 
     -   name: Hierarchy Demo
         category: Tests

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block main %}
+  {% if content %}
+
+  <section class="pt-3 p-md-3">
+    <article class="content">
+      {{ content }}
+
+      {% set show_blurbs = True %}
+      {% set depth= 1 %}
+      {% include 'children.html' %}
+    </article>
+  </section>
+
+  {% else %}
+  <section class="pt-3 p-md-3">
+    <article class="dactyl-content">
+      <h1 id="main-page-header">{{ currentpage.name }}</h1>
+      <p>{{ currentpage.blurb }}</p>
+      {% set show_blurbs = True %}
+      {% set depth = 2 %}
+      {% include 'children.html' %}
+    </article>
+  </section>
+  {% endif %}
+{% endblock %}
+
+{% block endbody %}
+{% if target.google_analytics_tag is defined %}
+<script type="application/javascript">
+  gtag('set', {'content_group1': 'Hub Pages'});
+</script>
+{% endif %}
+{% endblock %}

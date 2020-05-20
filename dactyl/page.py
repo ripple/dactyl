@@ -230,7 +230,7 @@ class DactylPage:
         # Apply markdown-based filters here
         for filter_name in self.filters():
             if "filter_markdown" in dir(self.config.filters[filter_name]):
-                logger.info("... applying markdown filter %s" % filter_name)
+                logger.debug("... applying markdown filter %s" % filter_name)
                 try:
                     md = self.config.filters[filter_name].filter_markdown(
                         md,
@@ -269,14 +269,17 @@ class DactylPage:
 
         md = self.md_content(context)
 
-        logger.info("... parsing markdown...")
-        html = markdown(md, extensions=["markdown.extensions.extra",
-                                        "markdown.extensions.sane_lists"])
+        if md:
+            logger.info("... parsing markdown...")
+            html = markdown(md, extensions=["markdown.extensions.extra",
+                                            "markdown.extensions.sane_lists"])
+        else:
+            html = ""
 
         # Apply raw-HTML-string-based filters here
         for filter_name in self.filters():
             if "filter_html" in dir(self.config.filters[filter_name]):
-                logger.info("... applying HTML filter %s" % filter_name)
+                logger.debug("... applying HTML filter %s" % filter_name)
                 try:
                     html = self.config.filters[filter_name].filter_html(
                             html,
@@ -305,7 +308,7 @@ class DactylPage:
         # Apply soup-based filters here
         for filter_name in self.filters():
             if "filter_soup" in dir(self.config.filters[filter_name]):
-                logger.info("... applying soup filter %s" % filter_name)
+                logger.debug("... applying soup filter %s" % filter_name)
                 try:
                     self.config.filters[filter_name].filter_soup(
                             soup,

@@ -1,0 +1,29 @@
+{% if target.repository is defined %}
+<div class="github-edit-wrap my-2 my-lg-0 mx-0 mx-lg-2">
+    {% if target.github_branch is undefined %}
+      {% set gh_branch = "master" %}
+    {% else %}
+      {% set gh_branch = target.github_branch %}
+    {% endif %}
+    {% set have_edit_link = False %}
+    {% if currentpage.md is defined %}
+        {% if currentpage.md.startswith("http://") or
+          currentpage.md.startswith("https://") %}
+          {# Leave have_edit_link = False #}
+        {% else %}
+          {% set have_edit_link = True %}
+          {% set githuburl = target.repository + "/edit/"
+            + gh_branch
+            + "/" + config.content_path + "/" + currentpage.md %}
+        {% endif %}
+    {% elif currentpage.template is defined %}
+      {% set have_edit_link = True %}
+      {% set githuburl = target.repository + "/edit/"
+        + gh_branch + "/"+ config.template_path + "/" + currentpage.template %}
+    {% endif %}
+    {% if not have_edit_link %}
+      {% set githuburl = target.repository %}
+    {% endif %}
+    <a href="{{githuburl}}" target="_blank" class="github-edit">{% trans %}Edit{% endtrans %}</a>
+</div><!-- /.github-edit -->
+{% endif %}

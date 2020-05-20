@@ -1,0 +1,15 @@
+{% if config.languages is defined and config.languages|length > 1 and target.lang is defined %}
+<nav role="navigation" class="d-flex mb-3 language-selector">
+  <ul class="nav">
+    {% for lang in config.languages %}
+    <li class="nav-item">
+      {% if lang.code == target.name %}
+      <a class="nav-link active" href="{{lang.prefix}}{{currentpage.html}}"><i class="fa fa-check-circle"></i> {{lang.display_name}}</a>
+      {% else %}
+      <a class="nav-link" href="{{lang.prefix}}{{currentpage.html}}">{{lang.display_name}}</a>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</nav>
+{% endif %}
