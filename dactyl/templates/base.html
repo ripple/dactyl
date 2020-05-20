@@ -39,7 +39,7 @@
 
 <body class="{% if currentpage.sidebar is undefined or currentpage.sidebar != "disabled" %}sidebar-primary {% endif %} lang-{{target.lang}} {% block bodyclasses %}{% endblock %}" data-spy="scroll" data-target="#page-toc-wrapper" data-offset="0">
   {% block topnav %}
-    {% include 'bs-header.html' %}
+    {% include 'header.html' %}
   {% endblock %}
 
   {% block mainbody %}
@@ -55,7 +55,7 @@
       <!-- main column -->
       <main class="main {% if currentpage.sidebar is defined and currentpage.sidebar == "disabled" %}col-md-12{% else %}col-md-7 col-lg-6{% endif %} order-md-3  {% block mainclasses %}{% endblock %}" role="main" id="main_content_body">
           {% block breadcrumbs %}
-            {% include 'bs-breadcrumbs.html' %}
+            {% include 'breadcrumbs.html' %}
           {% endblock %}
           {% block main %}
             <section class="pt-3 p-md-3">
@@ -69,7 +69,7 @@
       <!-- Left sidebar last so it's at the end for mobile -->
       <aside class="sidebar col-md-5 col-lg-3 p-0 order-md-1" role="complementary">
           {% block left_sidebar %}
-            {% include "bs-tree-nav.html" %}
+            {% include "tree-nav.html" %}
           {% endblock %}
       </aside>
       {% endif %}
@@ -78,7 +78,7 @@
   {% endblock %}
 
 {% block footer %}
-  {% include 'bs-footer.html' %}
+  {% include 'footer.html' %}
 {% endblock %}
 
 {% block nonblockingresources %}

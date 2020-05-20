@@ -35,16 +35,9 @@
         </section>
     </div>
     <div class="dactyl-pdf-toc">
-        {% for cat in categories %}
-        <h3>{{ cat }}</h3>
-        <ul>
-            {% for page in pages %}
-                {% if page.category == cat %}
-            <li><a href="{{ page.html }}">{{ page.name }}</a></li>
-                {% endif %}
-            {% endfor %}
-        </ul>
-        {% endfor %}
+        {% set show_blurbs = False %}
+        {% set depth = 99 %}
+        {% include 'children.html' %}
     </div>
 </body>
 </html>

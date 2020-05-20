@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html {% if currentpage.language %}lang="{{currentpage.language}}"{% else %}lang="en"{% endif %}>
+<html>
 <head>
     <meta charset="utf-8">
     <title>{{ currentpage.name }} - {{ target.display_name }}</title>
+    {% block css %}
     <style type="text/css">
     .dactyl-sidebar {
         float: right;
@@ -35,6 +36,7 @@
     }
 
     @media print {
+      .dactyl-sidebar {display: none;}
 
       @page {
         @bottom-left {
@@ -53,16 +55,28 @@
       }
     }
     </style>
+    {% endblock %}
+    {% block endhead %}
+    {% endblock %}
 </head>
 <body>
+    {% block rightsidebar %}
     <aside class="dactyl-sidebar">
         <h4>Contents</h4>
         <ul class="dactyl-page-toc">
             {{ page_toc }}
         </ul>
     </aside>
-    <main class="dactyl-main">{{content}}</main>
+    {% endblock %}
+
+    {% block main %}
+    <main>{{content}}</main>
+    {% endblock %}
+
+    {% block footer %}
     <footer>
-      <p>(Exported {{ current_time }})</p></footer>
+      <p>(Exported {{ current_time }})</p>
+    </footer>
+    {% endblock %}
 </body>
 </html>

@@ -1,0 +1,4 @@
+{% for page in pages -%}
+{%- if page.html is defined and page.html != "sitemap.txt" -%}
+{{target.url}}{{page.html}}
+{% endif %}{% endfor %}
