@@ -92,6 +92,10 @@ class DactylCLIParser:
             parser.add_argument("--watch", "-w", action="store_true", default=False,
                                 help="Watch for changes and re-generate output. "+\
                                 "This runs until force-quit.")
+            parser.add_argument("--http_port", type=int, default=DEFAULT_SERVER_PORT,
+                                help="Use this port for HTTP server (when "+\
+                                "building PDFs.) Use '0' for no server (may not "+\
+                                "work well with PDFs containing absolute links)")
 
         elif utility == self.UTIL_LINKS:
             parser.add_argument("-o", "--offline", action="store_true",

@@ -1,3 +1,12 @@
+# v0.11.1 Release Notes
+
+This release introduces a simple HTTP server to aid development of sites that use absolute paths in links, and to work around some issues with absolute paths in PDF generation.
+
+- **Watch mode** (`--watch` or just `-w`) now starts a simple HTTP server at `http://localhost:32289/` by default. You can use this to test your site locally if it uses absolute links.
+- **PDF mode** now uses an HTTP server, by default, to pass the pages to Prince. This works around problems with Prince being unable to resolve absolute hyperlinks from one page to another page in the PDF.
+
+When using either (or both) of the above options, you can specify a different port to use with the `--http_port` commandline option. To disable the HTTP server, specify `--http_port 0`.
+
 # v0.11.0 Release Notes
 
 This release brings new template functionality and improvements to the link checker.

@@ -46,6 +46,8 @@ NOT_LOADED_PLACEHOLDER = "__NOT_LOADED_PLACEHOLDER__"
 API_SLUG_KEY = "api_slug"
 BUILTIN_ES_TEMPLATE = "templates/template-es.json"
 
+DEFAULT_SERVER_PORT = 32289 # "DACTY" in T-9
+
 
 def recoverable_error(msg, bypass_errors, error=None):
     """Logs a warning/error message and exits if bypass_errors==False"""
