@@ -1,8 +1,6 @@
 content_path: content
 template_path: templates
 template_static_path: template_assets
-default_template: bs-doc.html
-default_pdf_template: template-pdf.html
 filter_paths:
     - custom_filters
     - more_custom_filters
