@@ -1,3 +1,7 @@
+# v0.11.2 Release Notes
+
+This release fixes a bug where the link checker ignored "known broken links" when checking links with absolute paths. (Prior to v0.11.0, the link checker wasn't capable of checking these links at all, so it skipped them regardless of whether they were marked as known broken links.)
+
 # v0.11.1 Release Notes
 
 This release introduces a simple HTTP server to aid development of sites that use absolute paths in links, and to work around some issues with absolute paths in PDF generation.
