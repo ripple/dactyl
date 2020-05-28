@@ -18,6 +18,7 @@ from copy import copy
 
 # Necessary for prince
 import subprocess
+from time import sleep
 
 # Used to fetch markdown sources from the net
 import requests
@@ -80,6 +81,8 @@ class DactylBuilder:
         self.default_pdf_template = self.get_template(self.config["default_pdf_template"])
         self.default_html_template = self.get_template(self.config["default_template"])
         self.default_es_template = self.get_es_template(self.config["default_es_template"])
+
+        self.http_port = DEFAULT_SERVER_PORT
 
 
     def temp_dir(self):
@@ -446,21 +449,32 @@ class DactylBuilder:
                 recoverable_error("Couldn't find 'only' page %s" % only_page,
                     self.config.bypass_errors)
                 return
+
         # Each HTML output file in the target is another arg to prince
+        if self.http_port:
+            serverurl = "http://localhost:%d/" % self.http_port
+        else:
+            serverurl = "" # port 0: don't use the server
         for p in pages:
             phtml = p.data["html"]
-            if os.path.isdir(phtml):
-                phtml = phtml+"index.html"
-            args.append(phtml)
+            # if os.path.isdir(phtml):
+            #     phtml = phtml+"index.html"
+            args.append(serverurl+phtml)
 
-        # Prince says --fileroot is deprecated, but I haven't been able to make
-        # --remap do the same thing. Anyway, this makes absolute URLs work:
-        args.append("--fileroot="+os.path.abspath(self.staging_folder))
+        if self.http_port:
+            # Start up an HTTP server for Prince. This helps it resolve absolute
+            # URLs in hyperlinks correctly (which --fileroot doesn't quite do)
+            server = subprocess.Popen(["python3", "-m", "http.server", str(self.http_port)])
+            # Wait for server to start
+            sleep(1)
 
-
-        logger.info("generating PDF: running %s..." % " ".join(args))
+        logger.info("generating PDF: running %s" % " ".join(args))
         prince_resp = subprocess.check_output(args, universal_newlines=True)
         print(prince_resp)
+
+        if self.http_port:
+            # Now shut down the server
+            server.terminate()
 
         # Clean up the staging_folder now that we're done using it
         os.chdir(old_cwd)
@@ -477,6 +491,10 @@ class DactylBuilder:
         watch(mode, target, cli_args.only, cli_args.pdf,
                 es_upload=cli_args.es_upload,)
         """
+
+        if self.mode == "html" and self.http_port:
+            server = subprocess.Popen(["python3", "-m", "http.server",
+                                      str(self.http_port), "-d", self.out_path])
 
         event_handler = UpdaterHandler(builder=self)
         observer = Observer()
@@ -571,6 +589,8 @@ def main(cli_args, config):
 
     if cli_args.leave_temp_files:
         builder.leave_temp_files = True
+
+    builder.http_port = cli_args.http_port
 
     if cli_args.only:
         logger.info("building page %s..."%cli_args.only)

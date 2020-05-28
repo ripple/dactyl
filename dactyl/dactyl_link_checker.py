@@ -51,11 +51,6 @@ def check_remote_url(endpoint, in_file, hreftype=TYPE_LINK):
                     (hreftype, endpoint, in_file))
             return (1, False)
 
-    if endpoint in config["known_broken_links"]:
-        logger.warning("Skipping known broken %s '%s' in %s" %
-                (hreftype, endpoint, in_file))
-        return (0, False)
-
     logger.info("Testing remote %s '%s'" % (hreftype, endpoint))
     try:
         code = requests.head(endpoint, timeout=TIMEOUT_SECS).status_code
@@ -95,6 +90,11 @@ def check_href(endpoint, in_file, dirpath, top_dir, offline, hreftype=TYPE_LINK,
     if not endpoint.strip():
         logger.warning("Empty %s in %s" % (hreftype,in_file))
         return (1, False)
+
+    if endpoint in config["known_broken_links"]:
+        logger.warning("Skipping known broken %s '%s' in %s" %
+                (hreftype, endpoint, in_file))
+        return (0, False)
 
     if endpoint == "#":
         if hreftype == TYPE_IMAGE:

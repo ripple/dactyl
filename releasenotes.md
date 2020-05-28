@@ -1,253 +1,128 @@
-# v0.10.3 Release Notes
+# v0.11.2 Release Notes
 
-Updates compatibility with Python-Markdown so that ordered lists start with the intended number again.
+This release fixes a bug where the link checker ignored "known broken links" when checking links with absolute paths. (Prior to v0.11.0, the link checker wasn't capable of checking these links at all, so it skipped them regardless of whether they were marked as known broken links.)
 
-# v0.10.2 Release Notes
+# v0.11.1 Release Notes
 
-Fixes a bug that caused ElasticSearch uploads to fail.
+This release introduces a simple HTTP server to aid development of sites that use absolute paths in links, and to work around some issues with absolute paths in PDF generation.
 
-# v0.10.1 Release Notes
+- **Watch mode** (`--watch` or just `-w`) now starts a simple HTTP server at `http://localhost:32289/` by default. You can use this to test your site locally if it uses absolute links.
+- **PDF mode** now uses an HTTP server, by default, to pass the pages to Prince. This works around problems with Prince being unable to resolve absolute hyperlinks from one page to another page in the PDF.
 
-Fixes a bug that caused Dactyl to fail on Python 3.5.
+When using either (or both) of the above options, you can specify a different port to use with the `--http_port` commandline option. To disable the HTTP server, specify `--http_port 0`.
 
-# v0.10.0 Release Notes
+# v0.11.0 Release Notes
 
-Dactyl v0.10.0 is a major refactor of Dactyl that includes some breaking changes and new functionality.
-
-## Breaking Changes
-
-Dactyl v0.10.0 contains two significant breaking changes: a new header ID formula, and xref errors.
-
-### Header ID Formula
-
-The default formula for header IDs has changed slightly. Most headers in English documents have the same IDs as before, but headers may have different IDs in certain edge cases, especially for headers with non-English text. In cases where your content contains an anchor link to a header whose ID has changed, you must update your links to use the header's ID under the new formula.
-
-The new formula more closely matches GitHub's formula for header IDs. In particular:
-
-- The new formula does not strip accents from characters such as é or ç.
-- The new formula does not strip East Asian script (nor other "word" characters from Unicode).
-- For repeated headers, the new formula appends `-1`, `-2`, etc. instead of `_1`, `_2`, etc.
-
-The only known divergences from GitHub's header formula are in cases where GitHub creates invalid `id` values.
-
-With this change, the `standardize_header_ids` filter is **DEPRECATED**. It will be removed in a future version.
-
-### xrefs Errors
-
-The `xrefs` filter now raises an error if you link to a page without providing link text, but that page's name is unknown.
-
-Previously the filter would silently provide link text based on other attributes of the page, such as its markdown filename. This is usually not what you want the final output to have.
-
-To continue building despite these types of errors, pass `--bypass_errors` when running `dactyl_build`. Preferably, fix the xrefs so the referenced pages have proper names.
-
+This release brings new template functionality and improvements to the link checker.
 
 ## New Features
 
-### Frontmatter Improvements
+- New, more powerful built-in templates.
+- You can now include or extend built-in templates.
+- The link checker supports absolute paths.
+- External Links filter.
+- Various fixes and minor improvements, especially for handling absolute paths (sites with subdirectories or "pretty URLs").
 
-Dactyl v0.10.0 improves the handling of Jekyll-style frontmatter. Frontmatter is metadata at the start of a Markdown file, surrounded by a pair of `---` lines. Now you can provide any of a page's fields in the frontmatter instead of in the Dactyl config file, except for the path to the file itself.
+For details, keep reading.
 
-In cases where the config file and the frontmatter specify conflicting values for a field, the config file takes precedence.
+### Template Improvements
 
-Example of a page with frontmatter:
+Dactyl has a new and improved set of built-in HTML templates, and now supports including or extending the built-in templates. These templates contain a bunch of useful stuff in modular format, so you can pull in what you need, replace what you don't, and get updates automatically when Dactyl is updated.
 
-**File: `concept1.md`**
+Many of the templates work better if you set certain fields on your target or page definitions. Here's a list of those fields:
 
-```md
----
-category: Concepts
-parent: concepts.html
-targets:
-    - en
----
-# Placeholder Concept 1
-
-This is the content of the placeholder concept page.
-```
-
-**Dactyl Config entry:**
-
-```yaml
--   md: content/concept1.md
-    category: Placeholders # Optional; Overrides "category" from the frontmatter
-```
-
-### New Hierarchy Features
-
-Managing a hierarchy of documents is a common problem, so the new version of Dactyl makes this easier with some new fields for defining your pages' hierarchy.
-
-Add the **`parent` field** to a page's metadata to define a "parent" for the current page. The value of the `parent` field should be **the exact value of the parent page's `html` field.** If a page doesn't have an explicitly-specified `html` value, you must use the automatically generated value for the parent.
-
-Example:
-
-```yaml
-- md: some-parent-page.md
-  html: parent.html
-
-- md: first-child-page.md
-  html: child1.html
-  parent: parent.html
-
-- md: grandchild.md
-  html: grandchild.html
-  parent: child1.html
-
-- md: child2.md
-  html: child2.html
-  parent: parent.html
-```
-
-This creates a conceptual hierarchy like this:
-
-- `parent.html`
-    - `child1.html`
-        - `grandchild.html`
-    - `child2.html`
-
-After loading pages, Dactyl provides the following additional fields in each page's metadata, which are available to the preprocessor, filters, and templates:
-
-| Field            | Value    | Description                                    |
-|:-----------------|:---------|:-----------------------------------------------|
-| `children`       | List     | A list of pages that claim this page as a parent. Each page in the list is provided as a reference, so you can read its metadata including following its own children. |
-| `is_ancestor_of` | Function | A function you can use to check whether a given page is the direct or indirect parent of another given page. Provide the exact `html` of the page you want to check for as the single argument to this function. |
-
-This conceptual hierarchy does not affect the paths where output files are written. (It would be sensible to choose output `html` paths to reflect this hierarchy, though.) Also, Dactyl does not enforce a strict tree-like hierarchy of parents/children. It is up to the templates to use these fields to provide appropriate navigation elements based on the hierarchy these fields represent. [Example of template for printing page hierarchy tree.](https://github.com/mDuo13/dactyl-starter-kit/blob/master/template/template-tree-nav.html)
-
-**Caution:** It is possible to create infinite loops. Do not make a page its own direct or indirect parent. Doing so is likely to result in a `RecursionError` when trying to build.
+| Field | Description |
+|---|---|
+| `prefix` | The base path for this site. Use `/` for a site served from the top-level of its domain. Required for navigation if your site has subfolders or "pretty URLs". |
+| `logo` | URL or path for a logo image to use in the top-left. If not defined, uses a text header instead. |
+| `google_analytics_tag` | String tag to use with Google Analytics, e.g. "UA-00000000-0". If not defined, doesn't load Google Analytics. |
+| `repository` | URL to this site's source repository on GitHub. Required for the "Edit on GitHub" button. |
+| `url` | The fully-qualified URL for the base of the site. Required by the sitemap and Google Search templates. |
+| `stylesheet` | URL or path to the default stylesheet. The default includes Bootstrap 4.5 as well as custom CSS for code tabs, callouts, and the page layout. See the [styles dir](./dactyl/styles/) for the source SCSS. The default is served by dactyl.link. |
+| `dactyljs` | URL or path to the Dactyl JavaScript file to use. This defines "jump to top" and code tab behavior. The default is served by dactyl.link. |
+| `bootstrapjs` | URL or path to the Bootstrap JavaScript file to use. The default is served by BootstrapCDN. |
+| `fontawesomecss` | URL or path to FontAwesome (v4) CSS file to use. The default is served by BootstrapCDN. |
 
 
-### Other New Fields
+#### Page Templates
 
-In addition to the new page fields added for page hierarchy, Dactyl now provides certain fields to every page based on the results of parsing that page. Previously, Dactyl only provided these fields when building ElasticSearch JSON formats. Now, Dactyl provides these fields to every page after parsing that page's content Markdown. These fields are:
+The following built-in templates represent **full pages**, so you can use them with the `default_template:` and `template:` settings in the config file or frontmatter. You can also derive your own templates from these templates using `{% extends 'template' %}` syntax.
 
-| Field       | Value      | Description                                       |
-|:------------|:-----------|:--------------------------------------------------|
-| `blurb`     | String     | An excerpt from the start of the page, if available, generally consisting of the first paragraph of body text. |
-| `plaintext` | String     | The entire body text of the page, stripped of any formatting. |
-| `headermap` | Dictionary | A mapping, where the keys are the headers' plain text (formatting removed) and the values are those headers' unique IDs. |
+| Template | Description |
+|---|---|
+| `404.html` | Contains an error message intended to be used as a custom 404 page. |
+| `base.html` | A general purpose template with a 3-column layout, fixed header, and a footer. The navigation uses the hierarchy (`parent` and `child`) fields introduced by Dactyl v0.10.0. This uses [Bootstrap 4.5.0](https://getbootstrap.com/docs/4.5/). Most of the other built-in templates are derived from this template. |
+| `doc.html` | Specialized for individual documents. This is the new default template. The right sidebar has an in-page table of contents, and this runs code tab and syntax highlighting JavaScript by default. (You still need to enable the multicode_tabs filter in your `dactyl-config.yml` file to get code tab syntax.) |
+| `landing.html` | A landing page that displays a list of child pages in the center column. |
+| `pdf-cover.html` | A cover page and table of contents for PDFs. |
+| `redirect.html` | Redirects the user to another URL, as set by the page's `redirect_url` field. Useful for deprecating pages. |
+| `simple.html` | A minimal template with no dependencies. |
+| `template-sitemap.txt` | A template for a text [sitemap](https://support.google.com/webmasters/answer/183668?hl=en) for use by search engines. |
 
-Because these fields are derived from the content's HTML output, they are **not available** to the preprocessor, nor in filter functions `filter_markdown()` or `filter_html()`. They **are available** to `filter_soup()` functions and when rendering HTML templates.
+When extending the default templates, you many of them have blocks you can replace. For the full list, see [the templates](./dactyl/templates/) directly.
 
-If a page already has a `blurb` field defined in its metadata, Dactyl leaves the existing value in place.
 
-### New headers map
+#### Module Templates
 
-Dactyl already provided templates with a string containing the HTML for a list of header-based anchors in the current page, in the `page_toc` variable. (This variable, and its legacy alias `sidebar_content`, continue to be available.) However, to provide an opportunity to customize the markup of how the in-page anchors are presented, Dactyl now also provides a `headers` field, which you can use to generate a more customized table of contents. (For example, if you are using Bootstrap, you can use this to provide the classes necessary to make Scrollspy work properly.)
+The following built-in templates are partial modules you can use with `{% include 'templatehere.html' %}` blocks from other templates. Many of these pieces are used by the page templates above, as well:
 
-The `headers` field is a **list of headers** in the document, derived from `<h1>` through `<h6>` elements. **Each header** in the list is a dictionary with the following fields:
+| Template | Description |
+|---|---|
+| `algolia-docsearch.html` | Provides a search box (and accompanying resources) powered by [Algolia DocSearch](https://docsearch.algolia.com/). To use this, you must provide your Algolia API key in the target's `algolia_api_key` field provide your index name in the target's `algolia_index_name` field. |
+| `breadcrumbs.html` | Provides [breadcrumbs](https://getbootstrap.com/docs/4.5/components/breadcrumb/) to the current page, based on the hierarchy fields. |
+| `children.html` | Displays a bulleted list of children of the current page. You can modify the behavior by setting certain properties before including this template. (See below for an example.) |
+| `footer.html` | A footer containing a copyright notice, license link, and language selector (if you have the right fields defined). |
+| `github-edit.html` | A button that links to edit the current page's source file on GitHub. Requires the target's `repository` field to be the URL of the site's repository on GitHub. |
+| `header.html` | A fixed header containing a logo, navigation to top-level pages, search, and Edit on GitHub buttons if the right fields are defined. |
+| `language-dropdown.html` | A language-selector dropdown that points to the equivalent page in other languages, if you have multiple languages defined. (This is the one used in the header.) |
+| `language-dropdown.html` | A horizontal language selector that points to the equivalent page in other languages, if you have multiple languages defined. (This is the one used in the footer.) |
+| `page-toc.html` | A Bootstrap/ScrollSpy-ready table of contents based on the headers in the current page's Markdown contents. |
+| `tree-nav.html` | Tree-style site navigation with collapsible levels. You can set a custom page to be the "top" of the tree to show only a subset of your site. Otherwise it uses the first page (usually the auto-provided cover page) as the top of the tree. Set `nav_omit: true` on a page to hide that page from this navigation. |
 
-| Field   | Value   | Description                                              |
-|:--------|:--------|:---------------------------------------------------------|
-| `text`  | String  | The plain text of the header, with formatting removed.   |
-| `id`    | String  | The unique ID of the header element in the HTML. You can use this to link to it. |
-| `level` | Integer | The level of this header. `<h1>` elements are level 1, `<h2>` elements are level 2, and so on. |
+##### Children Module
 
-Note that while `page_toc` only contains headers of level 3 and above, `headers` contains headers all the way down to `<h6>` elements, so your template can choose whether to print them or not.
-
-See the following examples for a comparison:
-
-**Old Style:**
+The following demonstrates how to use the `children.html` template to display a list of children of a page (including links):
 
 ```html
-No customization of the content (but still works)
-<ul class="your-class">
-  {{page_toc}}
-</ul>
-
-Results in:
-<ul class="your-class">
-  <li class="level-1"><a href="#top-header">Top header</a></li>
-  <li class="level-2"><a href="#lower-header">Lower header</a></li>
-  <li class="level-2"><a href="#next-header">Next header</a></li>
-</ul>
+{% set parent_html = 'some-parent.html' %}
+{% set show_blurbs = True %}
+{% set depth = 3 %}
+{% include 'children.html' %}
 ```
 
-**New Style:**
+You can omit any or all of the `{% set ... %}` statements to use the defaults:
+
+| Setting | Description | Default |
+|---|---|---|
+| `parent_html` | Which page's children to show. The HTML filename of that page. | The current page. |
+| `show_blurbs` | If True, add the child page's `blurb` attribute next to its link. | False |
+| `depth` | How many levels in the hierarchy to show below the parent. | 5 |
+
+##### Tree Nav Module
+
+The following shows how to display a subset of the tree nav (starting with the file `some_parent.html`) instead of the full tree:
 
 ```html
-Can set custom classes or even use different HTML elements:
-<nav class="your-class">
-  {% for h in headers %}
-    <a class="nav-item level-{{h.level}}" href="#{{h.id}}">{{h.text}}</a>
-  {% endfor %}
-</nav>
-
-Results in:
-<nav class="your-class">
-    <a class="nav-item level-1" href="#top-header">Top header</a>
-    <a class="nav-item level-2" href="#lower-header">Lower header</a>
-    <a class="nav-item level-2" href="#next-header">Next header</a>
-</nav>
+{% set tree_top = pages|selectattr('html', 'defined_and_equalto', 'some_parent.html')|list|first %}
+{% include 'tree-nav.html' %}
 ```
 
 
-### Path Filenames
+### Link Checker
 
-Previously, the `html` value for a file had to be a filename writable in the filesystem. You can now specify an `html` value ending in `/` as a shortcut for a filename ending in `index.html`. This should make it easier to create "pretty URLs" without any special server configuration.
+The link checker is now capable of handling absolute paths in the output. By default, it assumes the out directory is the top level of your site. If not, you can supply a commandline argument such as `--prefix /mysite/` to provide the folder
 
-Furthermore, the built-in xrefs filter now supports adding a prefix to the generated links, so that you can use it to provide absolute, not relative paths. To use this, add a `prefix` field to your target definition. For example, if you publish a `docs` target at `example.com/docs/`, set the prefix as follows:
+The link checker can now check a folder other than the default out path as specified in the config. Pass `-d some/nondefault/path/` to check another path.
 
-```yaml
-targets:
-  -   name: docs
-      display_name: Example Documentation
-      prefix: "/docs/"
-```
+### External Links Filter
 
-If you publish the target at the root level of a domain, use the prefix `"/"`.
-
-In future releases, Dactyl may use the `prefix` field for more conveniences around absolute paths.
+The `external_links` filter is now part of mainline Dactyl. This filter finds `http://` and `https://` links (in other words, links to other sites) and marks them as external links by adding an icon to the end of the link text. It also makes those links open in a new tab/window by default.
 
 
-### Internationalization Improvements
+## Bug Fixes and Other Improvements
 
-Dactyl now supports `{% trans %}Text to be translated{% endtrans %}` syntax in templates.
-
-To use translated values for these strings, add the following field to a **target definition**:
-
-| Field         | Value  | Description                                         |
-|:--------------|:-------|:----------------------------------------------------|
-| `locale_file` | String | Path to a (binary) `.mo` file containing translated strings for this target's locale/language. |
-
-Support for locale files is ***experimental*** and the details are likely to change in a future version of Dactyl.
-
-You can use [Babel](http://babel.pocoo.org/) to extract strings from templates and to compile the translations into a `.mo` file. For an example, see <https://github.com/mDuo13/dactyl-starter-kit/blob/master/locale/README.md>.
-
-
-### OpenAPI Parsing Improvements
-
-This release improves several aspects of OpenAPI (Swagger) specification parsing.
-
-- Single `example` requestBody values for API methods now display properly in the method detail page. Previously Dactyl only printed an example requestBody if the method definition used the `examples` array.
-- Example requestBody and Data Type are now formatted as pretty-printed JSON by default.
-- Fixed handling of schema names containing special characters such as `[` and `]`.
-
-However, OpenAPI spec parsing should still be considered experimental.
-
-### Multiline Callouts
-
-The built-in callouts filter now supports multi-line callouts using Markdown's blockquote syntax. A blockquote must be set off from paragraph text by blank lines before and after. Within the blockquote, each line must start with `> `. (The space is optional but recommended.) For example:
-
-```md
-Some paragraph text.
-
-> **Tip:** This begins a multiline callout.
->
-> - It can have lists.
->     - Indentation does not count the space in the `> ` as part of its
->       requirements, so things that would normally need to be indented 4 spaces
->       must be indented 5 instead.
-> - That's just Markdown syntax for you.
-
-More paragraph text
-```
-
-Build the [examples](examples/) to see it in action and to see some samples of specific edge cases.
-
-## Bug Fixes and Other Cleanup
-
-- `--skip_preprocessor` (when using a config file) works again. It had been broken since v0.40.0.
-- `--bypass_errors` can now bypass errors that occurred when running a filter.
-- Removed some extraneous whitespace in the default tables of contents `{{page_toc}}`.
-- Improved the clarity of log messages.
-- New unit tests.
+- Fixed some issues in building PDFs with links and images that use absolute paths.
+- Fixed a bug where cover pages wouldn't inherit fields from the target definition.
+- Fixed a bug that caused log messages to be duplicated. Also downgrades some log messages to debug-level.
+- Templates no longer raise an "Undefined" error when referencing undefined attributes of an object (e.g. target fields). (Only applies when not using strict undefined.)
+- Refactored link checker somewhat to reduce technical debt.
