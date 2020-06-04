@@ -23,6 +23,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+node_modules/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -45,9 +46,6 @@ coverage.xml
 *,cover
 .hypothesis/
 
-# Translations
-*.mo
-*.pot
 
 # Django stuff:
 *.log

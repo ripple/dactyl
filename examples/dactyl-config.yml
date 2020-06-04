@@ -7,10 +7,11 @@ filter_paths:
 
 targets:
     -   name: everything
-        display_name: Target with ALL THE EXAMPLES™
+        display_name: Dactyl Examples
         filters:
             - demote_headers
         demote_headers_pdf_only: true
+        stylesheet: template_assets/dactyl.css
 
     -   name: filterdemos
         display_name: Target with just the filter example pages
@@ -24,19 +25,22 @@ pages:
         html: tests-index.html
         category: Tests
         section_header: true
-        parent: hierarchy_demo.html
+        parent: index.html
+        template: landing.html
         targets:
             - everything
 
     -   md: includes.md
         category: Tests
         parent: tests-index.html
+        sidebar: left_only
         targets:
             - everything
 
     -   md: with-frontmatter.md
         html: with-frontmatter.html
         parent: tests-index.html
+        sidebar: right_only
         targets:
             - everything
 
@@ -58,13 +62,13 @@ pages:
     -   name: GitHub Markdown Compatibility
         category: Tests
         md: gfm-compat.md
-        parent: lists-and-codeblocks.html
+        parent: tests-index.html
         targets:
             - everything
 
     -   md: header_stress_test.md
         category: Tests
-        parent: lists-and-codeblocks.html
+        parent: tests-index.html
         targets:
             - everything
 
@@ -76,6 +80,7 @@ pages:
 
     -   name: Hierarchy Demo
         category: Tests
+        parent: tests-index.html
         template: template-hierarchy.html
         targets:
             - everything
@@ -83,11 +88,14 @@ pages:
     -   name: Filters
         category: Filters
         section_header: true
+        parent: index.html
+        template: landing.html
         targets:
             - everything
 
     -   md: filter-examples/callouts.md
         category: Filters
+        parent: filters.html
         targets:
             - everything
             - filterdemos
@@ -96,6 +104,7 @@ pages:
 
     -   md: filter-examples/xrefs.md
         category: Filters
+        parent: filters.html
         targets:
             - everything
             - filterdemos
@@ -104,6 +113,7 @@ pages:
 
     -   md: filter-examples/buttonize.md
         category: Filters
+        parent: filters.html
         targets:
             - everything
             - filterdemos
@@ -113,6 +123,7 @@ pages:
     -   md: filter-examples/patriots.md
         html: filter-examples-patriots.html
         category: Filters
+        parent: filters.html
         targets:
             - everything
             - filterdemos
@@ -123,6 +134,7 @@ pages:
         name: Custom Filter 2
         html: filter-examples-patriots2.html
         category: Filters
+        parent: filters.html
         targets:
             - everything
             - filterdemos
@@ -131,6 +143,7 @@ pages:
 
     -   md: filter-examples/badges.md
         category: Filters
+        parent: filters.html
         targets:
             - everything
             - filterdemos
@@ -139,6 +152,7 @@ pages:
 
     -   md: filter-examples/include_code.md
         category: Filters
+        parent: filters.html
         targets:
             - everything
             - filterdemos
@@ -147,6 +161,7 @@ pages:
 
     -   md: filter-examples/multicode_tabs.md
         category: Filters
+        parent: filters.html
         targets:
             - everything
             - filterdemos

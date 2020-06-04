@@ -1,5 +1,5 @@
 <nav class="breadcrumbs-wrap {% if currentpage.sidebar is defined and currentpage.sidebar == 'disabled' %} px-0 pt-5 pb-3 {% else %}p-0 p-md-3{% endif %}" aria-label="breadcrumb">
-  <ul class="breadcrumb bg-white">
+  <ul class="breadcrumb">
     {% set ns=namespace(crumbs = []) -%}
     {%- macro get_crumbs(page) %}
       {% if page.parent is undefined or page.parent == "index.html" %}
