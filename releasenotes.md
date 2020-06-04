@@ -1,3 +1,7 @@
+# v0.11.4 Release Notes
+
+This release fixes a bug in the link checker in v0.11.3 that caused it to incorrectly report directories as broken links instead of checking them.
+
 # v0.11.3 Release Notes
 
 This release fixes a bug in the link checker that caused it to fail with `IsADirectoryError` when attempting to check a link that omits the trailing the `/` from a directory index.
