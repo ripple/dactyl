@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html >
 <head>
-    <title>Template Extension - Target with ALL THE EXAMPLES™</title>
+    <title>Template Extension - Dactyl Examples</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width">
@@ -10,7 +10,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
     <!-- Stylesheet -->
-    <link href="https://dactyl.link/template_assets/dactyl.css" rel="stylesheet" />
+    <link href="template_assets/dactyl.css" rel="stylesheet" />
 
 
 
@@ -28,14 +28,20 @@
 
 </head>
 
-<body class="sidebar-primary  lang- " data-spy="scroll" data-target="#page-toc-wrapper" data-offset="0">
+<body class="sidebar-both  " data-spy="scroll" data-target="#page-toc-wrapper" data-offset="0">
 <nav class="navbar fixed-top navbar-expand-lg navbar-light bg-white px-2">
-  <a href="/" class="navbar-brand"><h1>Target with ALL THE EXAMPLES™</h1></a>
+  <a href="/" class="navbar-brand"><h1>Dactyl Examples</h1></a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHolder" aria-controls="navbarHolder" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
   <div class="collapse navbar-collapse justify-content-end" id="navbarHolder">
     <ul class="nav navbar-nav">
+          <li class="nav-item active-parent">
+            <a class="nav-link" href="tests-index.html">Tests</a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="filters.html">Filters</a>
+          </li>
     </ul><!-- /.navbar-nav -->
 
 
@@ -45,7 +51,7 @@
   <div class="container-fluid" role="document" id="main_content_wrapper">
     <div class="row">
       <!-- Right sidebar first so it's at the beginning for mobile layouts -->
-      <aside class="right-sidebar col-lg-3 order-lg-4 p-3" role="complementary">
+      <aside class="right-sidebar col-lg-3 order-lg-4" role="complementary">
 <div class="card" id="page-toc-wrapper">
   <div class="card-header">
     <h4>In this page:</h4>
@@ -58,11 +64,10 @@
       <!-- main column -->
       <main class="main col-md-7 col-lg-6 order-md-3  " role="main" id="main_content_body">
 <nav class="breadcrumbs-wrap p-0 p-md-3" aria-label="breadcrumb">
-  <ul class="breadcrumb bg-white">
+  <ul class="breadcrumb">
     
 
     <li class="active breadcrumb-item"><a href="index.html">Index</a></li>
-    <li class="active breadcrumb-item"><a href="hierarchy_demo.html">Hierarchy Demo</a></li>
     <li class="active breadcrumb-item"><a href="tests-index.html">Tests</a></li>
     <li class="active breadcrumb-item">Template Extension</li>
   </ul>
@@ -78,7 +83,7 @@
             </section>
       </main>
       <!-- Left sidebar last so it's at the end for mobile -->
-      <aside class="sidebar col-md-5 col-lg-3 p-0 order-md-1" role="complementary">
+      <aside class="sidebar col-md-5 col-lg-3 order-md-1" role="complementary">
 
 
 <div class="dactyl-tree-nav">
@@ -86,12 +91,56 @@
     <a href="index.html">Index</a>
   </div>
   <div id="sidenav" role="tablist" aria-multiselectable="true">
+      <div class="card active">
+  <div class="card-header" role="tab" id="sidenav_cat_head_1_1">
+    <a class=" sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_1" aria-expanded="true" aria-controls="sidenav_collapse_1_1"></a>
+    <h5 class="card-title">
+        <a class="sidenav_cat_title active-parent" href="tests-index.html">Tests</a>
+    </h5>
+  </div><!-- /.card-header -->
+
+  <div class="card-body card-body-single collapse show" role="tabpanel" id="sidenav_collapse_1_1">
+    <ul class="sidebar_pagelist">
+          <li class="leaf-child"><a class="" href="includes.html">Includes Test</a></li>
+          <li class="leaf-child"><a class="" href="with-frontmatter.html">Page With Frontmatter</a></li>
+          <li class="leaf-child"><a class="" href="conditionals.html">Conditionals Test</a></li>
+          <li class="leaf-child"><a class="" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></li>
+          <li class="leaf-child"><a class="" href="gfm-compat.html">GitHub Markdown Compatibility</a></li>
+          <li class="leaf-child"><a class="" href="header_stress_test.html">Header Stress Test</a></li>
+          <li class="leaf-child"><a class=" active" href="extends.html">Template Extension</a></li>
+          <li class="leaf-child"><a class="" href="hierarchy_demo.html">Hierarchy Demo</a></li>
+    </ul>
+  </div><!--/.card-body-->
+</div><!--/.card-->
+
+      <div class="card active">
+  <div class="card-header" role="tab" id="sidenav_cat_head_1_2">
+    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_2" aria-expanded="false" aria-controls="sidenav_collapse_1_2"></a>
+    <h5 class="card-title">
+        <a class="sidenav_cat_title " href="filters.html">Filters</a>
+    </h5>
+  </div><!-- /.card-header -->
+
+  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_2">
+    <ul class="sidebar_pagelist">
+          <li class="leaf-child"><a class="" href="filter-examples-callouts.html">Callouts Demonstration</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-xrefs.html">Intelligent Cross-References</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-buttonize.html">Buttonize Filter</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-patriots.html">Custom Filter</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-patriots2.html">Custom Filter 2</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-badges.html">Badges</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-include_code.html">Code Includer</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
+    </ul>
+  </div><!--/.card-body-->
+</div><!--/.card-->
+
   </div><!--/.sidenav-->
 </div><!-- /.dactyl-tree-nav -->      </aside>
     </div><!--/.row (main layout)-->
   </div>
 
-<p><small>(Part of Target with ALL THE EXAMPLES™. Exported 2020-05-27)</small></p>
+<p><small>(Part of Dactyl Examples. Exported 2020-06-03)</small></p>
 <p>© Ripple Labs</p>
 <!-- Non-blocking resources -->
 <!-- Bootstrap JS -->
