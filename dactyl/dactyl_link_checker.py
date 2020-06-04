@@ -156,7 +156,7 @@ def check_local_file(endpoint, in_file, dirpath, top_dir, site_prefix):
     # Assume index.html if path is a directory.
     # This won't work for certain unusual server configurations or if you're
     # building PHP files or something weird like that
-    if full_file_path[-1:] == "/":
+    if os.path.isdir(full_file_path):
         full_file_path = full_file_path + "index.html"
 
     logger.info("Testing local link in %s to '%s'" %

@@ -50,10 +50,12 @@ $black:    #000000;
 $code-color:    $gray-800;
 $body-color:    $black;
 $navbar-light-color: $gray-600;
-
+$breadcrumb-bg: $white;
 
 $navbar-padding-y: 0;
 $navbar-nav-link-padding-x: 1rem;
+
+$code-bg-color: $gray-100;
 
 // Bootstrap v4 ================================================================
 @import "node_modules/bootstrap/scss/bootstrap.scss";
@@ -80,6 +82,16 @@ $navbar-nav-link-padding-x: 1rem;
   /* Reduce external link icon size */
   .fa.fa-external-link:before {
     font-size: 80%;
+  }
+
+  blockquote {
+    padding: 0.5rem;
+    margin: 0.5rem 0.5rem 0.5rem 0;
+    border-left: 0.5rem solid $gray-500;
+
+    p:last-of-type {
+      margin-bottom: 0;
+    }
   }
 
   // Headings
@@ -277,25 +289,18 @@ $navbar-nav-link-padding-x: 1rem;
   // Code Tabs -----------------------------------------------------------------
 
   .multicode {
-    color: $black;
+    color: $code-color;
   }
 
   .multicode a.current {
-    background-color: $gray-200;
-    color: $black;
+    background-color: $code-bg-color;
+    color: $code-color;
   }
 
   .multicode a,
   a.current {
+    // The tabs themselves
     color: $black;
-  }
-
-  .multicode li {
-    border-color: $gray-300;
-  }
-
-  .code_sample pre code {
-    background-color: $gray-200;
   }
 
   .multicode a:hover {
@@ -304,12 +309,24 @@ $navbar-nav-link-padding-x: 1rem;
     padding-bottom: 7px;
   }
 
+  .code_sample pre code {
+    background-color: $code-bg-color;
+  }
+
   pre {
     overflow: visible;
     word-wrap: normal;
   }
   pre code {
     white-space: pre;
+    border-radius: $border-radius;
+  }
+  pre code, p code {
+    color: $code-color;
+    background: $code-bg-color;
+  }
+  p code {
+    padding: 0.2rem;
   }
   .code_sample pre {
     background: none;
@@ -355,8 +372,6 @@ $navbar-nav-link-padding-x: 1rem;
     list-style-type: none;
     margin-right: 0px;
     margin-left: 0px;
-    border-style: none solid;
-    border-width: 0.5px;
   }
   .multicode ul > li:before {
     background: none;
@@ -370,6 +385,13 @@ $navbar-nav-link-padding-x: 1rem;
     padding-top: 10px;
     margin: 0px;
     text-decoration: none;
+    border-style: solid;
+    border-color: transparent;
+    border-width: 0.5px 0.5px 0 0.5px;
+    border-top-left-radius: $border-radius;
+    border-top-right-radius: $border-radius;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
   }
   .multicode a.current:hover {
     border-bottom: none;
@@ -494,12 +516,40 @@ aside a.active-parent {
   padding-left: 34px;
 }
 
-/* main content area ----------------------------------- */
-.sidebar-primary .main {
-  border-left: 1px solid $gray-200;
-  border-right: 1px solid $gray-200;
+.right-sidebar {
+  padding: 1rem;
+
+  @media (max-width: 991px) {
+    // On this size screen, the right sidebar becomes a block at top instead
+    border-bottom: 1px solid $gray-200;
+  }
 }
 
+/* main content area ----------------------------------- */
+.sidebar-both .main, .sidebar-left .main {
+  border-left: 1px solid $gray-200;
+
+  @media (max-width: 767px) {
+    // On this size screen, the left sidebar becomes a block at bottom instead
+    border-left: none;
+  }
+}
+.sidebar-both .main, .sidebar-right .main {
+  border-right: 1px solid $gray-200;
+
+  @media (max-width: 991px) {
+    // On this size screen, the right sidebar becomes a block at top instead
+    border-right: none;
+  }
+}
+
+.main {
+  // large tables/images can go over the edge. Better to horizontal scroll than
+  // to overlap the right sidebar
+  overflow-x: auto;
+    z-index: 5;
+    min-height: 700px;
+}
 
 /* Edit on GitHub link ------------------------------------------------------ */
 .github-edit-wrap {
@@ -604,7 +654,6 @@ pre, code {
 /* Push content below fixed header ------------------------------------------ */
 #main_content_wrapper {
   margin-top: 68px;
-  padding: 0 48px;
 }
 
 /* Fix so anchors don't jump under the fixed header ------------------------- */
@@ -846,17 +895,6 @@ pre, code {
   display: inline-block;
 }
 
-.main {
-  // large tables/images can go over the edge. Better to horizontal scroll than
-  // to overlap the right sidebar
-  overflow-x: auto;
-}
-
-.sidebar-primary .main {
-  z-index: 5;
-  min-height: 700px;
-}
-
 /* Right navigation --------------------------------------------------------- */
 
 .right-sidebar .card {
@@ -870,7 +908,7 @@ pre, code {
 .right-sidebar .card-header {
   border-bottom: none;
   background-color: white;
-  padding: 10px 0;
+  padding: 0 0 10px 0;
 }
 
 .right-sidebar .card-header h4 {
@@ -1140,33 +1178,16 @@ Adapted for Dactyl Starter Kit
 
 @media (max-width: 991px) {
 
-  #main_content_wrapper {
-    padding: 0 24px;
-  }
   .navbar-brand img {
     width: 120px;
-  }
-
-  .sidebar-primary .main {
-    border-left: none;
-    border-right: none;
   }
 
   .right-sidebar .card {
     padding-left: 0;
   }
 
-  #main_content_body {
-    padding: 0;
-    border-left: 0;
-    border-bottom: 1px solid $gray-200
-  }
   #main_content_body .container-fluid {
     padding-left: 0;
-  }
-
-  .dactyl-footer {
-    margin: 0 24px;
   }
 
   #page-toc-wrapper {
@@ -1184,6 +1205,8 @@ Adapted for Dactyl Starter Kit
     overflow: hidden;
   }
 }
+
+
 @media (max-width: 480px) {
   html {
     overflow-x: hidden !important;
@@ -1255,10 +1278,10 @@ Adapted for Dactyl Starter Kit
   #main_content_body::before {
     display: none;
   }
-  .sidebar-primary .main {
+  #main_content_wrapper .main {
     border: 0;
   }
-  .sidebar-primary .row {
+  .main .row {
     display: block;
   }
   a[href^="#"]:after {

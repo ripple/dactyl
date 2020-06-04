@@ -1,39 +1,6 @@
-# v0.11.3 Release Notes
+# Dactyl Built-in Templates
 
-This release fixes a bug in the link checker that caused it to fail with `IsADirectoryError` when attempting to check a link that omits the trailing the `/` from a directory index.
-
-Additionally, this release contains minor adjustments to the default stylesheet and templates, and adds the template information from the v0.11.0 release notes to a README in the templates directory.
-
-# v0.11.2 Release Notes
-
-This release fixes a bug where the link checker ignored "known broken links" when checking links with absolute paths. (Prior to v0.11.0, the link checker wasn't capable of checking these links at all, so it skipped them regardless of whether they were marked as known broken links.)
-
-# v0.11.1 Release Notes
-
-This release introduces a simple HTTP server to aid development of sites that use absolute paths in links, and to work around some issues with absolute paths in PDF generation.
-
-- **Watch mode** (`--watch` or just `-w`) now starts a simple HTTP server at `http://localhost:32289/` by default. You can use this to test your site locally if it uses absolute links.
-- **PDF mode** now uses an HTTP server, by default, to pass the pages to Prince. This works around problems with Prince being unable to resolve absolute hyperlinks from one page to another page in the PDF.
-
-When using either (or both) of the above options, you can specify a different port to use with the `--http_port` commandline option. To disable the HTTP server, specify `--http_port 0`.
-
-# v0.11.0 Release Notes
-
-This release brings new template functionality and improvements to the link checker.
-
-## New Features
-
-- New, more powerful built-in templates.
-- You can now include or extend built-in templates.
-- The link checker supports absolute paths.
-- External Links filter.
-- Various fixes and minor improvements, especially for handling absolute paths (sites with subdirectories or "pretty URLs").
-
-For details, keep reading.
-
-### Template Improvements
-
-Dactyl has a new and improved set of built-in HTML templates, and now supports including or extending the built-in templates. These templates contain a bunch of useful stuff in modular format, so you can pull in what you need, replace what you don't, and get updates automatically when Dactyl is updated.
+This directory contains the default templates included with Dactyl. Starting with v0.11.0, you can include or extend the built-in templates. These templates contain a bunch of useful stuff in modular format, so you can pull in what you need, replace what you don't, and get updates automatically when Dactyl is updated.
 
 Many of the templates work better if you set certain fields on your target or page definitions. Here's a list of those fields:
 
@@ -65,7 +32,27 @@ The following built-in templates represent **full pages**, so you can use them w
 | `simple.html` | A minimal template with no dependencies. |
 | `template-sitemap.txt` | A template for a text [sitemap](https://support.google.com/webmasters/answer/183668?hl=en) for use by search engines. |
 
-When extending the default templates, you many of them have blocks you can replace. For the full list, see [the templates](./dactyl/templates/) directly.
+When extending the default templates, many of them have blocks you can replace. For the full list, inspect the templates' source code in this directory.
+
+##### Sidebars
+
+When using `base.html` or any of the templates derived from it, you can use the `sidebar` field to control the presence of sidebars. By default, both sidebars are present, with the left sidebar containing a cross-page navigation tree and the right sidebar containing an in-page table of contents. Provide `sidebar: disabled` (in the page definition or frontmatter) to have the center column occupy the full width of the page. Use `sidebar: left_only` to show only the left sidebar, and `sidebar: right_only` to show only the right sidebar.
+
+You can replace the sidebar contents by extending `base.html` and putting your replacements in `{% block left_sidebar %}` for the left sidebar, or `{% block right_sidebar %}` for the right sidebar.
+
+On medium viewscreens (768px to 991px wide) the right sidebar becomes full-width and appears before the main contents and left sidebar. On small viewscreens (less than 768px wide) the left sidebar and content become full-width, with the left sidebar coming after the page content. The following ASCII art attempts to depict this relationship:
+
+```text
+ Large screens        Medium Screens         Small screens
+
+| L |  C  | R |         | R       |              | R |
+|   |     |   |         | L |  C  |              | C |
+|   |     |   |         |   |     |              | L |
+
+L = left sidebar
+R = right sidebar
+C = main content
+```
 
 
 #### Module Templates
@@ -112,23 +99,3 @@ The following shows how to display a subset of the tree nav (starting with the f
 {% set tree_top = pages|selectattr('html', 'defined_and_equalto', 'some_parent.html')|list|first %}
 {% include 'tree-nav.html' %}
 ```
-
-
-### Link Checker
-
-The link checker is now capable of handling absolute paths in the output. By default, it assumes the out directory is the top level of your site. If not, you can supply a commandline argument such as `--prefix /mysite/` to provide the folder
-
-The link checker can now check a folder other than the default out path as specified in the config. Pass `-d some/nondefault/path/` to check another path.
-
-### External Links Filter
-
-The `external_links` filter is now part of mainline Dactyl. This filter finds `http://` and `https://` links (in other words, links to other sites) and marks them as external links by adding an icon to the end of the link text. It also makes those links open in a new tab/window by default.
-
-
-## Bug Fixes and Other Improvements
-
-- Fixed some issues in building PDFs with links and images that use absolute paths.
-- Fixed a bug where cover pages wouldn't inherit fields from the target definition.
-- Fixed a bug that caused log messages to be duplicated. Also downgrades some log messages to debug-level.
-- Templates no longer raise an "Undefined" error when referencing undefined attributes of an object (e.g. target fields). (Only applies when not using strict undefined.)
-- Refactored link checker somewhat to reduce technical debt.
