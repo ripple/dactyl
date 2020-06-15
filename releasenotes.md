@@ -1,3 +1,7 @@
+# v0.11.5 Release Notes
+
+This release makes the link checker more robust when the initial "HEAD" request fails. Previously it would retry using the GET method on some errors; now it retries any failure.
+
 # v0.11.4 Release Notes
 
 This release fixes a bug in the link checker in v0.11.3 that caused it to incorrectly report directories as broken links instead of checking them.
