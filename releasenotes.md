@@ -1,3 +1,10 @@
+# v0.11.6 Release Notes
+
+This release fixes the following bugs:
+
+- Variables passed through the commandline `--vars` option now correctly override existing variables that are defined in the config file.
+- Fixed a bug where if a page has a `parent` that wasn't part of the current target, it never got an `is_ancestor_of()` method. (This bug could cause builds using the built-in templates to fail.)
+
 # v0.11.5 Release Notes
 
 This release makes the link checker more robust when the initial "HEAD" request fails. Previously it would retry using the GET method on some errors; now it retries any failure.

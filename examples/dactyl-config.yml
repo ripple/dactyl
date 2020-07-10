@@ -12,6 +12,7 @@ targets:
             - demote_headers
         demote_headers_pdf_only: true
         stylesheet: template_assets/dactyl.css
+        foo: "fooooooo"
 
     -   name: filterdemos
         display_name: Target with just the filter example pages
@@ -41,6 +42,12 @@ pages:
         html: with-frontmatter.html
         parent: tests-index.html
         sidebar: right_only
+        targets:
+            - everything
+
+    -   md: cli-vars.md
+        html: cli-vars.html
+        parent: tests-index.html
         targets:
             - everything
 
@@ -85,6 +92,13 @@ pages:
         targets:
             - everything
 
+    -   md: debug.md
+        category: Tests
+        parent: tests-index.html
+        template: template-pdf.html
+        targets:
+            - everything
+
     -   name: Filters
         category: Filters
         section_header: true
@@ -92,6 +106,7 @@ pages:
         template: landing.html
         targets:
             - everything
+            - filterdemos
 
     -   md: filter-examples/callouts.md
         category: Filters

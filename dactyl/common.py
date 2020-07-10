@@ -94,13 +94,16 @@ def parse_frontmatter(text):
         logger.debug("...no front matter detected")
         return text, {}
 
-def merge_dicts(default_d, specific_d, reserved_keys_top=[]):
+def merge_dicts(default_d, specific_d, reserved_keys_top=[], override=False):
     """
     Extend specific_d with values from default_d (recursively), keeping values
     from specific_d where they both exist. (This is like dict.update() but
-    without overwriting duplicate keys in the updated dict.)
+    by default doesn't overwrite duplicate keys in the updated dict.)
 
     reserved_keys_top is only used at the top level, not recursively
+
+    override=True means that values in the default_d take precedence over values
+    for the same field in the specific_d.
     """
     for key,val in default_d.items():
         if key in reserved_keys_top:
@@ -109,4 +112,6 @@ def merge_dicts(default_d, specific_d, reserved_keys_top=[]):
             specific_d[key] = val
         elif type(specific_d[key]) == dict and type(val) == dict:
                 merge_dicts(val, specific_d[key])
+        elif override:
+            specific_d[key] = val
         #else leave the key in the specific_d
