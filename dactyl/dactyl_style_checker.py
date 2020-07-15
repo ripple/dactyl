@@ -10,7 +10,6 @@
 
 from dactyl.common import *
 
-#import nltk
 import collections
 
 from bs4 import BeautifulSoup
@@ -21,17 +20,26 @@ from dactyl.dactyl_build import DactylBuilder
 from dactyl.config import DactylConfig
 from dactyl.cli import DactylCLIParser
 from dactyl.target import DactylTarget
+import dactyl.style_report as style_report
 
 OVERRIDE_COMMENT_REGEX = r" *STYLE_OVERRIDE: *([\w, -]+)"
+
+
+
 
 class DactylStyleChecker:
     def __init__(self, target, config):
         """
-        TODO
+        A checker to build a target "virtually" and check its text for specific
+        style rules, including discouraged words and phrases, reading scores,
+        etc.
+
+        Does not check text in code samples.
         """
         self.target = target
         self.config = config
         self.load_style_rules()
+        self.issues = None
 
     @staticmethod
     def tokenize(passage):
@@ -59,7 +67,7 @@ class DactylStyleChecker:
             logger.warning("No 'phrase_substitutions_file' found in config.")
             self.disallowed_phrases = {}
 
-    def check_all(self):
+    def check_all(self, only_page=None):
         """
         Reads all pages for this checker's target and checks them for style.
 
@@ -81,58 +89,116 @@ class DactylStyleChecker:
 
         logger.info("Style Checker - checking all pages in target %s"%self.target.name)
 
-        style_issues = []
+        self.reports = []
         for page in pages:
-            logger.info("Checking page %s..." % page)
-            page_context = {"currentpage":page.data, **context}
-            page.html_content(page_context) # This defines page.soup
-            logger.debug("page.soup is... %s"%page.soup)
-            # If the page has no content, soup can be empty and that's OK.
-            if not page.soup.find_all():
-                logger.info("...page %s has no content."%page)
+            if only_page and page.data["html"] != only_page:
+                logger.debug("Only page mode - skipping %s"%page)
                 continue
+            pr = self.check_page(page, context)
+            if pr is not None:
+                logger.info(pr.describe_scores())
+                self.reports.append(pr)
 
-            page_issues = []
-            # All text in the parsed Markdown content should be contained in
-            # one of these top-level elements, except we ignore code samples.
-            block_elements = ["p","ul","table","h1","h2","h3","h4","h5","h6"]
-            blocks = [el for el in page.soup.find_all(
-                        name=block_elements, recursive=False)]
 
-            for block in blocks:
-                overrides = self.get_overrides(block)
-                # "Wipe" inlined <code> elements so we don't style-check
-                # code samples.
-                [code.clear() for code in block.find_all("code")]
-                passage_issues = self.check_passage(block.get_text(), overrides)
-                if passage_issues:
-                    page_issues += passage_issues
+    def check_page(self, page, context):
+        logger.info("Checking page %s..." % page)
+        page_context = {"currentpage":page.data, **context}
+        page.html_content(page_context) # This defines page.soup
+        logger.debug("page.soup is... %s"%page.soup)
+        # If the page has no content, soup can be empty and that's OK.
+        if not page.soup.find_all():
+            logger.warning("...page %s has no content."%page)
+            return
 
-            if page_issues:
-                style_issues.append( (page.data["name"], page_issues) )
+        page_issues = []
+        # All text in the parsed Markdown content should be contained in
+        # one of these top-level elements, except we ignore code samples.
+        block_elements = ["p","ul","table","h1","h2","h3","h4","h5","h6"]
+        blocks = [el for el in page.soup.find_all(
+                    name=block_elements, recursive=False)]
 
-        self.issues = style_issues
-        return style_issues
+
+        page_text = ""
+        for block in blocks:
+            overrides = self.get_overrides(block)
+            # "Wipe" inlined <code> elements so we don't style-check
+            # code samples.
+            [code.clear() for code in block.find_all("code")]
+            passage_text = block.get_text()
+            logger.debug("passage text: %s"%passage_text)
+            passage_issues = self.check_passage(passage_text, overrides)
+            if passage_issues:
+                page_issues += passage_issues
+
+            # Add this passage to the page text. Most readability scores seem
+            # to handle lists/bullets/headings/etc. best if we treat them like
+            # more sentences in an ongoing paragraph.
+            page_text += passage_text.strip()+". "
+
+        # Readability formulas are only appropriate for paragraphs
+        logger.debug("... Text for readability scoring:\n%s"%page_text)
+
+        return style_report.PageReport(page, page_issues, page_text)
+
 
 
     def report(self):
         """
         Print a report of discovered style issues to stdout.
-        self.check_all() must be called first to provide the issues
         """
-        #TODO: check for self.issues, report sensible error if check_all hasn't
-        # been run yet.
+        if self.reports is None:
+            self.check_all()
 
-        if not self.issues:
-            print("Style check passed with flying colors!")
+        num_pages = len(self.reports)
+        sum_issues = sum([len(pr.issues) for pr in self.reports])
+
+        if not num_pages:
+            logger.warning("No pages checked.")
             return
 
-        num_issues = sum(len(p[1]) for p in self.issues)
+        print("-----------------------------")
+        print("Discouraged Words and Phrases")
+        print("-----------------------------")
+        if not sum_issues:
+            print("No discouraged words/phrases found in %d pages!" % num_pages)
+        else:
+            print("Found %d discouraged words/phrases:" % sum_issues)
+            self.report_discouraged_words_phrases()
 
-        print("Found %d issues:" % num_issues)
-        for pagename,issuelist in self.issues:
-            print("Page: %s" % pagename)
-            c = collections.Counter(issuelist)
+
+        print("----------------------------------")
+        print(style_report.AveragePage(self.reports).describe_scores())
+        print("")
+        print("Most difficult pages by Flesch Reading Ease:")
+        worst = sorted(self.reports,
+                       key=lambda x:x.scores["flesch_reading_ease"]
+                      )[:3]
+        for pr in worst:
+            print(pr.describe_scores())
+        print("----------------------------------")
+
+        passed = sum([len(pr.goals_passed) for pr in self.reports])
+        failed = sum([len(pr.goals_failed) for pr in self.reports])
+        if passed+failed:
+            print("----------------------------------")
+            print("Readability Goals:")
+            print("{passed} passed out of {total} total goals ({pct:.1%})".format(
+                passed=passed,total=passed+failed,pct=passed/(passed+failed)
+            ))
+            if failed:
+                print("")
+                print("Failing pages:")
+                for pr in self.reports:
+                    if pr.goals_failed:
+                        print("{} ({})".format(pr.page, ", ".join(pr.goals_failed)))
+            print("----------------------------------")
+
+
+    def report_discouraged_words_phrases(self):
+        # for pagename,issuelist in self.issues:
+        for pr in self.reports:
+            print("Page: %s" % pr.page)
+            c = collections.Counter(pr.issues)
             for i, count_i in c.items():
                 if i[0]=="Unplain Phrase":
                     print("   Discouraged phrase: %s (%d instances); suggest '%s' instead." %
@@ -185,11 +251,16 @@ class DactylStyleChecker:
         return issues
 
 
+
+
 def main(cli_args, config):
     target = DactylTarget(config, name=cli_args.target)
     checker = DactylStyleChecker(target, config)
 
-    issues = checker.check_all()
+    if cli_args.only:
+        issues = checker.check_all(only_page=cli_args.only)
+    else:
+        issues = checker.check_all()
     checker.report()
     if issues:
         exit(1)

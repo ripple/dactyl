@@ -112,5 +112,9 @@ class DactylCLIParser:
             prefixes.add_argument("--no_prefix", action="store_true", default=False,
                 help="Don't check absolute links")
 
+        if utility == self.UTIL_STYLE:
+            parser.add_argument("--only", type=str, help=".html filename of a "+
+                                "single page in the config to check alone.")
+
 
         self.cli_args = parser.parse_args()

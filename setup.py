@@ -48,7 +48,8 @@ setup(
         'Markdown>=3.0.1',
         'ruamel.yaml',
         'requests',
-        'watchdog'
+        'watchdog',
+        'textstat'
     ],
     package_data={
         '': ["templates/*", "default-config.yml"],
