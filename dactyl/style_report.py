@@ -80,10 +80,12 @@ TESTS = {
 
 
 class PageReport:
-    def __init__(self, page, issues, page_text):
+    def __init__(self, page, issues, misspellings, page_text):
         self.page = page
         self.issues = issues
+        self.misspellings = misspellings
         self.scores = self.get_scores(page_text)
+        self.page_length(page_text)
         self.goals_passed, self.goals_failed = self.readability_goals()
 
     def get_scores(self, page_text):
@@ -104,6 +106,42 @@ class PageReport:
             s += "  {testname}: {desc}\n".format(
                 testname = deets["name"],
                 desc = descfunc(self.scores[test])
+            )
+
+        return s
+
+    def page_length(self, page_text):
+        """
+        Calculate page length metrics
+        """
+        self.len_chars = len(page_text)
+        self.len_words = len( re.split(r'\w+', page_text))
+        self.len_sentences = len( re.split(r'[.?!][)"]?\s', page_text) )
+
+    def report_page_length(self):
+        """
+        Returns a string that indicates the page length details
+        """
+
+        s = "%s Length Metrics:\n" % self.page
+        s += "  Sentences: {:,.0f}\n".format(self.len_sentences)
+        s += "  Words: {:,.0f}\n".format(self.len_words)
+        s += "  Characters: {:,.0f}\n".format(self.len_chars)
+
+        return s
+
+    def report_spelling(self):
+        """
+        Returns a string with spell-checker errors and suggested replacements.
+        """
+        if not self.misspellings:
+            return "%s passed spelling check." % self.page
+
+        s = "%s Unknown Words:\n" % self.page
+        for nonword, suggestions in self.misspellings.items():
+            s += "  {nonword}: {suggestions}\n".format(
+                nonword=nonword,
+                suggestions = ", ".join(suggestions)
             )
 
         return s
@@ -145,8 +183,23 @@ class PageReport:
 
 class AveragePage(PageReport):
     def __init__(self, reports):
+        """
+        reports should be a list of PageReport objects to average
+        """
         self.page = "Average Page"
         num_pages = len(reports)
+
+        if not num_pages:
+            self.scores = {test: 0 for test in TESTS.keys()}
+            self.len_chars = 0
+            self.len_words = 0
+            self.len_sentences = 0
+            return
+
         self.scores = {test: sum([pg.scores[test] for pg in reports])/num_pages
             for test in TESTS.keys()
         }
+
+        self.len_chars = sum([pg.len_chars for pg in reports])/num_pages
+        self.len_words = sum([pg.len_words for pg in reports])/num_pages
+        self.len_sentences = sum([pg.len_sentences for pg in reports])/num_pages

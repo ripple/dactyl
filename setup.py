@@ -49,7 +49,8 @@ setup(
         'ruamel.yaml',
         'requests',
         'watchdog',
-        'textstat'
+        'textstat',
+        'pyspellchecker'
     ],
     package_data={
         '': ["templates/*", "default-config.yml"],

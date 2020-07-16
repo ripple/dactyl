@@ -227,37 +227,105 @@ You can also run the link checker in offline mode (`-o`) to skip any remote link
 If you have a page that uses JavaScript or something to generate anchors dynamically, the link checker can't find those anchors (since it doesn't run any JS). You can add such pages to the `ignore_anchors_in` array in your config to skip checking for links that go to anchors in such pages.
 
 
-### Style Checking
+## Style Checking
 
-The style checker is experimental. It reads lists of discouraged words and phrases from the `word_substitutions_file` and `phrase_substitutions_file` paths (respectively) in the config. For each such word or phrase that appears in the output HTML (excluding `code`, `pre`, and `tt` elements), it counts and prints a violation, suggesting a replacement based on the word/phrase file.
+The style checker is experimental. It reports several details about document contents that may be helpful for identifying documents whose readability you could improve. These details are:
 
-The style checker re-generates HTML in-memory (never writing it out). It uses the first target in the config file unless you specify another target with `-t`.
+- Discouraged words and phrases.
+- Page length details.
+- Readability scores.
+- Spell-checking.
 
 Example usage:
 
 ```sh
-$ dactyl_style_checker -t rippledevportal
-Style Checker - checking all pages in target rippledevportal
-Found 6 issues:
-Page: Gateway Guide
-   Discouraged phrase: in order to (1 instances); suggest 'to' instead.
-   Discouraged phrase: and/or (1 instances); suggest '__ or __ or both' instead.
-   Discouraged word: feasible (1 instances); suggest 'can be done, workable' instead.
-   Discouraged phrase: in an effort to (1 instances); suggest 'to' instead.
-   Discouraged phrase: comply with (1 instances); suggest 'follow' instead.
-Page: Amendments
-   Discouraged phrase: limited number (1 instances); suggest 'limits' instead.
+$ dactyl_style_checker
 ```
 
-You can add an exemption to a specific style rule with an HTML comment. The exemption applies to the whole output (HTML) file in which it appears.
+The style checker re-generates HTML in-memory (never writing it out). It uses the first target in the config file unless you specify another target with `-t`.
+
+The style checker is intended for English text.
+
+
+### Discouraged Words and Phrases
+
+You can suggest specific words or phrases to discourage. The style checker checks for instances of these words and phrases in documents' content, and suggests alternatives based on the phrase file. Dactyl does not check text in `<code>`, `<pre>`, and `<tt>` elements since those are intended to be code samples.
+
+To configure lists of discouraged words and phrases, add the following config options:
+
+| Field                       | Value  | Description                           |
+|:----------------------------|:-------|:--------------------------------------|
+| `word_substitutions_file`   | String | The path to a YAML file with a single top-level map. The keys are the words to discourage and the values are suggestions of words to replace them with. |
+| `phrase_substitutions_file` | String | The path to a YAML file with a single top-level map. The keys are phrases to discourage and the values are suggestions of phrases to replace them with. |
+
+You can add an exemption to a specific discouraged word/phrase rule with an HTML comment. The exemption applies to the whole output (HTML) file in which it appears.
 
 ```html
 Maybe the word "will" is a discouraged word, but you really want to use it here without flagging it as a violation? Adding a comment like this <!-- STYLE_OVERRIDE: will --> makes it so.
 ```
 
+### Spell Checking
+
+Dactyl uses [pyspellchecker](https://pyspellchecker.readthedocs.io/en/latest/) to report possible spelling errors and suggest corrections. The built-in dictionary is not very thorough; you can extend it by providing a dictionary file with more words. Spell checking is case-insensitive.
+
+***TODO: It doesn't handle contractions correctly right now. Fix.***
+
+Add the following field to the config to provide a custom dictionary file to extend the built-in dictionary. (You cannot remove words from the built-in dictionary.)
+
+| Field           | Value  | Description                                       |
+|:----------------|:-------|:--------------------------------------------------|
+| `spelling_file` | String | Path to a text file with words to add. Each line of the file should contain a single word to add to the dictionary. |
+
+
+### Length Metrics
+
+Dactyl reports the number of characters of text, number of sentences, and number of words in each document. These counts only include text contents (the parts generated from Markdown). They do not include code samples (not even inlined code words), or images/figures. The sentence counts are estimates. Headings, list items, and table cells each count as one sentence in these metrics. The summary includes the averages across all pages, and the stats for the three longest and shortest pages.
+
+These metrics are intended to be helpful for choosing documents that would be better off combined or split up. They can also be useful for interpreting readability scores, which tend to be less reliable for very short documents.
+
+
+### Readability Scores
+
+The style checker reports readability scores based on several formulas implemented in the [textstat library](https://github.com/shivam5992/textstat). These can help you identify documents with a high proportion of big words and long sentences.
+
+> **Caution:** Readability formulas are not very smart. Trying to get a high readability score can actually decrease the clarity of your writing if you aren't mindful of other factors. Things readability formulas usually don't take into account include: brevity; complexity of the high-level structure; logical connections such as cause and effect; and precise use of language.
+
+By default, Dactyl prints the readability scores for each page as it analyzes them. The `-q` option hides this output. The summary at the end lists the average scores for all pages analyzed and the three pages with the worst Flesch Reading Ease scores.
+
+#### Readability Goals
+
+You can set readability goals for individual pages or an entire target by adding the `readability_goals` field. This field should contain a map of readability metrics to target scores. Goals defined for individual pages override goals set for the entire target. Dactyl compares a page's readability scores to any goals set and reports a list of pages that failed their goals in the summary. The goal passes if the page's score is equal better (easier to read) than the stated goal value, and fails otherwise. For Flesch Reading Ease, higher scores represent better readability; for the other tests, _lower_ scores represent better readability.
+
+Example configuration:
+
+```yaml
+targets:
+
+  - name: my-target
+    display_name: Example Target
+    readability_goals:
+        flesch_reading_ease: 50
+        automated_readability_index: 12
+```
+
+The available readability tests are:
+
+| Field Name                     | Details                                     |
+|:-------------------------------|:--------------------------------------------|
+| `flesch_reading_ease`          | [Flesch reading ease](https://en.wikipedia.org/wiki/Flesch%E2%80%93Kincaid_readability_tests#Flesch_reading_ease). Maximum score 121.22; no limit on how negative the score can be. |
+| `smog_index`                   | [SMOG grade](https://en.wikipedia.org/wiki/SMOG). Gives an estimated grade level. |
+| `coleman_liau_index`           | [Coleman-Liau index](https://en.wikipedia.org/wiki/Coleman%E2%80%93Liau_index). Gives an estimated grade level. |
+| `automated_readability_index`  | [Automated readability index](https://en.wikipedia.org/wiki/Automated_readability_index). Gives an estimated grade level. |
+| `dale_chall_readability_score` | [Dale-Chall readability formula](https://en.wikipedia.org/wiki/Dale%E2%80%93Chall_readability_formula). Decimal representing difficulty; lower values map to lower grade levels. |
+| `linsear_write_formula`        | [Linsear Write formula](https://en.wikipedia.org/wiki/Linsear_Write). Gives an estimated grade level. |
+| `gunning_fog`                  | [Gunning fog index](https://en.wikipedia.org/wiki/Gunning_fog_index). Gives an estimated grade level. |
+
+Estimated grade levels are based on the United States school system and are given as decimal approximations. For example, `11.5` represents somewhere between 11th and 12th grade (high school junior to senior).
+
+
 ## Configuration
 
-Many parts of Dactyl are configurable. An advanced setup would probably have the following folders in your directory structure:
+Many parts of Dactyl are configurable. An advanced setup would probably have a directory structure such as the following:
 
 ```
 ./                      # Top-level dir; this is where you run dactyl_*
@@ -270,7 +338,7 @@ Many parts of Dactyl are configurable. An advanced setup would probably have the
 ./out                   # Directory where output gets generated. Can be deleted
 ```
 
-(All of these paths can be configured.)
+All of these paths can be configured.
 
 ### Targets
 
