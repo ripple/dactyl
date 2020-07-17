@@ -268,13 +268,19 @@ Maybe the word "will" is a discouraged word, but you really want to use it here 
 
 Dactyl uses [pyspellchecker](https://pyspellchecker.readthedocs.io/en/latest/) to report possible spelling errors and suggest corrections. The built-in dictionary is not very thorough; you can extend it by providing a dictionary file with more words. Spell checking is case-insensitive.
 
-***TODO: It doesn't handle contractions correctly right now. Fix.***
+If you want the spell checker to skip a page, put `skip_spell_checker: true` in the page definition.
 
-Add the following field to the config to provide a custom dictionary file to extend the built-in dictionary. (You cannot remove words from the built-in dictionary.)
+If you want to ignore one or more words on a single page only, add a comment such as the following anywhere in the page:
+
+```html
+<!-- IGNORE_SPELLING: affectednodes, creatednode, deletednode, modifiednode -->
+```
+
+To extend the built-in dictionary used for all files, add the following field to the config. (You cannot remove words from the built-in dictionary.)
 
 | Field           | Value  | Description                                       |
 |:----------------|:-------|:--------------------------------------------------|
-| `spelling_file` | String | Path to a text file with words to add. Each line of the file should contain a single word to add to the dictionary. |
+| `spelling_file` | String | Path to a text file with words to add to the dictionary. Each line of the file should contain a single word (case-insensitive). |
 
 
 ### Length Metrics

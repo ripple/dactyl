@@ -23,8 +23,8 @@ from dactyl.cli import DactylCLIParser
 from dactyl.target import DactylTarget
 import dactyl.style_report as style_report
 
-OVERRIDE_COMMENT_REGEX = r" *STYLE_OVERRIDE: *([\w, -]+)"
-
+OVERRIDE_COMMENT_REGEX = r" *STYLE_OVERRIDE: *([\w, -]+) "
+SPELLING_OVERRIDE_REGEX = r" *SPELLING_IGNORE: *([\w, -]+) "
 
 
 
@@ -47,7 +47,11 @@ class DactylStyleChecker:
 
     @staticmethod
     def tokenize(passage):
-        words = re.split(r"\W+", passage)
+        passage = passage.replace("’", "'") # normalize smart quotes to plain quotes
+        passage = re.sub(r"[¹²³½]","",passage)
+        words = re.split(r"[^\w']+", passage)
+        words = [re.sub("'s?$","",w) for w in words] # strip trailing 's or '
+        words = [re.sub("^'","",w) for w in words] # strip leaing '
         return [w for w in words if w]
 
     @staticmethod
@@ -143,8 +147,8 @@ class DactylStyleChecker:
             return
 
         # All text in the parsed Markdown content should be contained in
-        # one of these top-level elements, except we ignore code samples.
-        block_elements = ["p","ul","table","h1","h2","h3","h4","h5","h6"]
+        # one of these elements, except we ignore code samples.
+        block_elements = ["p","li","table","h1","h2","h3","h4","h5","h6"]
         blocks = [el for el in page.soup.find_all(
                     # name=block_elements, recursive=False)]
                     name=block_elements)]
@@ -153,6 +157,10 @@ class DactylStyleChecker:
         page_text = ""
         page_misspellings = {}
         page_issues = []
+        ignore_words = self.get_overrides(page.soup, use_regex=SPELLING_OVERRIDE_REGEX)
+        logger.debug("Set of words to ignore for this file: %s"%ignore_words)
+        if page.data.get("skip_spell_checker", False):
+            logger.info("Skipping spell checker for page %s." % page)
         for block in blocks:
             overrides = self.get_overrides(block)
             # "Wipe" inlined <code> elements so we don't style-check
@@ -165,9 +173,10 @@ class DactylStyleChecker:
             if passage_issues:
                 page_issues += passage_issues
 
-            passage_misspellings = self.check_spelling(passage_text)
-            if passage_misspellings:
-                page_misspellings.update(passage_misspellings)
+            if not page.data.get("skip_spell_checker", False):
+                passage_misspellings = self.check_spelling(passage_text, ignore_words)
+                if passage_misspellings:
+                    page_misspellings.update(passage_misspellings)
 
             # Add this passage to the page text. Most readability scores seem
             # to handle lists/bullets/headings/etc. best if we treat them like
@@ -283,7 +292,7 @@ class DactylStyleChecker:
                     print("   %s: %s (%d instances)" % (i[0], i[1], count_i))
 
 
-    def get_overrides(self, soup):
+    def get_overrides(self, soup, use_regex=OVERRIDE_COMMENT_REGEX):
         """
         Look for overrides in the text to make exceptions for specific style
         rules. Returns a set of rule strings to ignore for this block.
@@ -292,7 +301,7 @@ class DactylStyleChecker:
         overrides = set()
         comments = soup.find_all(string=lambda text:isinstance(text,Comment))
         for comment in comments:
-            m = re.match(OVERRIDE_COMMENT_REGEX, comment)
+            m = re.match(use_regex, comment)
             if m:
                 new_overrides = m.group(1).split(",")
                 new_overrides = {o.strip() for o in new_overrides}
@@ -322,17 +331,18 @@ class DactylStyleChecker:
 
         return issues
 
-    def check_spelling(self, passage):
+    def check_spelling(self, passage, ignore_words=set()):
         """Checks a string of text for spelling mistakes."""
         # TODO: more granular spelling overrides
 
         logging.debug("Spell-checking passage: <<<%s>>>" % passage)
         tokens = [t.lower() for t in self.tokenize(passage)]
-        unknown = self.spell.unknown(tokens)
+
+        unknown = self.spell.unknown(tokens) - ignore_words
         if unknown:
             logger.info("Unknown/misspelled words: %s"%unknown)
 
-        return {nonword: self.spell.candidates(nonword) for nonword in unknown}
+        return {w: self.spell.candidates(w)-{w} for w in unknown}
 
 
 
