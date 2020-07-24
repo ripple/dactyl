@@ -305,6 +305,8 @@ class DactylStyleChecker:
             if m:
                 new_overrides = m.group(1).split(",")
                 new_overrides = {o.strip() for o in new_overrides}
+                if use_regex == SPELLING_OVERRIDE_REGEX:
+                    new_overrides = {o.lower() for o in new_overrides}
                 logger.info("Overrides found: %s" % new_overrides)
                 overrides |= new_overrides
 
