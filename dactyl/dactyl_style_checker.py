@@ -26,6 +26,7 @@ import dactyl.style_report as style_report
 OVERRIDE_COMMENT_REGEX = r" *STYLE_OVERRIDE: *([\w, -]+) "
 SPELLING_OVERRIDE_REGEX = r" *SPELLING_IGNORE: *([\w, -]+) "
 
+EXTENDED_DICTIONARY = "words.txt"
 
 
 class DactylStyleChecker:
@@ -41,8 +42,7 @@ class DactylStyleChecker:
         self.config = config
         self.load_style_rules()
         self.issues = None
-        self.spell = spellchecker.SpellChecker(distance = 1)
-        self.load_spelling_file()
+        self.load_spellchecker()
 
 
     @staticmethod
@@ -75,32 +75,50 @@ class DactylStyleChecker:
             logger.warning("No 'phrase_substitutions_file' found in config.")
             self.disallowed_phrases = {}
 
-    def load_spelling_file(self):
+    def load_spellchecker(self):
         """
-        Read a text file with additional words to add to the spell checker's
-        dictionary, so these words don't get flagged as misspelled.
+        Load the spelling checker, including a built-in extended dictionary and
+        optional project-level configurable word dictionary with words not to
+        flag as misspelled.
         """
+        self.spell = spellchecker.SpellChecker(distance = 1)
+
+        try:
+            with resource_stream(__name__, EXTENDED_DICTIONARY) as f:
+                self.load_words_from_file(f)
+        except FileNotFoundError as e:
+            recoverable_error("Couldn't load Dactyl built-in spelling file. " +
+                              "Using the default dictionary only.",
+                              self.config.bypass_errors, error=e)
+
         spelling_file = self.config.get("spelling_file", None)
         if not spelling_file:
-            logger.warn("No spelling_file provided in config - skipping") # TODO: make debug
+            logger.debug("No spelling_file provided in config - skipping")
             return
-
-        new_words = []
         try:
             with open(spelling_file, "r", encoding="utf-8") as f:
-                logger.debug("Opened spelling_file %s"%spelling_file)
-                for line in f:
-                    word = line.strip().lower()
-                    if word:
-                        new_words.append(word)
+                self.load_words_from_file(f)
+
         except FileNotFoundError as e:
             recoverable_error("Failed to load spelling_file %s: %s" %
                               (spelling_file, e), self.config.bypass_errors,
                               error=e)
 
+
+    def load_words_from_file(self, fhandle):
+        """
+        Read a file or file-like object line by line and add the words
+        from that file to the built-in dictionary.
+        """
+        new_words = []
+        for line in fhandle:
+            word = line.strip().lower()
+            if word:
+                new_words.append(word)
         if new_words:
             self.spell.word_frequency.load_words(new_words)
-            logger.info("Loaded these words into the dictionary: %s"%new_words)
+            logger.info("Loaded %d words into the dictionary"%len(new_words))
+
 
     def check_all(self, only_page=None):
         """
@@ -344,7 +362,7 @@ class DactylStyleChecker:
         if unknown:
             logger.info("Unknown/misspelled words: %s"%unknown)
 
-        return {w: self.spell.candidates(w)-{w} for w in unknown}
+        return {w: list(self.spell.candidates(w)-{w})[:3] for w in unknown}
 
 
 

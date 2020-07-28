@@ -53,6 +53,10 @@ setup(
         'pyspellchecker'
     ],
     package_data={
-        '': ["templates/*", "default-config.yml"],
+        '': [
+            "templates/*",
+            "default-config.yml",
+            "words.txt"
+        ],
     }
 )
