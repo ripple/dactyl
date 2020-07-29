@@ -170,12 +170,18 @@ class DactylStyleChecker:
         # let's strip any of those out.
         [div.unwrap() for div in page.soup.find_all(name="div")]
 
+        # Sometimes certain elements don't have whitespace between then, so
+        # .get_text() will mash words together. Adding ". " makes them register
+        # as separate sentences, which is probably more accurate for readability.
+        might_need_space = page.soup.find_all(name=["li","th","td"])
+        for tag in might_need_space:
+            tag.append(" ")
+
         # All text in the parsed Markdown content should be contained in
         # one of these elements, except we ignore code samples.
         block_elements = ["p","blockquote","ul","table","h1","h2","h3","h4","h5","h6"]
         blocks = [el for el in page.soup.find_all(
                     name=block_elements, recursive=False)]
-                    # name=block_elements)]
 
 
         page_text = ""

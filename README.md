@@ -242,7 +242,7 @@ Example usage:
 $ dactyl_style_checker
 ```
 
-The style checker re-generates HTML in-memory (never writing it out). It uses the first target in the config file unless you specify another target with `-t`.
+The style checker re-generates HTML in-memory (never writing it out). It uses the first target in the config file unless you specify another target with `-t`. You can check just one file by passing its HTML path in the `--only` parameter.
 
 The style checker is intended for English text.
 
@@ -294,7 +294,7 @@ These metrics are intended to be helpful for choosing documents that would be be
 
 The style checker reports readability scores based on several formulas implemented in the [textstat library](https://github.com/shivam5992/textstat). These can help you identify documents with a high proportion of big words and long sentences.
 
-> **Caution:** Readability formulas are not very smart. Trying to get a high readability score can actually decrease the clarity of your writing if you aren't mindful of other factors. Things readability formulas usually don't take into account include: brevity; complexity of the high-level structure; logical connections such as cause and effect; and precise use of language.
+> **Caution:** Readability formulas are not very smart. Trying to get a high readability score can actually decrease the clarity of your writing if you aren't mindful of other factors. Things readability formulas usually don't take into account include: brevity; complexity of the high-level structure; logical connections such as cause and effect; and precise use of language. They tend to score tables and bulleted lists badly even though those structure are very helpful for actual readability.
 
 By default, Dactyl prints the readability scores for each page as it analyzes them. The `-q` option hides this output. The summary at the end lists the average scores for all pages analyzed and the three pages with the worst Flesch Reading Ease scores.
 
