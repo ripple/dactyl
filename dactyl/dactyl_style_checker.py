@@ -164,12 +164,18 @@ class DactylStyleChecker:
             logger.info("...page %s has no content."%page)
             return
 
+
+        # There normally aren't any <div> tags in HTML made from Markdown, but
+        # sometimes it's useful for Dactyl filters to wrap stuff in them. So
+        # let's strip any of those out.
+        [div.unwrap() for div in page.soup.find_all(name="div")]
+
         # All text in the parsed Markdown content should be contained in
         # one of these elements, except we ignore code samples.
-        block_elements = ["p","li","table","h1","h2","h3","h4","h5","h6"]
+        block_elements = ["p","blockquote","ul","table","h1","h2","h3","h4","h5","h6"]
         blocks = [el for el in page.soup.find_all(
-                    # name=block_elements, recursive=False)]
-                    name=block_elements)]
+                    name=block_elements, recursive=False)]
+                    # name=block_elements)]
 
 
         page_text = ""
@@ -199,7 +205,8 @@ class DactylStyleChecker:
             # Add this passage to the page text. Most readability scores seem
             # to handle lists/bullets/headings/etc. best if we treat them like
             # more sentences in an ongoing paragraph.
-            page_text += passage_text.strip()+". "
+            if passage_text.strip():
+                page_text += passage_text.strip()+". "
 
         # Readability formulas are only appropriate for paragraphs
         logger.debug("... Text for readability scoring:\n%s"%page_text)
@@ -353,7 +360,6 @@ class DactylStyleChecker:
 
     def check_spelling(self, passage, ignore_words=set()):
         """Checks a string of text for spelling mistakes."""
-        # TODO: more granular spelling overrides
 
         logging.debug("Spell-checking passage: <<<%s>>>" % passage)
         tokens = [t.lower() for t in self.tokenize(passage)]

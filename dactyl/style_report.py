@@ -9,6 +9,8 @@ import textstat
 from dactyl.common import *
 from dactyl.page import DactylPage
 
+MIN_SENTENCES_FOR_STYLE_GOALS = 10
+
 def grade_level_desc(score):
     return "Grade level {score:.1f}".format(score=score)
 
@@ -156,6 +158,12 @@ class PageReport:
         """
         if not isinstance(self.page, DactylPage):
             logger.debug("readability_goals(): not a DactylPage: %s"%self.page)
+            return [],[]
+
+        if self.len_sentences < MIN_SENTENCES_FOR_STYLE_GOALS:
+            logger.info(("Exempting page {pg} from readability goals "+
+                            "because it is less than {n} sentences:").format(
+                            pg=self.page, n=MIN_SENTENCES_FOR_STYLE_GOALS))
             return [],[]
 
         failed_goals = []
