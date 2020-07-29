@@ -229,7 +229,7 @@ If you have a page that uses JavaScript or something to generate anchors dynamic
 
 ## Style Checking
 
-The style checker is experimental. It reports several details about document contents that may be helpful for identifying documents whose readability you could improve. These details are:
+The style checker is experimental. It is only suitable for English text. It reports several details about document contents that may be helpful for identifying documents whose readability you could improve. These details are:
 
 - Discouraged words and phrases.
 - Page length details.
@@ -242,9 +242,11 @@ Example usage:
 $ dactyl_style_checker
 ```
 
-The style checker re-generates HTML in-memory (never writing it out). It uses the first target in the config file unless you specify another target with `-t`. You can check just one file by passing its HTML path in the `--only` parameter.
+The style checker re-generates contents in-memory (never writing it out), unlike the link checker which requires you to run `dactyl_build` first. It only checks contents that come from Markdown, not from HTML templates.
 
-The style checker is intended for English text.
+The style checker uses the first target in the config file unless you specify another target with `-t`. You can check just one file by passing its HTML path in the `--only` parameter.
+
+The exit code of the command is 0 (success) if it found no discouraged words, the spell checker found no unknown words, and no pages failed their configured readability goals. Otherwise, the exit code of the command is 1 (failure).
 
 
 ### Discouraged Words and Phrases
@@ -301,6 +303,8 @@ By default, Dactyl prints the readability scores for each page as it analyzes th
 #### Readability Goals
 
 You can set readability goals for individual pages or an entire target by adding the `readability_goals` field. This field should contain a map of readability metrics to target scores. Goals defined for individual pages override goals set for the entire target. Dactyl compares a page's readability scores to any goals set and reports a list of pages that failed their goals in the summary. The goal passes if the page's score is equal better (easier to read) than the stated goal value, and fails otherwise. For Flesch Reading Ease, higher scores represent better readability; for the other tests, _lower_ scores represent better readability.
+
+**Note:** Since very short pages tend to have inconsistent and unreliable readability scores, Dactyl does not calculate readability scores for pages with fewer than 10 "sentences". (Bullet points, headings, and table cells each count as separate "sentences" for this purpose.)
 
 Example configuration:
 

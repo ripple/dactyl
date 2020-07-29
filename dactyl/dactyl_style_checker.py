@@ -152,6 +152,7 @@ class DactylStyleChecker:
                 logger.info(pr.describe_scores())
                 logger.info(pr.report_page_length())
                 self.reports.append(pr)
+        return self.reports
 
 
     def check_page(self, page, context):
@@ -388,7 +389,8 @@ def main(cli_args, config):
     else:
         issues = checker.check_all()
     checker.report()
-    if issues:
+
+    if [pr for pr in issues if not pr.passed]:
         exit(1)
     else:
         exit(0)

@@ -90,6 +90,11 @@ class PageReport:
         self.page_length(page_text)
         self.goals_passed, self.goals_failed = self.readability_goals()
 
+        if len(self.issues) or len(self.misspellings) or len(self.goals_failed):
+            self.passed = False
+        else:
+            self.passed = True
+
     def get_scores(self, page_text):
         scores = {}
         for test in TESTS.keys():
