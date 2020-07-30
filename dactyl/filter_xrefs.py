@@ -80,18 +80,18 @@ def find_file_in_any_target(fname, config):
 def lookup_display_name(targetname, config):
     for t in config["targets"]:
         if "name" in t and t["name"] == targetname:
-            display_name = "%s %s %s %s %s" % (
+            display_name = "%s" % (
                 t.get("display_name", ""),
-                t.get("product", ""),
-                t.get("version", ""),
-                t.get("guide", ""),
-                t.get("subtitle", "")
             )
             if display_name.strip():
                 return display_name
             else:
                 warning("Target has no display_name/product/version/guide: %s" % targetname)
                 return targetname
+        elif "name" in t and t["name"] != targetname:
+            display_name = "%s" % (
+                t.get("name", ""),
+            ) 
     else:
         warning("Target not found: %s" % targetname)
         return targetname
