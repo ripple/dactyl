@@ -50,7 +50,8 @@ setup(
         'requests',
         'watchdog',
         'textstat',
-        'pyspellchecker'
+        'pyspellchecker',
+        'pygments'
     ],
     package_data={
         '': [

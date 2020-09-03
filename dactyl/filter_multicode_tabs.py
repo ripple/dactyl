@@ -41,7 +41,7 @@ def filter_soup(soup, mode="html", **kwargs):
         codetabs_ul["class"] = "codetabs"
         cb_area.insert(0,codetabs_ul)
 
-        pres = cb_area.find_all("pre")
+        pres = cb_area.find_all(class_="codehilite")
         index2 = 0
         for pre in pres:
             #make a unique ID for this code sample

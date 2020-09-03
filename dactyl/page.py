@@ -272,7 +272,8 @@ class DactylPage:
         if md:
             logger.info("... parsing markdown...")
             html = markdown(md, extensions=["markdown.extensions.extra",
-                                            "markdown.extensions.sane_lists"])
+                                            "markdown.extensions.sane_lists",
+                                            "codehilite"])
         else:
             html = ""
 
