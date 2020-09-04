@@ -151,9 +151,7 @@ class DactylTarget:
         """
         Add the provided fields to this target's definition
         """
-        merge_dicts(fields, self.data, RESERVED_KEYS_TARGET)
-        if "display_name" in fields: # Exception to reserved key rule
-            self.data["display_name"] = fields["display_name"]
+        merge_dicts(fields, self.data, RESERVED_KEYS_TARGET, override=True)
 
 
     def expand_openapi_spec(self, page_data):
@@ -282,6 +280,8 @@ class DactylTarget:
                 # Start an empty list of children
                 p.data["children"] = []
 
+        for p in self.pages:
+            # Separate loop so we don't miss it where the parent isn't in-target
             p.data["is_ancestor_of"] = self.make_ancestor_lookup(p)
 
     @staticmethod

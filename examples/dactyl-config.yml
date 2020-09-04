@@ -12,6 +12,7 @@ targets:
             - demote_headers
         demote_headers_pdf_only: true
         stylesheet: template_assets/dactyl.css
+        foo: "fooooooo"
 
     -   name: filterdemos
         display_name: Target with just the filter example pages
@@ -30,17 +31,27 @@ pages:
         targets:
             - everything
 
+    -   md: code-highlighting.md
+        html: code-highlighting.html
+        parent: tests-index.html
+        targets:
+            - everything
+
     -   md: includes.md
         category: Tests
         parent: tests-index.html
-        sidebar: left_only
         targets:
             - everything
 
     -   md: with-frontmatter.md
         html: with-frontmatter.html
         parent: tests-index.html
-        sidebar: right_only
+        targets:
+            - everything
+
+    -   md: cli-vars.md
+        html: cli-vars.html
+        parent: tests-index.html
         targets:
             - everything
 
@@ -72,19 +83,6 @@ pages:
         targets:
             - everything
 
-    -   md: extends.md
-        category: Tests
-        parent: tests-index.html
-        targets:
-            - everything
-
-    -   name: Hierarchy Demo
-        category: Tests
-        parent: tests-index.html
-        template: template-hierarchy.html
-        targets:
-            - everything
-
     -   name: Filters
         category: Filters
         section_header: true
@@ -92,6 +90,7 @@ pages:
         template: landing.html
         targets:
             - everything
+            - filterdemos
 
     -   md: filter-examples/callouts.md
         category: Filters
@@ -120,27 +119,6 @@ pages:
         filters:
             - buttonize
 
-    -   md: filter-examples/patriots.md
-        html: filter-examples-patriots.html
-        category: Filters
-        parent: filters.html
-        targets:
-            - everything
-            - filterdemos
-        filters:
-            - patriots
-
-    -   md: filter-examples/patriots.md
-        name: Custom Filter 2
-        html: filter-examples-patriots2.html
-        category: Filters
-        parent: filters.html
-        targets:
-            - everything
-            - filterdemos
-        filters:
-            - patriots2
-
     -   md: filter-examples/badges.md
         category: Filters
         parent: filters.html
@@ -150,15 +128,6 @@ pages:
         filters:
             - badges
 
-    -   md: filter-examples/include_code.md
-        category: Filters
-        parent: filters.html
-        targets:
-            - everything
-            - filterdemos
-        filters:
-            - include_code
-
     -   md: filter-examples/multicode_tabs.md
         category: Filters
         parent: filters.html
@@ -167,6 +136,64 @@ pages:
             - filterdemos
         filters:
             - multicode_tabs
+
+    -   md: extending/index.md
+        html: extending-index.html
+        category: Extending
+        section_header: true
+        parent: index.html
+        template: landing.html
+        targets:
+            - everything
+
+    -   md: extending/extend-templates.md
+        category: Extending
+        parent: extending-index.html
+        targets:
+            - everything
+
+    -   md: extending/hierarchy.md
+        category: Extending
+        parent: extending-index.html
+        template: template-hierarchy.html
+        targets:
+            - everything
+
+    -   md: extending/patriots.md
+        html: filter-examples-patriots.html
+        category: Extending
+        parent: extending-index.html
+        targets:
+            - everything
+        filters:
+            - patriots
+
+    -   md: extending/patriots.md
+        name: Custom Filter 2
+        html: filter-examples-patriots2.html
+        category: Extending
+        parent: extending-index.html
+        targets:
+            - everything
+        filters:
+            - patriots2
+
+    -   md: extending/include_code.md
+        category: Extending
+        parent: extending-index.html
+        targets:
+            - everything
+        filters:
+            - include_code
+
+    -   md: extending/debug.md
+        html: debug.html
+        category: Extending
+        parent: extending-index.html
+        template: template-minimal.html
+        no_highlighting: true
+        targets:
+            - everything
 
 
 # -------------------- Style Checker Rules ------------------------

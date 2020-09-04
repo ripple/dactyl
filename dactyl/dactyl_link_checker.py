@@ -58,8 +58,8 @@ def check_remote_url(endpoint, in_file, hreftype=TYPE_LINK):
         logger.warning("Error occurred: %s" % repr(e))
         code = 500
 
-    if code == 405 or code == 404:
-        #HEAD didn't work, maybe GET will?
+    if code < 200 or code >= 400:
+        # HEAD didn't work. Retry with GET before we give a final answer.
         try:
             code = requests.get(endpoint, timeout=TIMEOUT_SECS).status_code
         except Exception as e:

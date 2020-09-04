@@ -48,9 +48,16 @@ setup(
         'Markdown>=3.0.1',
         'ruamel.yaml',
         'requests',
-        'watchdog'
+        'watchdog',
+        'textstat',
+        'pyspellchecker',
+        'pygments'
     ],
     package_data={
-        '': ["templates/*", "default-config.yml"],
+        '': [
+            "templates/*",
+            "default-config.yml",
+            "words.txt"
+        ],
     }
 )

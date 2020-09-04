@@ -1,30 +1,29 @@
-<!DOCTYPE html>
-<html {% if currentpage.language %}lang="{{currentpage.language}}"{% else %}lang="en"{% endif %}>
-<head>
-    <meta charset="utf-8">
-    <title>{{ currentpage.name }} - {{ target.display_name }}</title>
-    {% include 'filter-css-includes.html' %}
-</head>
-<body>
-    <main class="dactyl-main dactyl-toc">
+{% extends 'doc.html' %}
+
+{% block main %}
+<section class="pt-3 p-md-3">
+  <article class="dactyl-content">
+    {{ content}}
+
+    <ul>
+    {% macro page_w_children(pg) %}
+      <li class="dactyl-toc-entry"><a href="{{ pg.html }}">{{ pg.name }}</a></li>
+      {% if pg.children %}
         <ul>
-        {% macro page_w_children(pg) %}
-          <li class="dactyl-toc-entry"><a href="{{ pg.html }}">{{ pg.name }}</a></li>
-          {% if pg.children %}
-            <ul>
-              {% for child in pg.children %}
-                {{ page_w_children(child) }}
-              {% endfor %}
-            </ul>
-          {% endif %}
-        {% endmacro %}
-        {% for page in pages %}
-          {% if page.parent is undefined %}
-            {{ page_w_children(page) }}
-          {% endif %}
-        {% endfor %}
+          {% for child in pg.children %}
+            {{ page_w_children(child) }}
+          {% endfor %}
         </ul>
-    </main>
-    <footer>(Exported {{ current_time }})</footer>
-</body>
-</html>
+      {% endif %}
+    {% endmacro %}
+    
+    {% for page in pages %}
+      {% if page.parent is undefined %}
+        {{ page_w_children(page) }}
+      {% endif %}
+    {% endfor %}
+    </ul>
+
+  </article>
+</section>
+{% endblock %}

@@ -56,11 +56,11 @@ class TestDactyl(unittest.TestCase):
 
     def test_generate_pdf_from_config(self):
         subprocess.check_call(["dactyl_build","--pdf"])
-        assert os.path.isfile("out/Target_with_ALL_THE_EXAMPLES.pdf")
+        assert os.path.isfile("out/Dactyl_Examples.pdf")
 
     def test_generate_pdf_only_one_page(self):
         subprocess.check_call(["dactyl_build","-c","dactyl-config.yml","--only","gfm-compat.md","--pdf"])
-        assert os.path.isfile("out/Target_with_ALL_THE_EXAMPLES.pdf")
+        assert os.path.isfile("out/Dactyl_Examples.pdf")
 
     def test_build_from_target(self):
         subprocess.check_call(["dactyl_build","-t","filterdemos"])
@@ -68,7 +68,6 @@ class TestDactyl(unittest.TestCase):
         assert os.path.isfile("out/filter-examples-xrefs.html")
         assert os.path.isfile("out/filter-examples-buttonize.html")
         assert os.path.isfile("out/filter-examples-badges.html")
-        assert os.path.isfile("out/filter-examples-include_code.html")
         assert os.path.isfile("out/filter-examples-multicode_tabs.html")
 
     def test_dactyl_link_checker(self):
@@ -99,7 +98,6 @@ class TestDactyl(unittest.TestCase):
         assert os.path.isfile("out/filter-examples-xrefs.json")
         assert os.path.isfile("out/filter-examples-buttonize.json")
         assert os.path.isfile("out/filter-examples-badges.json")
-        assert os.path.isfile("out/filter-examples-include_code.json")
         assert os.path.isfile("out/filter-examples-multicode_tabs.json")
 
     def test_elastic_search_single_page(self):
@@ -116,7 +114,6 @@ class TestDactyl(unittest.TestCase):
         assert os.path.isfile("out/filter-examples/xrefs.md")
         assert os.path.isfile("out/filter-examples/buttonize.md")
         assert os.path.isfile("out/filter-examples/badges.md")
-        assert os.path.isfile("out/filter-examples/include_code.md")
         assert os.path.isfile("out/filter-examples/multicode_tabs.md")
 
     def test_generate_markdown_only_one_page(self):
@@ -127,23 +124,53 @@ class TestDactyl(unittest.TestCase):
         subprocess.check_call(["dactyl_build","--only","gfm-compat.md"])
         assert os.path.isfile("out/gfm-compat.html")
 
-    def test_preprocessing_command_line(self):
-        subprocess.check_call(["dactyl_build","--vars","{\"target\":\"filterdemos\"}"])
-        assert os.path.isfile("out/filter-examples-callouts.html")
-        assert os.path.isfile("out/filter-examples-xrefs.html")
-        assert os.path.isfile("out/filter-examples-buttonize.html")
-        assert os.path.isfile("out/filter-examples-badges.html")
-        assert os.path.isfile("out/filter-examples-include_code.html")
-        assert os.path.isfile("out/filter-examples-multicode_tabs.html")
+    def test_no_vars(self):
+        subprocess.check_call(["dactyl_build"])
+        assert os.path.isfile("out/cli-vars.html")
+        with open("out/cli-vars.html","r") as f:
+            text = f.read()
+        assert "fooooooo" in text
+        assert "``" in text
 
-    def test_preprocessing_json(self):
-        subprocess.check_call(["dactyl_build","--vars","../tests/test_preprocessing.json"])
-        assert os.path.isfile("out/filter-examples-callouts.html")
-        assert os.path.isfile("out/filter-examples-xrefs.html")
-        assert os.path.isfile("out/filter-examples-buttonize.html")
-        assert os.path.isfile("out/filter-examples-badges.html")
-        assert os.path.isfile("out/filter-examples-include_code.html")
-        assert os.path.isfile("out/filter-examples-multicode_tabs.html")
+    def test_vars_inlined(self):
+        subprocess.check_call(["dactyl_build","--vars",'{"foo": "FOO VALUE", "bar": "BAR VAL"}'])
+        assert os.path.isfile("out/cli-vars.html")
+        with open("out/cli-vars.html","r") as f:
+            text = f.read()
+        assert "``" not in text
+        assert "fooooooo" not in text
+
+
+    def test_vars_file(self):
+        subprocess.check_call(["dactyl_build","--vars","../tests/test_vars.json"])
+        assert os.path.isfile("out/cli-vars.html")
+        with open("out/cli-vars.html","r") as f:
+            text = f.read()
+        assert "``" not in text
+        assert "fooooooo" not in text
+
+
+    def test_codehilite(self):
+        """
+        Check that syntax highlighting runs by default.
+        """
+        subprocess.check_call(["dactyl_build"])
+        assert os.path.isfile("out/code-highlighting.html")
+        with open("out/code-highlighting.html","r") as f:
+            text = f.read()
+        assert '<span class="nf">slugify</span>' in text
+
+    def test_nohilight(self):
+        """
+        Check that syntax highlighting does not run when disabled on a page.
+        """
+        subprocess.check_call(["dactyl_build"])
+        assert os.path.isfile("out/debug.html")
+        with open("out/debug.html","r") as f:
+            text = f.read()
+        assert '<div class="codehilite">' not in text
+
+
 
 
 if __name__ == '__main__':

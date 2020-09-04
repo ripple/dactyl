@@ -4,26 +4,6 @@
 // source files. You can install these using yarn or npm and the included
 // package.json file.
 
-// Font Stacks =================================================================
-@font-face {
-  font-family: 'Roboto';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: local("Roboto"), url("../font/Roboto-Regular.woff2") format('woff2'), url(https://fonts.gstatic.com/s/roboto/v19/KFOmCnqEu92Fr1Mu4mxK.woff2) format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: 'Roboto';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: local('Roboto Bold'), local('Roboto-Bold'), url("../font/Roboto-Bold.woff2") format('woff2'), url(https://fonts.gstatic.com/s/roboto/v19/KFOlCnqEu92Fr1MmWUlfBBc4.woff2) format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-$font-family-monospace: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
-$font-family-sans-serif: -apple-system, system-ui, 'Roboto', sans-serif;
-
 // Theme Colors ================================================================
 
 $white:    #FFFFFF;
@@ -37,17 +17,9 @@ $gray-700: #4D4D4D;
 $gray-800: #333333;
 $gray-900: #1A1A1A;
 $black:    #000000;
-//
-// $primary:       #0000ff; // 100% blue
-// $secondary:     #404080;
-// $light:         $gray-200;
-// $dark:          $black;
-// $success:       #2BCB96; // light green
-// $info:          #7699bb; // bluish
-// $warning:       #D0DB60; // yellowish -- "caution" callout style
-// $danger:        #AA4949; // wine red -- "warning" callout style
 
 $code-color:    $gray-800;
+$code-bg-color: $gray-100;
 $body-color:    $black;
 $navbar-light-color: $gray-600;
 $breadcrumb-bg: $white;
@@ -55,7 +27,8 @@ $breadcrumb-bg: $white;
 $navbar-padding-y: 0;
 $navbar-nav-link-padding-x: 1rem;
 
-$code-bg-color: $gray-100;
+@import "_font.scss"; // webfont and font stack definitions
+@import "_codehilite.scss"; // Styles for built-in code syntax highlighting
 
 // Bootstrap v4 ================================================================
 @import "node_modules/bootstrap/scss/bootstrap.scss";
@@ -309,10 +282,6 @@ $code-bg-color: $gray-100;
     padding-bottom: 7px;
   }
 
-  .code_sample pre code {
-    background-color: $code-bg-color;
-  }
-
   pre {
     overflow: visible;
     word-wrap: normal;
@@ -320,6 +289,11 @@ $code-bg-color: $gray-100;
   pre code {
     white-space: pre;
     border-radius: $border-radius;
+    padding: 24px;
+    display: block;
+    overflow: auto;
+    max-height: 24em;
+    border-radius: 4px;
   }
   pre code, p code {
     color: $code-color;
@@ -327,18 +301,6 @@ $code-bg-color: $gray-100;
   }
   p code {
     padding: 0.2rem;
-  }
-  .code_sample pre {
-    background: none;
-    border: none;
-    border-radius: 0;
-  }
-  .code_sample pre code {
-    overflow: auto;
-    max-height: 24em;
-    border-radius: 4px;
-    display: block;
-    padding: 24px;
   }
   .code_sample pre code.expanded {
     overflow: visible;
