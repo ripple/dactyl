@@ -271,9 +271,14 @@ class DactylPage:
 
         if md:
             logger.info("... parsing markdown...")
-            html = markdown(md, extensions=["markdown.extensions.extra",
-                                            "markdown.extensions.sane_lists",
-                                            "codehilite"])
+            extensions = ["markdown.extensions.extra",
+                          "markdown.extensions.sane_lists"]
+            no_highlighting = self.config.get("no_highlighting", False)
+            if "no_highlighting" in self.data:
+                no_highlighting = self.data["no_highlighting"]
+            if not no_highlighting:
+                extensions.append("codehilite")
+            html = markdown(md, extensions=extensions)
         else:
             html = ""
 

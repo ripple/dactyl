@@ -54,6 +54,9 @@ preprocessor_allow_undefined: true
 ## the input md files.
 flatten_default_html_paths: true
 
+## Set this to true to disable Dactyl's built-in syntax highlighting
+no_highlighting: false
+
 ## Default templates.
 default_template: doc.html
 default_pdf_template: simple.html

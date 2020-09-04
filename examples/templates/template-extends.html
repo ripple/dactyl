@@ -1,6 +1,19 @@
 {% extends 'doc.html' %}
 
-{% block footer %}
-<p><small>(Part of {{target.display_name}}. Exported {{ current_time }})</small></p>
-{% if currentpage.copyright %}<p>© {{currentpage.copyright}}</p>{% endif %}
+{% block right_sidebar %}
+
+<div class="card" id="use-case-related">
+  <div class="card-header">
+    <h4>Related Pages</h4>
+  </div>
+  <div class="card-body">
+    <ul>
+      {% for link in currentpage.related_links %}
+        {% set linkpage = pages|selectattr("html", 'defined_and_equalto', link)|first %}
+        <li><a href="{{linkpage.html}}">{{linkpage.name}}</a></li>
+      {% endfor %}
+    </ul>
+  </div><!--/.card-body-->
+</div>
+
 {% endblock %}

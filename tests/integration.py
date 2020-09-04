@@ -68,7 +68,6 @@ class TestDactyl(unittest.TestCase):
         assert os.path.isfile("out/filter-examples-xrefs.html")
         assert os.path.isfile("out/filter-examples-buttonize.html")
         assert os.path.isfile("out/filter-examples-badges.html")
-        assert os.path.isfile("out/filter-examples-include_code.html")
         assert os.path.isfile("out/filter-examples-multicode_tabs.html")
 
     def test_dactyl_link_checker(self):
@@ -99,7 +98,6 @@ class TestDactyl(unittest.TestCase):
         assert os.path.isfile("out/filter-examples-xrefs.json")
         assert os.path.isfile("out/filter-examples-buttonize.json")
         assert os.path.isfile("out/filter-examples-badges.json")
-        assert os.path.isfile("out/filter-examples-include_code.json")
         assert os.path.isfile("out/filter-examples-multicode_tabs.json")
 
     def test_elastic_search_single_page(self):
@@ -116,7 +114,6 @@ class TestDactyl(unittest.TestCase):
         assert os.path.isfile("out/filter-examples/xrefs.md")
         assert os.path.isfile("out/filter-examples/buttonize.md")
         assert os.path.isfile("out/filter-examples/badges.md")
-        assert os.path.isfile("out/filter-examples/include_code.md")
         assert os.path.isfile("out/filter-examples/multicode_tabs.md")
 
     def test_generate_markdown_only_one_page(self):
@@ -151,6 +148,29 @@ class TestDactyl(unittest.TestCase):
             text = f.read()
         assert "``" not in text
         assert "fooooooo" not in text
+
+
+    def test_codehilite(self):
+        """
+        Check that syntax highlighting runs by default.
+        """
+        subprocess.check_call(["dactyl_build"])
+        assert os.path.isfile("out/code-highlighting.html")
+        with open("out/code-highlighting.html","r") as f:
+            text = f.read()
+        assert '<span class="nf">slugify</span>' in text
+
+    def test_nohilight(self):
+        """
+        Check that syntax highlighting does not run when disabled on a page.
+        """
+        subprocess.check_call(["dactyl_build"])
+        assert os.path.isfile("out/debug.html")
+        with open("out/debug.html","r") as f:
+            text = f.read()
+        assert '<div class="codehilite">' not in text
+
+
 
 
 if __name__ == '__main__':
