@@ -14,14 +14,9 @@
 
 
 
-    <!-- syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js"></script>
-
     <script>
         $(document).ready(function() {
             $(".multicode").minitabs();
-            hljs.initHighlighting();
             make_code_expandable();
         });
     </script>
@@ -41,6 +36,9 @@
           </li>
           <li class="nav-item active-parent">
             <a class="nav-link" href="filters.html">Filters</a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
           </li>
     </ul><!-- /.navbar-nav -->
 
@@ -77,30 +75,30 @@
 <p>The multi code-tabs filter lets you list multiple code samples and have them appear as tabs in the HTML version. It looks like this:</p>
 <div class="multicode" id="code-0"><ul class="codetabs"><li><a href="#code-0-0">Tab 1 Name</a></li><li><a href="#code-0-1">Tab 2 Name</a></li><li><a href="#code-0-2">Tab 3 Name</a></li></ul>
 
-<div class="code_sample" id="code-0-0" style="position: static;"><pre><code class="json">{
-  "id": 2,
-  "command": "account_info",
-  "account": "r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59",
-  "strict": true,
-  "ledger_index": "validated"
-}
-</code></pre></div>
+<div class="code_sample" id="code-0-0" style="position: static;"><div class="codehilite"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">"id"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+  <span class="nt">"command"</span><span class="p">:</span> <span class="s2">"account_info"</span><span class="p">,</span>
+  <span class="nt">"account"</span><span class="p">:</span> <span class="s2">"r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59"</span><span class="p">,</span>
+  <span class="nt">"strict"</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nt">"ledger_index"</span><span class="p">:</span> <span class="s2">"validated"</span>
+<span class="p">}</span>
+</code></pre></div></div>
 
-<div class="code_sample" id="code-0-1" style="position: static;"><pre><code class="json">POST http://s1.ripple.com:51234/
-{
-    "method": "account_info",
-    "params": [
-        {
-            "account": "r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59",
-            "strict": true,
-            "ledger_index": "validated"
-        }
-    ]
-}
-</code></pre></div>
+<div class="code_sample" id="code-0-1" style="position: static;"><div class="codehilite"><pre><span></span><code><span class="err">POST</span> <span class="err">http://s</span><span class="mi">1</span><span class="err">.ripple.com:</span><span class="mi">51234</span><span class="err">/</span>
+<span class="p">{</span>
+    <span class="nt">"method"</span><span class="p">:</span> <span class="s2">"account_info"</span><span class="p">,</span>
+    <span class="nt">"params"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="nt">"account"</span><span class="p">:</span> <span class="s2">"r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59"</span><span class="p">,</span>
+            <span class="nt">"strict"</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+            <span class="nt">"ledger_index"</span><span class="p">:</span> <span class="s2">"validated"</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></div>
 
-<div class="code_sample" id="code-0-2" style="position: static;"><pre><code class="bash">rippled account_info r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59 validated true
-</code></pre></div>
+<div class="code_sample" id="code-0-2" style="position: static;"><div class="codehilite"><pre><span></span><code>rippled account_info r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59 validated <span class="nb">true</span>
+</code></pre></div></div>
 </div>
               </article>
             </section>
@@ -124,14 +122,14 @@
 
   <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_1">
     <ul class="sidebar_pagelist">
+          <li class="leaf-child"><a class="" href="code-highlighting.html">Code Highlighting</a></li>
           <li class="leaf-child"><a class="" href="includes.html">Includes Test</a></li>
           <li class="leaf-child"><a class="" href="with-frontmatter.html">Page With Frontmatter</a></li>
+          <li class="leaf-child"><a class="" href="cli-vars.html">Commandline Variables</a></li>
           <li class="leaf-child"><a class="" href="conditionals.html">Conditionals Test</a></li>
           <li class="leaf-child"><a class="" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></li>
           <li class="leaf-child"><a class="" href="gfm-compat.html">GitHub Markdown Compatibility</a></li>
           <li class="leaf-child"><a class="" href="header_stress_test.html">Header Stress Test</a></li>
-          <li class="leaf-child"><a class="" href="extends.html">Template Extension</a></li>
-          <li class="leaf-child"><a class="" href="hierarchy_demo.html">Hierarchy Demo</a></li>
     </ul>
   </div><!--/.card-body-->
 </div><!--/.card-->
@@ -149,11 +147,28 @@
           <li class="leaf-child"><a class="" href="filter-examples-callouts.html">Callouts Demonstration</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-xrefs.html">Intelligent Cross-References</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-buttonize.html">Buttonize Filter</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-badges.html">Badges</a></li>
+          <li class="leaf-child"><a class=" active" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
+    </ul>
+  </div><!--/.card-body-->
+</div><!--/.card-->
+
+      <div class="card active">
+  <div class="card-header" role="tab" id="sidenav_cat_head_1_3">
+    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_3" aria-expanded="false" aria-controls="sidenav_collapse_1_3"></a>
+    <h5 class="card-title">
+        <a class="sidenav_cat_title " href="extending-index.html">Extending Dactyl</a>
+    </h5>
+  </div><!-- /.card-header -->
+
+  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_3">
+    <ul class="sidebar_pagelist">
+          <li class="leaf-child"><a class="" href="extending-extend-templates.html">Template Extension</a></li>
+          <li class="leaf-child"><a class="" href="extending-hierarchy.html">Hierarchy Demo</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-patriots.html">Custom Filter</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-patriots2.html">Custom Filter 2</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-badges.html">Badges</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-include_code.html">Code Includer</a></li>
-          <li class="leaf-child"><a class=" active" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
+          <li class="leaf-child"><a class="" href="extending-include_code.html">Code Includer</a></li>
+          <li class="leaf-child"><a class="" href="debug.html">Debug</a></li>
     </ul>
   </div><!--/.card-body-->
 </div><!--/.card-->

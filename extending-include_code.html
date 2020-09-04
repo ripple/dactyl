@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html >
 <head>
-    <title>Intelligent Cross-References - Dactyl Examples</title>
+    <title>Code Includer - Dactyl Examples</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width">
@@ -34,10 +34,10 @@
           <li class="nav-item ">
             <a class="nav-link" href="tests-index.html">Tests</a>
           </li>
-          <li class="nav-item active-parent">
+          <li class="nav-item ">
             <a class="nav-link" href="filters.html">Filters</a>
           </li>
-          <li class="nav-item ">
+          <li class="nav-item active-parent">
             <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
           </li>
     </ul><!-- /.navbar-nav -->
@@ -55,8 +55,7 @@
     <h4>In this page:</h4>
   </div>
   <ul id="page-toc" class="list-group card-body" role="directory">
-    <li class="level-1"><a class="nav-link" href="#intelligent-cross-references">Intelligent Cross-References</a></li>
-    <li class="level-2"><a class="nav-link" href="#anchors">Anchors</a></li>
+    <li class="level-1"><a class="nav-link" href="#code-includer">Code Includer</a></li>
   </ul>
 </div>      </aside>
 
@@ -67,30 +66,47 @@
     
 
     <li class="active breadcrumb-item"><a href="index.html">Index</a></li>
-    <li class="active breadcrumb-item"><a href="filters.html">Filters</a></li>
-    <li class="active breadcrumb-item">Intelligent Cross-References</li>
+    <li class="active breadcrumb-item"><a href="extending-index.html">Extending Dactyl</a></li>
+    <li class="active breadcrumb-item">Code Includer</li>
   </ul>
 </nav><!--/.breadcrumbs-wrap-->            <section class="pt-3 p-md-3">
               <article class="dactyl-content">
-                <h1 id="intelligent-cross-references">Intelligent Cross-References</h1>
-<p>Intelligent cross-references are a feature designed to be a link when they can be, and text directing people to a different target (guide) if not. Here's some examples for testing:</p>
-<p><a href="filter-examples-callouts.html">This should link to the callouts demo page.</a></p>
-<p>You can link by HTML filename: <a href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></p>
-<p>Or by MD filename: <a href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></p>
-<p>If the MD filename is ambiguous, you can specify the full path:
-<a href="filter-examples-xrefs.html">Intelligent Cross-References</a></p>
-<p>For an example of an inline cross reference, see <a href="gfm-compat.html">GitHub Markdown Compatibility</a>.</p>
-<p>Also, demonstrating that context, spaces, and case mostly don't matter:</p>
-<ul>
-<li><a href="includes.html">Includes Test</a></li>
-<li>(Above this should be a cross-reference to the includes test.)</li>
-</ul>
-<h2 id="anchors">Anchors</h2>
-<p>You can use anchors but the generated labels always use the page name: <a href="gfm-compat.html#code-blocks">GitHub Markdown Compatibility</a></p>
-<p>If you want to refer to a specific anchor, the workaround is to use an explicit label: <a href="gfm-compat.html#code-blocks">Code Blocks</a></p>
-<p>If the cross-reference appears in multiple targets, Dactyl chooses the first such target listed for the file. For example, if you want to refer to the Conditionals page using the conditionals target (when linking it from the filterexamples target), you have to change the order listed in the config file. Dactyl will always use the "everything" target since that's the first one listed:</p>
-<p><a href="conditionals.html">Conditionals Test</a></p>
-<p>If you want to specify a different target, you have to use conditional text in Jinja templating syntax instead of smart xrefs.</p>
+                <h1 id="code-includer">Code Includer</h1>
+<p>The <code>include_code</code> filter provides a function that can make a code sample from a file, pulling in just specific lines if desired.</p>
+<p>Call it like so:</p>
+<div class="codehilite"><pre><span></span><code><span class="cp">{{</span> <span class="nv">include_code</span><span class="o">(</span><span class="s2">"sample_include.json"</span><span class="o">,</span> <span class="nv">lines</span><span class="o">=</span><span class="s2">"1,3,5-6"</span><span class="o">,</span> <span class="nv">mark_disjoint</span><span class="o">=</span><span class="kp">True</span><span class="o">)</span> <span class="cp">}}</span><span class="x"></span>
+</code></pre></div>
+<p>Sample:</p>
+<div class="codehilite"><pre><span></span><code><span class="err">{"line one": "here",</span>
+<span class="err">...</span>
+<span class="err">"third line": 3,</span>
+<span class="err">...</span>
+<span class="err">    "line 5": "FIVE",</span>
+<span class="err">"six": 6</span>
+</code></pre></div>
+<p>One range:</p>
+<div class="codehilite"><pre><span></span><code><span class="err">"second line": true,</span>
+<span class="err">"third line": 3,</span>
+<span class="err">    "4th line": [1,2,3,4],</span>
+</code></pre></div>
+<p>The whole file:</p>
+<div class="codehilite"><pre><span></span><code><span class="err">{"line one": "here",</span>
+<span class="err">"second line": true,</span>
+<span class="err">"third line": 3,</span>
+<span class="err">    "4th line": [1,2,3,4],</span>
+<span class="err">    "line 5": "FIVE",</span>
+<span class="err">"six": 6</span>
+<span class="err">}</span>
+</code></pre></div>
+<p>Custom separator string for disjoint lines:</p>
+<div class="codehilite"><pre><span></span><code><span class="err">{"line one": "here",</span>
+<span class="err">"second line": true,</span>
+<span class="err">... (line omitted)...</span>
+<span class="err">    "4th line": [1,2,3,4],</span>
+<span class="err">    "line 5": "FIVE",</span>
+<span class="err">"six": 6</span>
+<span class="err">}</span>
+</code></pre></div>
               </article>
             </section>
       </main>
@@ -127,16 +143,16 @@
 
       <div class="card active">
   <div class="card-header" role="tab" id="sidenav_cat_head_1_2">
-    <a class=" sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_2" aria-expanded="true" aria-controls="sidenav_collapse_1_2"></a>
+    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_2" aria-expanded="false" aria-controls="sidenav_collapse_1_2"></a>
     <h5 class="card-title">
-        <a class="sidenav_cat_title active-parent" href="filters.html">Filters</a>
+        <a class="sidenav_cat_title " href="filters.html">Filters</a>
     </h5>
   </div><!-- /.card-header -->
 
-  <div class="card-body card-body-single collapse show" role="tabpanel" id="sidenav_collapse_1_2">
+  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_2">
     <ul class="sidebar_pagelist">
           <li class="leaf-child"><a class="" href="filter-examples-callouts.html">Callouts Demonstration</a></li>
-          <li class="leaf-child"><a class=" active" href="filter-examples-xrefs.html">Intelligent Cross-References</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-xrefs.html">Intelligent Cross-References</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-buttonize.html">Buttonize Filter</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-badges.html">Badges</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
@@ -146,19 +162,19 @@
 
       <div class="card active">
   <div class="card-header" role="tab" id="sidenav_cat_head_1_3">
-    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_3" aria-expanded="false" aria-controls="sidenav_collapse_1_3"></a>
+    <a class=" sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_3" aria-expanded="true" aria-controls="sidenav_collapse_1_3"></a>
     <h5 class="card-title">
-        <a class="sidenav_cat_title " href="extending-index.html">Extending Dactyl</a>
+        <a class="sidenav_cat_title active-parent" href="extending-index.html">Extending Dactyl</a>
     </h5>
   </div><!-- /.card-header -->
 
-  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_3">
+  <div class="card-body card-body-single collapse show" role="tabpanel" id="sidenav_collapse_1_3">
     <ul class="sidebar_pagelist">
           <li class="leaf-child"><a class="" href="extending-extend-templates.html">Template Extension</a></li>
           <li class="leaf-child"><a class="" href="extending-hierarchy.html">Hierarchy Demo</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-patriots.html">Custom Filter</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-patriots2.html">Custom Filter 2</a></li>
-          <li class="leaf-child"><a class="" href="extending-include_code.html">Code Includer</a></li>
+          <li class="leaf-child"><a class=" active" href="extending-include_code.html">Code Includer</a></li>
           <li class="leaf-child"><a class="" href="debug.html">Debug</a></li>
     </ul>
   </div><!--/.card-body-->

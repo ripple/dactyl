@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html >
 <head>
-    <title>GitHub Markdown Compatibility - Dactyl Examples</title>
+    <title>Code Highlighting - Dactyl Examples</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width">
@@ -55,12 +55,10 @@
     <h4>In this page:</h4>
   </div>
   <ul id="page-toc" class="list-group card-body" role="directory">
-    <li class="level-1"><a class="nav-link" href="#github-markdown-compatibility">GitHub Markdown Compatibility</a></li>
-    <li class="level-2"><a class="nav-link" href="#gfm-features-not-supported">GFM Features Not Supported</a></li>
-    <li class="level-2"><a class="nav-link" href="#line-breaks">Line Breaks</a></li>
-    <li class="level-2"><a class="nav-link" href="#preprocessing">Preprocessing</a></li>
-    <li class="level-2"><a class="nav-link" href="#header-ids">Header IDs</a></li>
-    <li class="level-2"><a class="nav-link" href="#code-blocks">Code Blocks</a></li>
+    <li class="level-1"><a class="nav-link" href="#code-highlighting">Code Highlighting</a></li>
+    <li class="level-2"><a class="nav-link" href="#requirements">Requirements</a></li>
+    <li class="level-2"><a class="nav-link" href="#languages">Languages</a></li>
+    <li class="level-2"><a class="nav-link" href="#disabling">Disabling</a></li>
   </ul>
 </div>      </aside>
 
@@ -72,58 +70,58 @@
 
     <li class="active breadcrumb-item"><a href="index.html">Index</a></li>
     <li class="active breadcrumb-item"><a href="tests-index.html">Tests</a></li>
-    <li class="active breadcrumb-item">GitHub Markdown Compatibility</li>
+    <li class="active breadcrumb-item">Code Highlighting</li>
   </ul>
 </nav><!--/.breadcrumbs-wrap-->            <section class="pt-3 p-md-3">
               <article class="dactyl-content">
-                <h1 id="github-markdown-compatibility">GitHub Markdown Compatibility</h1>
-<p>GitHub-Flavored Markdown has some stuff that Dactyl doesn't do and vice-versa, and various edge cases that the two may interpret differently.</p>
-<ul>
-<li><a href="#gfm-features-not-supported">GFM Features Not Supported</a></li>
-<li><a href="#line-breaks">Line Breaks</a></li>
-<li><a href="#preprocessing">Preprocessing</a></li>
-<li><a href="#header-ids">Header IDs</a></li>
-<li><a href="#code-blocks">Code Blocks</a></li>
-</ul>
-<h2 id="gfm-features-not-supported">GFM Features Not Supported</h2>
-<p>Dactyl doesn't do any of the following:</p>
-<ul>
-<li>https://github.com/gitlabhq/gitlabhq/blob/master/doc/markdown/markdown.md#url-auto-linking</li>
-<li><a href="https://github.com/gitlabhq/gitlabhq/blob/master/doc/markdown/markdown.md#emoji">Emoji codes</a></li>
-<li>Task lists<ul>
-<li>[x] completed</li>
-<li>[ ] incomplete</li>
-</ul>
-</li>
-<li><a href="https://github.com/gitlabhq/gitlabhq/blob/master/doc/markdown/markdown.md#special-gitlab-references">GitLab references</a></li>
-</ul>
-<p><strong>Suggestion:</strong> Avoid using these.</p>
-<h2 id="line-breaks">Line Breaks</h2>
-<p>You can have hard-wrapped paragraphs in Markdown. This
-means that not every single-line break introduces a
-new paragraph (<code>&lt;p&gt;</code> tag). Generally, we don't write
-hard-wrapped text for docs, though. (It introduces
-unnecessary churn in diffs.)</p>
-<p>Two paragraphs should be separated by an empty line.</p>
-<p>According to Markdown syntax, you can force a mid-paragraph
-line break by ending a line with two spaces<br/>
-as demonstrated in this paragraph.</p>
-<p>But watch out -- some editors (like <a href="https://atom.io/docs">Atom</a>) tend to strip off trailing spaces!</p>
-<h2 id="preprocessing">Preprocessing</h2>
-<p>Dactyl does preprocessing with Jinja, so you can do <a href="conditionals.html">conditional text</a> and <a href="includes.html">includes</a>. GitHub doesn't have stuff like that.</p>
-<p><strong>Suggestion:</strong> For docs that are meant to be viewed on GitHub, use Dactyl's "Githubify mode" (TODO: better docs on that) to do pre-processing only and export a markdown file you can push elsewhere. Be careful not to overwrite the original (with the prepropessing directives) with the processed export version.</p>
-<p><strong>Caution:</strong> The pre-processing doesn't know anything about Markdown syntax, so it might catch Jinja-esque syntax in things that weren't meant to be interpreted as such. Use <a href="http://jinja.pocoo.org/docs/dev/templates/#escaping">Jinja's escaping syntax</a> to fix that. E.g.:</p>
-<p>The {% raw %} block type leaves things inside of it unprocessed.</p>
-<p>You can also use the variable delimiter to print a literal, e.g. {{ '{{' }} will come out as {{</p>
-<h2 id="header-ids">Header IDs</h2>
-<p>You can link to headers within a markdown document because each header has a unique ID based on its text.</p>
-<p>Beware of slight differences across markdown parsers. In most cases, Dactyl's header formula matches GitHub's.</p>
-<p><strong>Caution:</strong> Header IDs are case-sensitive and always lower case, for both GitHub-Flavored and Dactyl markdown.</p>
-<p>For a detailed comparison of many edge cases, see <a href="header_stress_test.html">Header Stress Test (Dactyl)</a> vs. <a href="https://gist.github.com/mDuo13/44b624bf82b5a2230153559c2344b4cb">Header Stress Test (GitHub Gist)</a>.</p>
-<h2 id="code-blocks">Code Blocks</h2>
-<p>You can do code blocks either by the "indented" syntax or with code fences.</p>
-<p>Generally, we recommend using code fences. <a href="lists-and-codeblocks.html">Code blocks inside lists</a> are an exception where you should use indentation to demarcate code blocks.</p>
-<p>Dactyl automatically does <a href="code-highlighting.html">syntax highlighting</a> on included code blocks. If you use a language definition in the code blocks, Dactyl uses that to apply the correct syntax highlighting where possible.</p>
+                <h1 id="code-highlighting">Code Highlighting</h1>
+<p>Dactyl automatically adds syntax highlighting to code blocks when it parses Markdown, using the <a href="https://pygments.org/">Pygments</a>-derived <a href="https://python-markdown.github.io/extensions/code_hilite/">CodeHilite</a> extension. Parsing the syntax highlighting at compile time like this is faster and less work for readers' computers than in-browser syntax highlighting such as using <a href="https://highlightjs.readthedocs.io/en/latest/api.html">highlight.js</a>. (If you prefer highlight.js's output, though, you can still run it to overwrite Dactyl's syntax highlighting.)</p>
+<p>Example of a code segment colored by Dactyl's built-in highlighting:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">unacceptable_chars</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"[^A-Za-z0-9._ ]+"</span><span class="p">)</span>
+<span class="n">whitespace_regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s+"</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">slugify</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">unacceptable_chars</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">whitespace_regex</span><span class="p">,</span> <span class="s2">"_"</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s2">"_"</span>
+    <span class="k">return</span> <span class="n">s</span>
+</code></pre></div>
+<h2 id="requirements">Requirements</h2>
+<p>The highlighting requires a stylesheet to define the colors and styles used. Dactyl's default stylesheet includes an example or you can define your own. You can output one of Pygments' default stylesheets from the commandline as in the following example:</p>
+<div class="codehilite"><pre><span></span><code>$ pygmentize -S default -f html -a .codehilite &gt; default.css
+</code></pre></div>
+<h2 id="languages">Languages</h2>
+<p>Dactyl's code highlighting supports the same <a href="https://pygments.org/languages/">programming languages that Pygments supports</a>. By default it attempts to auto-detect the language, but you can add a language code to the first line of a fenced code block to specify the language.</p>
+<p>Example code:</p>
+<div class="codehilite"><pre><span></span><code><span class="err">```js</span>
+<span class="err">function slugify(s) {</span>
+<span class="err">  const unacceptable_chars = /[^A-Za-z0-9._ ]+/</span>
+<span class="err">  const whitespace_regex = /\s+/</span>
+<span class="err">  s = s.replace(unacceptable_chars, "")</span>
+<span class="err">  s = s.replace(whitespace_regex, "_")</span>
+<span class="err">  s = s.toLowerCase()</span>
+<span class="err">  if (!s) {</span>
+<span class="err">    s = "_"</span>
+<span class="err">  }</span>
+<span class="err">  return s</span>
+<span class="err">}</span>
+<span class="err">```</span>
+</code></pre></div>
+<p>Output:</p>
+<div class="codehilite"><pre><span></span><code><span class="kd">function</span> <span class="nx">slugify</span><span class="p">(</span><span class="nx">s</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kr">const</span> <span class="nx">unacceptable_chars</span> <span class="o">=</span> <span class="sr">/[^A-Za-z0-9._ ]+/</span>
+  <span class="kr">const</span> <span class="nx">whitespace_regex</span> <span class="o">=</span> <span class="sr">/\s+/</span>
+  <span class="nx">s</span> <span class="o">=</span> <span class="nx">s</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="nx">unacceptable_chars</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+  <span class="nx">s</span> <span class="o">=</span> <span class="nx">s</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="nx">whitespace_regex</span><span class="p">,</span> <span class="s2">"_"</span><span class="p">)</span>
+  <span class="nx">s</span> <span class="o">=</span> <span class="nx">s</span><span class="p">.</span><span class="nx">toLowerCase</span><span class="p">()</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">s</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">s</span> <span class="o">=</span> <span class="s2">"_"</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="nx">s</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="disabling">Disabling</h2>
+<p>If for some reason you want to turn off syntax highlighting, you can add <code>no_highlighting: true</code> to your config file at the global, target, or page level.</p>
               </article>
             </section>
       </main>
@@ -146,13 +144,13 @@ as demonstrated in this paragraph.</p>
 
   <div class="card-body card-body-single collapse show" role="tabpanel" id="sidenav_collapse_1_1">
     <ul class="sidebar_pagelist">
-          <li class="leaf-child"><a class="" href="code-highlighting.html">Code Highlighting</a></li>
+          <li class="leaf-child"><a class=" active" href="code-highlighting.html">Code Highlighting</a></li>
           <li class="leaf-child"><a class="" href="includes.html">Includes Test</a></li>
           <li class="leaf-child"><a class="" href="with-frontmatter.html">Page With Frontmatter</a></li>
           <li class="leaf-child"><a class="" href="cli-vars.html">Commandline Variables</a></li>
           <li class="leaf-child"><a class="" href="conditionals.html">Conditionals Test</a></li>
           <li class="leaf-child"><a class="" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></li>
-          <li class="leaf-child"><a class=" active" href="gfm-compat.html">GitHub Markdown Compatibility</a></li>
+          <li class="leaf-child"><a class="" href="gfm-compat.html">GitHub Markdown Compatibility</a></li>
           <li class="leaf-child"><a class="" href="header_stress_test.html">Header Stress Test</a></li>
     </ul>
   </div><!--/.card-body-->

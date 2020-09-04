@@ -14,14 +14,9 @@
 
 
 
-    <!-- syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js"></script>
-
     <script>
         $(document).ready(function() {
             $(".multicode").minitabs();
-            hljs.initHighlighting();
             make_code_expandable();
         });
     </script>
@@ -42,6 +37,9 @@
           <li class="nav-item active-parent">
             <a class="nav-link" href="filters.html">Filters</a>
           </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
+          </li>
     </ul><!-- /.navbar-nav -->
 
 
@@ -58,7 +56,9 @@
   </div>
   <ul id="page-toc" class="list-group card-body" role="directory">
     <li class="level-1"><a class="nav-link" href="#callouts-demonstration">Callouts Demonstration</a></li>
-    <li class="level-2"><a class="nav-link" href="#finer-points">Finer points</a></li>
+    <li class="level-2"><a class="nav-link" href="#multiline-callouts">Multiline Callouts</a></li>
+    <li class="level-2"><a class="nav-link" href="#cases-to-avoid">Cases to Avoid</a></li>
+    <li class="level-2"><a class="nav-link" href="#custom-callout-types">Custom Callout Types</a></li>
   </ul>
 </div>      </aside>
 
@@ -75,42 +75,14 @@
 </nav><!--/.breadcrumbs-wrap-->            <section class="pt-3 p-md-3">
               <article class="dactyl-content">
                 <h1 id="callouts-demonstration">Callouts Demonstration</h1>
-<p class="dactyl-callout tip"><strong>Tip:</strong> Callouts are a great way to call attention to particular bits of information.</p>
-<p>In order to use callouts, the page (or target) has to have the <code>callouts</code> filter enabled.</p>
-<p class="dactyl-callout note"><strong>Note:</strong> Callouts have four types, "Note", "Tip", "Caution", and "Warning".</p>
+<p>Callouts are a specially-colored blocks that call attention to particular bits of information. They might be special warnings, asides, or other details. To use callouts, the page (or target) has to have the <code>callouts</code> filter enabled, then provide syntax such as the following:</p>
+<div class="codehilite"><pre><span></span><code>**Tip:** This is a "Tip" callout, styled with green and a checkmark by default.
+</code></pre></div>
+<p class="dactyl-callout tip"><strong>Tip:</strong> This is a "Tip" callout, styled with green and a checkmark by default.</p>
+<p class="dactyl-callout note"><strong>Note:</strong> Callouts have four types by default: "Note", "Tip", "Caution", and "Warning".</p>
 <p class="dactyl-callout caution"><strong>Caution:</strong> Be sure not to overuse callouts.</p>
-<p class="dactyl-callout warning"><strong>Warning:</strong> Callouts are very specific. <code>**Note:**</code> triggers a callout; <code>**Notes:**</code> doesn't.</p>
-<h2 id="finer-points">Finer points</h2>
-<p class="dactyl-callout tip"><strong>Tip</strong> The colon is optional, though.</p>
-<ul>
-<li class="dactyl-callout note"><strong>Note:</strong> Callouts can only contain a single element of text. You can't have multiple paragraphs or a list nested in a callout.</li>
-<li>The callout applies to the whole list item.<ul>
-<li class="dactyl-callout tip"><strong>Tip:</strong> You can have callouts nested in a list.<ul>
-<li class="dactyl-callout warning"><strong>Warning:</strong> Don't nest callouts in list items that are already callouts, because that's ugly and confusing.</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>And more stuff. <strong>Note:</strong> The callout doesn't trigger if it's not at the start of the element.</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>Table</th>
-<th>Stuff</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="dactyl-callout warning"><strong>Warning:</strong> Callout syntax in table cells is weird.</td>
-<td>So it's probably best not to do that.</td>
-</tr>
-<tr>
-<td>Probably.</td>
-<td class="dactyl-callout caution"><strong>Caution:</strong> It could maybe work better with better CSS.</td>
-</tr>
-</tbody>
-</table>
+<p class="dactyl-callout warning"><strong>Warning:</strong> Callouts are very specific. <code>**Note:**</code> triggers a callout; <code>**Notes:**</code> doesn't. The colon is optional, though.</p>
+<h2 id="multiline-callouts">Multiline Callouts</h2>
 <blockquote class="dactyl-callout tip">
 <p><strong>Tip:</strong> Multiline callouts with blockquotes are now possible.</p>
 <ul>
@@ -119,6 +91,13 @@
 </li>
 </ul>
 </blockquote>
+<p>Code example:</p>
+<div class="codehilite"><pre><span></span><code><span class="err">&gt; **Tip:** Multiline callouts with blockquotes are now possible.</span>
+<span class="err">&gt;</span>
+<span class="err">&gt; - Do this to include bulleted lists.</span>
+<span class="err">&gt; - Or other types of lists.</span>
+<span class="err">&gt;</span>
+</code></pre></div>
 <p>If you have a callout word like <strong>tip</strong> bolded mid-paragraph, it should not become a callout.</p>
 <blockquote>
 <p>Please <strong>note</strong> that this also applies to blockquotes.</p>
@@ -142,13 +121,95 @@ if (true) {
 <blockquote class="dactyl-callout tip">
 <p><strong>Tip:</strong> To get a proper code block in a blockquote, provide a single
 line of just the blockquote intro <code>&gt;</code>, and indent the code block 5 spaces.</p>
-<pre><code>print("Hello world!")
-if True:
-    print("Note that extra spaces beyond the initial 5 carry over.")
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="err">print("Hello world!")</span>
+<span class="err">if True:</span>
+<span class="err">    print("Note that extra spaces beyond the initial 5 carry over.")</span>
+</code></pre></div>
 <p>To continue the block quote afterwords, leave a near-blank line similarly.
 Do not use code fences in a blockquote: they don't work as expected.</p>
 </blockquote>
+<h2 id="cases-to-avoid">Cases to Avoid</h2>
+<ul>
+<li>In a list, the callout applies to the whole list item.<ul>
+<li class="dactyl-callout tip"><strong>Tip:</strong> You can have callouts nested in a list.<ul>
+<li class="dactyl-callout warning"><strong>Warning:</strong> You probably wouldn't like what happens if you nest callouts in list items that are already callouts.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>One more point. <strong>Note:</strong> The callout doesn't trigger if it's not at the start of the element.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Stuff</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="dactyl-callout warning"><strong>Warning:</strong> Callout syntax in table cells is weird.</td>
+<td>So it's probably best not to do that.</td>
+</tr>
+<tr>
+<td>Probably.</td>
+<td class="dactyl-callout caution"><strong>Caution:</strong> It could maybe work better with better CSS.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="custom-callout-types">Custom Callout Types</h2>
+<p>You can define additional callout types if you want. This requires two pieces:</p>
+<ul>
+<li>A list of what words should trigger a callout.</li>
+<li>CSS styles for the relevant callout types.</li>
+</ul>
+<p>To define custom callout classes, write the trigger words (case-insensitive) in your project's Dactyl config file. This overwrites the default list, so include the default four if you still want to use them. For example:</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">callout_types</span><span class="p">:</span>
+  <span class="p p-Indicator">-</span> <span class="s">"tip"</span>
+  <span class="p p-Indicator">-</span> <span class="s">"ヒント"</span> <span class="c1"># equiv. of "Tip" in Japanese (lit. "Hint")</span>
+  <span class="p p-Indicator">-</span> <span class="s">"note"</span>
+  <span class="p p-Indicator">-</span> <span class="s">"注記"</span> <span class="c1"># equiv of "Note" in Japanese</span>
+  <span class="p p-Indicator">-</span> <span class="s">"caution"</span>
+  <span class="p p-Indicator">-</span> <span class="s">"注意"</span> <span class="c1"># equiv. of "Caution" in Japanese</span>
+  <span class="p p-Indicator">-</span> <span class="s">"warning"</span>
+  <span class="p p-Indicator">-</span> <span class="s">"警告"</span> <span class="c1"># equiv. of "Warning" in Japanese</span>
+</code></pre></div>
+<p>Any paragraph that starts with a bold or italic section that consists of <em>only</em> one of the listed words triggers a callout. The callout has two CSS classes:</p>
+<ol>
+<li>A general callout class. This is <code>dactyl-callout</code> by default.</li>
+<li>The word that triggered the callout (for example, <code>tip</code>) in all lowercase.</li>
+</ol>
+<p>You can customize the general callout class with a config file line such as the following:</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">callout_class</span><span class="p">:</span> <span class="s">"my-callout-class"</span>
+</code></pre></div>
+<p>Finally, add the relevant CSS styles to your stylesheet for the new class. For example, the default Dactyl stylesheet defines the "Tip" and "ヒント" callout styles as follows:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">.</span><span class="nc">dactyl-content</span> <span class="p">.</span><span class="nc">dactyl-callout</span> <span class="p">{</span>
+    <span class="k">border-style</span><span class="p">:</span> <span class="kc">solid</span><span class="p">;</span>
+    <span class="k">border-radius</span><span class="p">:</span> <span class="mf">.25</span><span class="kt">rem</span><span class="p">;</span>
+    <span class="k">border-width</span><span class="p">:</span> <span class="mi">1</span><span class="kt">px</span><span class="p">;</span>
+        <span class="k">border-left-width</span><span class="p">:</span> <span class="mi">1</span><span class="kt">px</span><span class="p">;</span>
+    <span class="k">border-left-width</span><span class="p">:</span> <span class="mi">4</span><span class="kt">px</span><span class="p">;</span>
+    <span class="k">padding</span><span class="p">:</span> <span class="mi">5</span><span class="kt">px</span><span class="p">;</span>
+        <span class="k">padding-left</span><span class="p">:</span> <span class="mi">5</span><span class="kt">px</span><span class="p">;</span>
+    <span class="k">padding-left</span><span class="p">:</span> <span class="mi">25</span><span class="kt">px</span><span class="p">;</span>
+    <span class="k">page-break-inside</span><span class="p">:</span> <span class="kc">avoid</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">dactyl-content</span> <span class="p">.</span><span class="nc">dactyl-callout</span><span class="p">.</span><span class="nc">tip</span><span class="o">,</span> <span class="p">.</span><span class="nc">dactyl-content</span> <span class="p">.</span><span class="nc">dactyl-callout</span><span class="p">.</span><span class="nc">ヒント</span> <span class="p">{</span>
+    <span class="k">border-color</span><span class="p">:</span> <span class="mh">#28a745</span><span class="p">;</span> <span class="c">/* Green border */</span>
+<span class="p">}</span>
+
+<span class="p">.</span><span class="nc">dactyl-content</span> <span class="p">.</span><span class="nc">dactyl-callout</span><span class="p">.</span><span class="nc">tip</span> <span class="o">&gt;</span> <span class="nt">strong</span><span class="p">:</span><span class="nd">first-child</span><span class="p">::</span><span class="nd">before</span><span class="o">,</span>
+<span class="p">.</span><span class="nc">dactyl-content</span> <span class="p">.</span><span class="nc">dactyl-callout</span><span class="p">.</span><span class="nc">tip</span> <span class="o">&gt;</span> <span class="nt">p</span> <span class="nt">strong</span><span class="p">:</span><span class="nd">first-child</span><span class="p">::</span><span class="nd">before</span><span class="o">,</span>
+<span class="p">.</span><span class="nc">dactyl-content</span> <span class="p">.</span><span class="nc">dactyl-callout</span><span class="p">.</span><span class="nc">ヒント</span> <span class="o">&gt;</span> <span class="nt">strong</span><span class="p">:</span><span class="nd">first-child</span><span class="p">::</span><span class="nd">before</span><span class="o">,</span>
+<span class="p">.</span><span class="nc">dactyl-content</span> <span class="p">.</span><span class="nc">dactyl-callout</span><span class="p">.</span><span class="nc">ヒント</span> <span class="o">&gt;</span> <span class="nt">p</span> <span class="nt">strong</span><span class="p">:</span><span class="nd">first-child</span><span class="p">::</span><span class="nd">before</span> <span class="p">{</span>
+    <span class="k">content</span><span class="p">:</span> <span class="s2">"\f058"</span><span class="p">;</span> <span class="c">/* fontawesome check-circle icon */</span>
+    <span class="k">font-family</span><span class="p">:</span> <span class="n">FontAwesome</span><span class="p">;</span>
+    <span class="k">color</span><span class="p">:</span> <span class="mh">#28a745</span><span class="p">;</span>
+    <span class="k">margin-left</span><span class="p">:</span> <span class="mi">-20</span><span class="kt">px</span><span class="p">;</span>
+    <span class="k">padding-right</span><span class="p">:</span> <span class="mi">5</span><span class="kt">px</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
               </article>
             </section>
       </main>
@@ -171,14 +232,14 @@ Do not use code fences in a blockquote: they don't work as expected.</p>
 
   <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_1">
     <ul class="sidebar_pagelist">
+          <li class="leaf-child"><a class="" href="code-highlighting.html">Code Highlighting</a></li>
           <li class="leaf-child"><a class="" href="includes.html">Includes Test</a></li>
           <li class="leaf-child"><a class="" href="with-frontmatter.html">Page With Frontmatter</a></li>
+          <li class="leaf-child"><a class="" href="cli-vars.html">Commandline Variables</a></li>
           <li class="leaf-child"><a class="" href="conditionals.html">Conditionals Test</a></li>
           <li class="leaf-child"><a class="" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></li>
           <li class="leaf-child"><a class="" href="gfm-compat.html">GitHub Markdown Compatibility</a></li>
           <li class="leaf-child"><a class="" href="header_stress_test.html">Header Stress Test</a></li>
-          <li class="leaf-child"><a class="" href="extends.html">Template Extension</a></li>
-          <li class="leaf-child"><a class="" href="hierarchy_demo.html">Hierarchy Demo</a></li>
     </ul>
   </div><!--/.card-body-->
 </div><!--/.card-->
@@ -196,11 +257,28 @@ Do not use code fences in a blockquote: they don't work as expected.</p>
           <li class="leaf-child"><a class=" active" href="filter-examples-callouts.html">Callouts Demonstration</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-xrefs.html">Intelligent Cross-References</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-buttonize.html">Buttonize Filter</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-badges.html">Badges</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
+    </ul>
+  </div><!--/.card-body-->
+</div><!--/.card-->
+
+      <div class="card active">
+  <div class="card-header" role="tab" id="sidenav_cat_head_1_3">
+    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_3" aria-expanded="false" aria-controls="sidenav_collapse_1_3"></a>
+    <h5 class="card-title">
+        <a class="sidenav_cat_title " href="extending-index.html">Extending Dactyl</a>
+    </h5>
+  </div><!-- /.card-header -->
+
+  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_3">
+    <ul class="sidebar_pagelist">
+          <li class="leaf-child"><a class="" href="extending-extend-templates.html">Template Extension</a></li>
+          <li class="leaf-child"><a class="" href="extending-hierarchy.html">Hierarchy Demo</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-patriots.html">Custom Filter</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-patriots2.html">Custom Filter 2</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-badges.html">Badges</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-include_code.html">Code Includer</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
+          <li class="leaf-child"><a class="" href="extending-include_code.html">Code Includer</a></li>
+          <li class="leaf-child"><a class="" href="debug.html">Debug</a></li>
     </ul>
   </div><!--/.card-body-->
 </div><!--/.card-->

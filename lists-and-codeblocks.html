@@ -14,14 +14,9 @@
 
 
 
-    <!-- syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js"></script>
-
     <script>
         $(document).ready(function() {
             $(".multicode").minitabs();
-            hljs.initHighlighting();
             make_code_expandable();
         });
     </script>
@@ -41,6 +36,9 @@
           </li>
           <li class="nav-item ">
             <a class="nav-link" href="filters.html">Filters</a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
           </li>
     </ul><!-- /.navbar-nav -->
 
@@ -83,11 +81,11 @@
 <li>
 <p>first list item</p>
 <p>Descriptive text inside of 1st list item (indented 4 spaces, after a blank line):</p>
-<pre><code>Indented, non-fenced code block, minimum 8 spaces indented
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="err">Indented, non-fenced code block, minimum 8 spaces indented</span>
+</code></pre></div>
 <p>More descriptive text inside of 1st list item (indented 4 spaces again):</p>
-<pre><code>Indented, non-fenced code block, minimum 8 spaces indented
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="err">Indented, non-fenced code block, minimum 8 spaces indented</span>
+</code></pre></div>
 </li>
 <li>
 <p>second list item</p>
@@ -102,8 +100,8 @@
 <li>
 <p>level two list item 2</p>
 <p>Some more info on item 2</p>
-<pre><code>a code block inside 2
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="err">a code block inside 2</span>
+</code></pre></div>
 </li>
 </ol>
 </li>
@@ -112,11 +110,11 @@
 <ol>
 <li>This is the first item of a list.</li>
 </ol>
-<pre><code>This is a
-    fenced
-        code
-            block
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="err">This is a</span>
+<span class="err">    fenced</span>
+<span class="err">        code</span>
+<span class="err">            block</span>
+</code></pre></div>
 <ol start="2">
 <li>The list should resume from here, but it's actually a new list instead</li>
 <li>Is this the third list item?
@@ -129,8 +127,8 @@
 5. Also, don't number your lists with letters in markdown</p>
 <p>a. It won't get interpreted as a list</p>
 <p>b. they get interpreted as raw text</p>
-<pre><code>1. so you can't put more things nested in them
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="err">1. so you can't put more things nested in them</span>
+</code></pre></div>
 <p>c. and if you omit a blank line it gets worse
 d. the lines blur together</p>
 </li>
@@ -160,14 +158,14 @@ d. the lines blur together</p>
 
   <div class="card-body card-body-single collapse show" role="tabpanel" id="sidenav_collapse_1_1">
     <ul class="sidebar_pagelist">
+          <li class="leaf-child"><a class="" href="code-highlighting.html">Code Highlighting</a></li>
           <li class="leaf-child"><a class="" href="includes.html">Includes Test</a></li>
           <li class="leaf-child"><a class="" href="with-frontmatter.html">Page With Frontmatter</a></li>
+          <li class="leaf-child"><a class="" href="cli-vars.html">Commandline Variables</a></li>
           <li class="leaf-child"><a class="" href="conditionals.html">Conditionals Test</a></li>
           <li class="leaf-child"><a class=" active" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></li>
           <li class="leaf-child"><a class="" href="gfm-compat.html">GitHub Markdown Compatibility</a></li>
           <li class="leaf-child"><a class="" href="header_stress_test.html">Header Stress Test</a></li>
-          <li class="leaf-child"><a class="" href="extends.html">Template Extension</a></li>
-          <li class="leaf-child"><a class="" href="hierarchy_demo.html">Hierarchy Demo</a></li>
     </ul>
   </div><!--/.card-body-->
 </div><!--/.card-->
@@ -185,11 +183,28 @@ d. the lines blur together</p>
           <li class="leaf-child"><a class="" href="filter-examples-callouts.html">Callouts Demonstration</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-xrefs.html">Intelligent Cross-References</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-buttonize.html">Buttonize Filter</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-badges.html">Badges</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
+    </ul>
+  </div><!--/.card-body-->
+</div><!--/.card-->
+
+      <div class="card active">
+  <div class="card-header" role="tab" id="sidenav_cat_head_1_3">
+    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_3" aria-expanded="false" aria-controls="sidenav_collapse_1_3"></a>
+    <h5 class="card-title">
+        <a class="sidenav_cat_title " href="extending-index.html">Extending Dactyl</a>
+    </h5>
+  </div><!-- /.card-header -->
+
+  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_3">
+    <ul class="sidebar_pagelist">
+          <li class="leaf-child"><a class="" href="extending-extend-templates.html">Template Extension</a></li>
+          <li class="leaf-child"><a class="" href="extending-hierarchy.html">Hierarchy Demo</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-patriots.html">Custom Filter</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-patriots2.html">Custom Filter 2</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-badges.html">Badges</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-include_code.html">Code Includer</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
+          <li class="leaf-child"><a class="" href="extending-include_code.html">Code Includer</a></li>
+          <li class="leaf-child"><a class="" href="debug.html">Debug</a></li>
     </ul>
   </div><!--/.card-body-->
 </div><!--/.card-->

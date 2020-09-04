@@ -14,21 +14,16 @@
 
 
 
-    <!-- syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js"></script>
-
     <script>
         $(document).ready(function() {
             $(".multicode").minitabs();
-            hljs.initHighlighting();
             make_code_expandable();
         });
     </script>
 
 </head>
 
-<body class="sidebar-left  " data-spy="scroll" data-target="#page-toc-wrapper" data-offset="0">
+<body class="sidebar-both  " data-spy="scroll" data-target="#page-toc-wrapper" data-offset="0">
 <nav class="navbar fixed-top navbar-expand-lg navbar-light bg-white px-2">
   <a href="/" class="navbar-brand"><h1>Dactyl Examples</h1></a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHolder" aria-controls="navbarHolder" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +37,9 @@
           <li class="nav-item ">
             <a class="nav-link" href="filters.html">Filters</a>
           </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
+          </li>
     </ul><!-- /.navbar-nav -->
 
 
@@ -51,9 +49,21 @@
   <div class="container-fluid" role="document" id="main_content_wrapper">
     <div class="row">
       <!-- Right sidebar first so it's at the beginning for mobile layouts -->
+      <aside class="right-sidebar col-lg-3 order-lg-4" role="complementary">
+<div class="card" id="page-toc-wrapper">
+  <div class="card-header">
+    <h4>In this page:</h4>
+  </div>
+  <ul id="page-toc" class="list-group card-body" role="directory">
+    <li class="level-1"><a class="nav-link" href="#includes-test">Includes Test</a></li>
+    <li class="level-2"><a class="nav-link" href="#with-conditionals">With Conditionals</a></li>
+    <li class="level-1"><a class="nav-link" href="#includes-and-filters">Includes and Filters</a></li>
+    <li class="level-1"><a class="nav-link" href="#other-stuff">Other Stuff</a></li>
+  </ul>
+</div>      </aside>
 
       <!-- main column -->
-      <main class="main col-md-7 col-lg-9 order-md-3  " role="main" id="main_content_body">
+      <main class="main col-md-7 col-lg-6 order-md-3  " role="main" id="main_content_body">
 <nav class="breadcrumbs-wrap p-0 p-md-3" aria-label="breadcrumb">
   <ul class="breadcrumb">
     
@@ -65,84 +75,23 @@
 </nav><!--/.breadcrumbs-wrap-->            <section class="pt-3 p-md-3">
               <article class="dactyl-content">
                 <h1 id="includes-test">Includes Test</h1>
-<p>This page demonstrates including a file using the preprocessor syntax. The path to including a file is always relative to the <strong>content_path</strong> from the config.</p>
+<p>This page demonstrates including a file using the <a href="https://jinja.palletsprojects.com/en/2.11.x/templates/#include">preprocessor's <code>include</code> syntax</a>. The path to including a file is always relative to the <strong><code>content_path</code></strong> from the config.</p>
+<p>Example code:</p>
+<div class="codehilite"><pre><span></span><code><span class="err">{% include 'includes/reusable.md' %}</span>
+</code></pre></div>
+<p>Results:</p>
+<p>This snippet of text is reusable and can be included multiple times as needed, while being sourced from a single file in all cases.</p>
+<h2 id="with-conditionals">With Conditionals</h2>
+<p>Sometimes you want to use a block of text with slight differences in different contexts. You can use <a href="conditionals.html">conditionals</a> to define the different text to appear or not depending on where the file is being included. In most cases you can check some property of the <code>currentpage</code> or <code>target</code>, but in case you can't, the <a href="https://jinja.palletsprojects.com/en/2.11.x/templates/#assignments"><code>set</code> tag</a> can help.</p>
+<p>Example code:</p>
+<div class="codehilite"><pre><span></span><code><span class="err">{% set extended = True %}</span>
+<span class="err">{% include 'includes/reusable.md' %}</span>
+</code></pre></div>
+<p>Results:</p>
+<p>This snippet of text is reusable and can be included multiple times as needed, while being sourced from a single file in all cases.</p>
+<p>This is the extended version.</p>
 <h1 id="includes-and-filters">Includes and Filters</h1>
-<p>If you include a page that is written to use a filter, you might get weird results if the current page / target don't run the filter. For example...</p>
-<h1 id="callouts-demonstration">Callouts Demonstration</h1>
-<p><strong>Tip:</strong> Callouts are a great way to call attention to particular bits of information.</p>
-<p>In order to use callouts, the page (or target) has to have the <code>callouts</code> filter enabled.</p>
-<p><strong>Note:</strong> Callouts have four types, "Note", "Tip", "Caution", and "Warning".</p>
-<p><strong>Caution:</strong> Be sure not to overuse callouts.</p>
-<p><strong>Warning:</strong> Callouts are very specific. <code>**Note:**</code> triggers a callout; <code>**Notes:**</code> doesn't.</p>
-<h2 id="finer-points">Finer points</h2>
-<p><strong>Tip</strong> The colon is optional, though.</p>
-<ul>
-<li><strong>Note:</strong> Callouts can only contain a single element of text. You can't have multiple paragraphs or a list nested in a callout.</li>
-<li>The callout applies to the whole list item.<ul>
-<li><strong>Tip:</strong> You can have callouts nested in a list.<ul>
-<li><strong>Warning:</strong> Don't nest callouts in list items that are already callouts, because that's ugly and confusing.</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>And more stuff. <strong>Note:</strong> The callout doesn't trigger if it's not at the start of the element.</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>Table</th>
-<th>Stuff</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Warning:</strong> Callout syntax in table cells is weird.</td>
-<td>So it's probably best not to do that.</td>
-</tr>
-<tr>
-<td>Probably.</td>
-<td><strong>Caution:</strong> It could maybe work better with better CSS.</td>
-</tr>
-</tbody>
-</table>
-<blockquote>
-<p><strong>Tip:</strong> Multiline callouts with blockquotes are now possible.</p>
-<ul>
-<li>Do this to include bulleted lists.</li>
-<li>Or other types of lists.
-</li>
-</ul>
-</blockquote>
-<p>If you have a callout word like <strong>tip</strong> bolded mid-paragraph, it should not become a callout.</p>
-<blockquote>
-<p>Please <strong>note</strong> that this also applies to blockquotes.</p>
-</blockquote>
-<p>There is a difficult edge case for blockquotes where a paragraph other than the first one starts with a callout keyword:</p>
-<blockquote>
-<p>This is the start of a blockquote that is not, itself, a callout.</p>
-<p><strong>Note:</strong> This callout occurs in the middle of a blockquote.</p>
-<p>But the blockquote containing it is not, itself, a callout.</p>
-</blockquote>
-<p>Also, note that you can cannot use code fences in blockquotes.</p>
-<blockquote>
-<p><strong>Caution:</strong> Code fences in blockquotes don't work right.</p>
-<p><code>js
-if (true) {
-    console.log('this line of code should be indented');
-}</code></p>
-<p>The code fence gets treated as inlined code text instead. This is a limitation of Python-Markdown.</p>
-</blockquote>
-<p>You can, however, use indented code blocks in blockquotes:</p>
-<blockquote>
-<p><strong>Tip:</strong> To get a proper code block in a blockquote, provide a single
-line of just the blockquote intro <code>&gt;</code>, and indent the code block 5 spaces.</p>
-<pre><code>print("Hello world!")
-if True:
-    print("Note that extra spaces beyond the initial 5 carry over.")
-</code></pre>
-<p>To continue the block quote afterwords, leave a near-blank line similarly.
-Do not use code fences in a blockquote: they don't work as expected.</p>
-</blockquote>
+<p>If you include a page that is written to use a filter, you might get weird results if the current page / target don't run the filter.</p>
 <h1 id="other-stuff">Other Stuff</h1>
 <p>Includes are part of preprocessing, so you can do things like making one file that has all your <a href="https://daringfireball.net/projects/markdown/syntax#link">Markdown reference links</a>, and including that in all your pages to make the reference links always available.</p>
 <p>Reader exercise: make your own filter to automatically include a page at the end of another page!</p>
@@ -168,14 +117,14 @@ Do not use code fences in a blockquote: they don't work as expected.</p>
 
   <div class="card-body card-body-single collapse show" role="tabpanel" id="sidenav_collapse_1_1">
     <ul class="sidebar_pagelist">
+          <li class="leaf-child"><a class="" href="code-highlighting.html">Code Highlighting</a></li>
           <li class="leaf-child"><a class=" active" href="includes.html">Includes Test</a></li>
           <li class="leaf-child"><a class="" href="with-frontmatter.html">Page With Frontmatter</a></li>
+          <li class="leaf-child"><a class="" href="cli-vars.html">Commandline Variables</a></li>
           <li class="leaf-child"><a class="" href="conditionals.html">Conditionals Test</a></li>
           <li class="leaf-child"><a class="" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></li>
           <li class="leaf-child"><a class="" href="gfm-compat.html">GitHub Markdown Compatibility</a></li>
           <li class="leaf-child"><a class="" href="header_stress_test.html">Header Stress Test</a></li>
-          <li class="leaf-child"><a class="" href="extends.html">Template Extension</a></li>
-          <li class="leaf-child"><a class="" href="hierarchy_demo.html">Hierarchy Demo</a></li>
     </ul>
   </div><!--/.card-body-->
 </div><!--/.card-->
@@ -193,11 +142,28 @@ Do not use code fences in a blockquote: they don't work as expected.</p>
           <li class="leaf-child"><a class="" href="filter-examples-callouts.html">Callouts Demonstration</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-xrefs.html">Intelligent Cross-References</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-buttonize.html">Buttonize Filter</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-badges.html">Badges</a></li>
+          <li class="leaf-child"><a class="" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
+    </ul>
+  </div><!--/.card-body-->
+</div><!--/.card-->
+
+      <div class="card active">
+  <div class="card-header" role="tab" id="sidenav_cat_head_1_3">
+    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_3" aria-expanded="false" aria-controls="sidenav_collapse_1_3"></a>
+    <h5 class="card-title">
+        <a class="sidenav_cat_title " href="extending-index.html">Extending Dactyl</a>
+    </h5>
+  </div><!-- /.card-header -->
+
+  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_3">
+    <ul class="sidebar_pagelist">
+          <li class="leaf-child"><a class="" href="extending-extend-templates.html">Template Extension</a></li>
+          <li class="leaf-child"><a class="" href="extending-hierarchy.html">Hierarchy Demo</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-patriots.html">Custom Filter</a></li>
           <li class="leaf-child"><a class="" href="filter-examples-patriots2.html">Custom Filter 2</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-badges.html">Badges</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-include_code.html">Code Includer</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
+          <li class="leaf-child"><a class="" href="extending-include_code.html">Code Includer</a></li>
+          <li class="leaf-child"><a class="" href="debug.html">Debug</a></li>
     </ul>
   </div><!--/.card-body-->
 </div><!--/.card-->
