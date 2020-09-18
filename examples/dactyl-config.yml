@@ -55,6 +55,10 @@ pages:
         targets:
             - everything
 
+    -   md: link-types.md
+        targets:
+            - everything
+
     -   name: Conditionals Test
         category: Tests
         md: conditionals.md

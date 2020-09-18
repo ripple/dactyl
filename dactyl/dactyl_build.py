@@ -440,7 +440,9 @@ class DactylBuilder:
         os.chdir(self.staging_folder)
 
         # Start preparing the prince command
-        args = [self.config["prince_executable"], '--javascript', '-o', abs_pdf_path, '--no-warn-css']
+        args = [self.config["prince_executable"], '--javascript', '-o', abs_pdf_path]
+        if not self.config["legacy_prince"]:
+            args.append('--no-warn-css')
 
         pages = self.target.pages
         if only_page:

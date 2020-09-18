@@ -1,3 +1,7 @@
+# v0.13.1 Release Notes
+
+This release fixes the link checker's handling of some less common hyperlink types. It also adds the `--legacy_prince` option to allow you to build PDFs with Prince version 10 and earlier.
+
 # v0.13.0 Release Notes
 
 This release adds built-in (compile-time) syntax highlighting to Dactyl. This syntax highlighting runs by default, but you can disable it with `no_highlight` in your config file (at the global, target, or page level). The built-in templates now use the built-in highlighting at compile time instead of doing syntax highlighting browser-side.

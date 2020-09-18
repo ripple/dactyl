@@ -96,6 +96,10 @@ class DactylCLIParser:
                                 help="Use this port for HTTP server (when "+\
                                 "building PDFs.) Use '0' for no server (may not "+\
                                 "work well with PDFs containing absolute links)")
+            parser.add_argument("--legacy_prince", action="store_true",
+                                help="When building PDFs, disable options that aren't"+\
+                                "supported by older versions of Prince.",
+                                default=False)
 
         elif utility == self.UTIL_LINKS:
             parser.add_argument("-o", "--offline", action="store_true",

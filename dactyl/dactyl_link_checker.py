@@ -41,6 +41,8 @@ remote_url_cache = {
     #str url: bool was_good
 }
 def check_remote_url(endpoint, in_file, hreftype=TYPE_LINK):
+    if endpoint[:2] == "//": #Protocol-relative URL. Assume HTTPS.
+        endpoint = "https:" + endpoint
     if endpoint in remote_url_cache.keys():
         if remote_url_cache[endpoint]:
             logger.debug("Skipping cached %s %s" % (hreftype, endpoint))
@@ -103,11 +105,16 @@ def check_href(endpoint, in_file, dirpath, top_dir, offline, hreftype=TYPE_LINK,
         logger.debug("Skipping empty anchor link in %s" % in_file)
         return (0, False)
 
-    if "mailto:" in endpoint:
+    if endpoint[:len("mailto:")] == "mailto:":
         if hreftype == TYPE_IMAGE:
             logger.warning("Invalid image URL: '%s' in %s" % (endpoint, in_file))
             return (1, False)
-        logger.warning("Skipping email link in %s to %s" %
+        logger.info("Skipping email link in %s to %s" %
+                (in_file, endpoint))
+        return (0, False)
+
+    if endpoint[:len("javascript:")] == "javascript:":
+        logger.info("Skipping javascript link in %s to %s" %
                 (in_file, endpoint))
         return (0, False)
 

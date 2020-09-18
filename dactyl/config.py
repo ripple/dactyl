@@ -193,6 +193,8 @@ class DactylConfig:
             self.config["template_allow_undefined"] = False
         if self.cli_args.pp_strict_undefined:
             self.config["preprocessor_allow_undefined"] = False
+        if self.cli_args.legacy_prince:
+            self.config["legacy_prince"] = True
 
 
     def __getitem__(self, key):

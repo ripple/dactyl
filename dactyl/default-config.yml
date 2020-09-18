@@ -39,6 +39,8 @@ es_index_fields:
 es_index_separator: '-'
 
 prince_executable: prince
+# Disable --no-warn-css for compatibility with older Prince versions:
+legacy_prince: false
 
 ## If this is true, parses the files as Markdown without Jinja syntax
 skip_preprocessor: false
