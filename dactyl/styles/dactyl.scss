@@ -105,6 +105,21 @@ $navbar-nav-link-padding-x: 1rem;
     font-weight: 700;
   }
 
+  // Hover anchors ---------------
+  .hover_anchor {
+    visibility: hidden;
+    padding-left: 1rem;
+    font-size: 60%;
+  }
+
+  h1,h2,h3,h4,h5,h6 {
+    &:hover .hover_anchor {
+      visibility: visible;
+      text-decoration: none;
+    }
+  }
+
+
   // Images --------------------------------------------------------------------
 
   // Images should not exceed the main column

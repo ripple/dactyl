@@ -45,6 +45,7 @@ OPENAPI_SPEC_PLACEHOLDER = "__OPENAPI_SPEC_PLACEHOLDER__"
 NOT_LOADED_PLACEHOLDER = "__NOT_LOADED_PLACEHOLDER__"
 API_SLUG_KEY = "api_slug"
 BUILTIN_ES_TEMPLATE = "templates/template-es.json"
+HOVERANCHOR_FIELD = "hover_anchors"
 
 DEFAULT_SERVER_PORT = 32289 # "DACTY" in T-9
 
@@ -111,7 +112,7 @@ def merge_dicts(default_d, specific_d, reserved_keys_top=[], override=False):
         if key not in specific_d.keys():
             specific_d[key] = val
         elif type(specific_d[key]) == dict and type(val) == dict:
-                merge_dicts(val, specific_d[key])
+            merge_dicts(val, specific_d[key])
         elif override:
             specific_d[key] = val
         #else leave the key in the specific_d

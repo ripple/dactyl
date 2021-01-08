@@ -5,6 +5,9 @@ filter_paths:
     - custom_filters
     - more_custom_filters
 
+defaults: &defaults
+    hover_anchors: "¶"
+
 targets:
     -   name: everything
         display_name: Dactyl Examples
@@ -13,13 +16,16 @@ targets:
         demote_headers_pdf_only: true
         stylesheet: template_assets/dactyl.css
         foo: "fooooooo"
+        <<: *defaults
 
     -   name: filterdemos
         display_name: Target with just the filter example pages
+        <<: *defaults
 
     -   name: conditionals
         display_name: Conditional Text Target
         condition: tests-2
+        <<: *defaults
 
 pages:
     -   name: Tests
