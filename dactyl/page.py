@@ -551,7 +551,7 @@ class DactylPage:
             if "export" in dir(self.config.filters[filter_name]):
                 for key,val in self.config.filters[filter_name].export.items():
                     if key in exported_vals.keys():
-                        logger.warning(f"Export '{key}' from filter {filter_name} overwrites previous value. Another filter exported the same key?")
+                        logger.warning("Export '{key}' from filter {filter_name} overwrites previous value. Another filter exported the same key?".format(key=key, filter_name=filter_name))
                     exported_vals[key] = val
         return exported_vals
 
