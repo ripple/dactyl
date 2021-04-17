@@ -11,7 +11,7 @@
 
 import re
 
-def filter_soup(soup, **kwargs):
+def filter_soup(soup, logger=None, **kwargs):
     """
     Adds an external link marker to external links
     and makes them open in new tabs.
@@ -21,6 +21,7 @@ def filter_soup(soup, **kwargs):
 
     links = soup.find_all("a", href=True)
     for link in links:
+        logger.debug(f"Link: {link}")
         if extern_regex.match(link["href"]):
             link["target"] = "_blank"
             ex_link_marker = soup.new_tag("i", attrs={

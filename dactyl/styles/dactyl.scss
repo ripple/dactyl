@@ -33,6 +33,8 @@ $navbar-nav-link-padding-x: 1rem;
 // Bootstrap v4 ================================================================
 @import "node_modules/bootstrap/scss/bootstrap.scss";
 
+@import "_left_nav.scss";
+
 // Layout Styles ===============================================================
 .navbar.fixed-top {
   border-bottom: 1px solid $gray-200;
@@ -726,150 +728,6 @@ pre, code {
 }
 .breadcrumb-item a:hover {
   color: #000;
-}
-
-/* Left navigation ---------------------------------------------------------- */
-
-.tree_nav {
-  top: 48px;
-  padding: 44px 24px 48px 0;
-  background-color: white;
-}
-
-.sidebar_pagelist {
-  margin-bottom: 12px;
-  margin-left: 24px;
-  padding-left: 16px;
-  list-style-type: none;
-}
-
-.sidebar_pagelist .sidebar_pagelist {
-  margin-left: 16px;
-}
-
-#sidenav a,
-.sidenav_parent a {
-  text-decoration: none;
-  line-height: 24px;
-}
-#sidenav a.active-parent {
-  font-weight: 700;
-}
-#sidenav a:hover,
-.sidenav_parent a:hover {
-  text-decoration: none;
-}
-
-#sidenav .card + .card {
-  margin: 0;
-}
-
-#sidenav .card {
-  border-width: 0;
-}
-
-#sidenav .card-body {
-  padding: 0;
-  padding-left: 15px;
-}
-
-#sidenav .card-body-single {
-  margin-left: -25px;
-}
-
-#sidenav .collapse {
-  padding-bottom: 0;
-}
-
-#sidenav .card-header {
-  padding: 0;
-  background-color: transparent;
-  border-bottom: 0;
-}
-
-#sidenav .card {
-  padding: 0;
-  border-radius: 0;
-}
-
-#sidenav .card:only-child {
-  border-top: 0;
-  background: none;
-}
-
-#sidenav .card-header h5 {
-  margin-bottom: 0;
-  text-transform: none;
-  font-size: 1.05rem;
-}
-
-#sidenav .card-header h5 .sidenav_cat_title {
-  display: block;
-  padding: 11px 10px 11px 40px;
-  text-indent: -10px;
-}
-#sidenav .grandchildren-container h5 .sidenav_cat_title:hover {
-  padding-left: 39px;
-}
-#sidenav .grandchildren-container h5 .sidenav_cat_title.active:hover {
-  padding-left: 40px;
-}
-
-#sidenav .grandchildren-container .card-header h5 .sidenav_cat_title {
-  text-indent: 0;
-}
-
-#sidenav .card-header .sidenav_cat_toggler {
-  position: absolute;
-  left: -10px;
-  padding: 10px 12px 12px 12px;
-  line-height: 0;
-
-  -webkit-transform: rotate(90deg);
-  -ms-transform: rotate(90deg);
-  transform: rotate(90deg);
-  transition-duration: 0.3s;
-}
-
-#sidenav .grandchildren-container .sidenav_cat_toggler {
-  left: 0;
-}
-
-#sidenav .card-header .sidenav_cat_toggler {
-  width: 24px;
-  height: 24px;
-  display: block;
-  -webkit-mask-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDIzLjAuMiwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMjQgMjQ7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4KPHN0eWxlIHR5cGU9InRleHQvY3NzIj4KCS5zdDB7ZmlsbDojNjc2NDYzO30KPC9zdHlsZT4KPHBhdGggY2xhc3M9InN0MCIgZD0iTTEwLjIsNi4zbDUuNyw1LjdsLTUuNyw1LjdWNi4zeiIvPgo8L3N2Zz4K);
-  mask-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDIzLjAuMiwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMjQgMjQ7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4KPHN0eWxlIHR5cGU9InRleHQvY3NzIj4KCS5zdDB7ZmlsbDojNjc2NDYzO30KPC9zdHlsZT4KPHBhdGggY2xhc3M9InN0MCIgZD0iTTEwLjIsNi4zbDUuNyw1LjdsLTUuNyw1LjdWNi4zeiIvPgo8L3N2Zz4K);;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-size: 24px 24px;
-  mask-size: 24px 24px;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  border: 12px solid transparent;
-}
-
-#sidenav .card-header .sidenav_cat_toggler.collapsed {
-  -webkit-transform: rotate(0deg);
-  -ms-transform: rotate(0deg);
-  transform: rotate(0deg);
-  transition-duration: 0.3s;
-}
-
-.sidenav-parent a {
-  padding: 15px 11px 15px 0px;
-  font-size: 18px;
-  display: block;
-}
-
-.sidenav-parent a:before {
-  font-family: FontAwesome;
-  padding-right: 5px;
-  padding-left: 5px;
-  content:"\f148";
-  transform: scaleX(-1);
-  display: inline-block;
 }
 
 /* Right navigation --------------------------------------------------------- */

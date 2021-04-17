@@ -147,6 +147,11 @@ pages:
         filters:
             - multicode_tabs
 
+    -   md: filter-examples/external_links.md
+        targets:
+            - everything
+            - filterdemos
+
     -   md: extending/index.md
         html: extending-index.html
         category: Extending
