@@ -1,3 +1,7 @@
+# v0.14.1 Release Notes
+
+This release removes a couple of debug statements that broke compatibility with Python 3.5. (Python 3.5 has reached end of life, but Dactyl still works with it for now if you use the right versions of its dependencies.)
+
 # v0.14.0 Release notes
 
 This release improves the built-in templates, improves the documentation in the examples, and introduces the concept of "Virtual Pages". Virtual pages are placeholders for links to external sites, which you can insert into the automatically-generated navigation with a stanza similar to a page built by Dactyl.

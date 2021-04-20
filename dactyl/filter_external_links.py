@@ -21,7 +21,7 @@ def filter_soup(soup, logger=None, **kwargs):
 
     links = soup.find_all("a", href=True)
     for link in links:
-        logger.debug(f"Link: {link}")
+        # logger.debug(f"Link: {link}")
         if extern_regex.match(link["href"]):
             link["target"] = "_blank"
             ex_link_marker = soup.new_tag("i", attrs={
