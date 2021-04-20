@@ -144,43 +144,54 @@ class DactylConfig:
 
         # Try loading from custom filter paths in order, fall back to built-ins
         for filter_name in filternames:
-            filter_loaded = False
-            loading_errors = []
-            if "filter_paths" in self.config:
-                for filter_path in self.config["filter_paths"]:
-                    try:
-                        f_filepath = os.path.join(filter_path, "filter_"+filter_name+".py")
+            self.load_filter(filter_name)
 
-                        ## Requires Python 3.5+
-                        spec = importlib.util.spec_from_file_location(
-                                    "dactyl_filters."+filter_name, f_filepath)
-                        self.filters[filter_name] = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(self.filters[filter_name])
+    def load_filter(self, filter_name):
+        """
+        Load a specific filter, if possible. Can be called "late" when parsing
+        frontmatter.
+        """
+        if filter_name in self.filters.keys():
+            return True
 
-                        filter_loaded = True
-                        break
-                    except FileNotFoundError as e:
-                        loading_errors.append({"Path": filter_path, "Error": repr(e)})
-                        logger.debug("Filter %s isn't in path %s\nErr:%s" %
-                                    (filter_name, filter_path, repr(e)))
-                    except Exception as e:
-                        loading_errors.append({"Path": filter_path, "Error": repr(e)})
-                        recoverable_error("Failed to load filter '%s', with error: %s" %
-                                (filter_name, repr(e)), self.bypass_errors)
-
-            if not filter_loaded:
-                # Load from the Dactyl module
+        loading_errors = []
+        if "filter_paths" in self.config:
+            for filter_path in self.config["filter_paths"]:
                 try:
-                    self.filters[filter_name] = import_module("dactyl.filter_"+filter_name)
+                    f_filepath = os.path.join(filter_path, "filter_"+filter_name+".py")
+
+                    ## Requires Python 3.5+
+                    spec = importlib.util.spec_from_file_location(
+                                "dactyl_filters."+filter_name, f_filepath)
+                    self.filters[filter_name] = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(self.filters[filter_name])
+
+                    return True
+
+                except FileNotFoundError as e:
+                    loading_errors.append({"Path": filter_path, "Error": repr(e)})
+                    logger.debug("Filter %s isn't in path %s\nErr:%s" %
+                                (filter_name, filter_path, repr(e)))
                 except Exception as e:
-                    loading_errors.append({"Path": "(Dactyl Built-ins)", "Error": repr(e)})
-                    #logger.debug("Failed to load filter %s. Errors: %s" %
-                    #    (filter_name, loading_errors))
-                    recoverable_error("Failed to load filter %s. Errors:\n%s" %
-                        (filter_name, "\n".join(
-                            ["  %s: %s" % (le["Path"], le["Error"])
-                                for le in loading_errors])
-                        ), self.bypass_errors)
+                    loading_errors.append({"Path": filter_path, "Error": repr(e)})
+                    recoverable_error("Failed to load filter '%s', with error: %s" %
+                            (filter_name, repr(e)), self.bypass_errors)
+
+        # Didn't find it yet; try loading it from the Dactyl module
+        try:
+            self.filters[filter_name] = import_module("dactyl.filter_"+filter_name)
+            return True
+        except Exception as e:
+            loading_errors.append({"Path": "(Dactyl Built-ins)", "Error": repr(e)})
+            #logger.debug("Failed to load filter %s. Errors: %s" %
+            #    (filter_name, loading_errors))
+            recoverable_error("Failed to load filter %s. Errors:\n%s" %
+                (filter_name, "\n".join(
+                    ["  %s: %s" % (le["Path"], le["Error"])
+                        for le in loading_errors])
+                ), self.bypass_errors)
+
+
 
     def load_build_options(self):
         """Overwrites some build-specific options based on the CLI params"""
@@ -193,6 +204,8 @@ class DactylConfig:
             self.config["template_allow_undefined"] = False
         if self.cli_args.pp_strict_undefined:
             self.config["preprocessor_allow_undefined"] = False
+        if self.cli_args.legacy_prince:
+            self.config["legacy_prince"] = True
 
 
     def __getitem__(self, key):

@@ -1,5 +1,7 @@
 # Header Stress Test
 
+This page demonstrates a variety of edge cases for the generation of automatic IDs from header text. Dactyl's generated IDs match GitHub-flavored Markdown (GFM) except in cases where GFM generates invalid IDs.
+
 ## 2. Edit rippled.cfg
 
 Lorem ipsum dolor amet seitan succulents copper mug humblebrag. Synth XOXO next level exercitation intelligentsia farm-to-table celiac four loko esse reprehenderit artisan ennui migas bitters. Plaid la croix prism man bun. Roof party neutra butcher heirloom fashion axe. Letterpress semiotics aliquip, palo santo lomo vice man braid reprehenderit nulla raw denim put a bird on it readymade. Everyday carry dolore flexitarian, YOLO typewriter elit hexagon XOXO cred bespoke gochujang synth.

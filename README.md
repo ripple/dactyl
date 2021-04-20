@@ -462,7 +462,7 @@ Dactyl pre-processes Markdown files by treating them as [Jinja][] Templates, so 
 |:------------------|:---------------------------------------------------------|
 | `target`          | The [target](#targets) definition of the current target. |
 | `pages`           | The [array of page definitions](#pages) in the current target. Use this to generate navigation across pages. (The default templates don't do this, but you should.) |
-| `currentpage`     | The definition of the page currently being rendered.     |
+| `currentpage`     | The definition of the page currently being rendered. This inherits most fields defined at the target level as well. |
 | `categories`      | A de-duplicated array of categories that are used by at least one page in this target, sorted in the order they first appear. |
 | `config`          | The global Dactyl config object. |
 | `content`         | The parsed HTML content of the page currently being rendered. |

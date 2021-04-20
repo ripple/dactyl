@@ -1,5 +1,9 @@
 {
   "dependencies": {
-    "bootstrap": "^4.4.1"
+    "bootstrap": "^4.4.1",
+    "node-sass": "^4.14.1"
+  },
+  "scripts": {
+    "build-css": "node-sass --include-path scss dactyl.scss ../../examples/template_assets/dactyl.css --output-style compressed"
   }
 }

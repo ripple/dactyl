@@ -33,7 +33,6 @@ class DactylPage:
         self.load_content()
         self.provide_default_filename()
         self.provide_name()
-        # self.html_content({"currentpage":data, **context})
 
     def get_pp_env(self, loader):
         if (self.config["preprocessor_allow_undefined"] or
@@ -52,17 +51,6 @@ class DactylPage:
         def undefined_or_ne(a,b):
             return pp_env.tests["undefined"](a) or pp_env.tests["ne"](a, b)
         pp_env.tests["undefined_or_ne"] = undefined_or_ne
-
-        # Pull exported values (& functions) from page filters into the pp_env
-        for filter_name in self.filters(save=False):
-            if filter_name not in self.config.filters.keys():
-                logger.debug("Skipping unloaded filter '%s'" % filter_name)
-                continue
-            if "export" in dir(self.config.filters[filter_name]):
-                for key,val in self.config.filters[filter_name].export.items():
-                    logger.debug("... pulling in filter_%s's exported key '%s'"
-                            % (filter_name, key))
-                    pp_env.globals[key] = val
 
         return pp_env
 
@@ -127,6 +115,9 @@ class DactylPage:
             # special case: let frontmatter overwrite default "html" vals
             if PROVIDED_FILENAME_KEY in self.data and "html" in frontmatter:
                 self.data["html"] = frontmatter["html"]
+            # special case: add filters from frontmatter
+            if "filters" in frontmatter:
+                self.gain_filters(frontmatter["filters"])
             self.twolines = pp_env.loader.twolines[self.data["md"]]
         else:
             logger.info("... reading markdown from file")
@@ -138,6 +129,8 @@ class DactylPage:
             # special case: let frontmatter overwrite default "html" vals
             if PROVIDED_FILENAME_KEY in self.data and "html" in frontmatter:
                 self.data["html"] = frontmatter["html"]
+            if "filters" in frontmatter:
+                self.gain_filters(frontmatter["filters"])
             self.twolines = self.rawtext.split("\n", 2)[:2]
 
 
@@ -219,7 +212,7 @@ class DactylPage:
 
     def preprocess(self, context):
         try:
-            md = self.pp_template.render(**context)
+            md = self.pp_template.render(**context, **self.filter_exports())
         except Exception as e:
             recoverable_error("Preprocessor error in page %s: %s."%(self, e),
                               self.config.bypass_errors, error=e)
@@ -345,8 +338,9 @@ class DactylPage:
 
     def update_toc(self):
         """
-        Assign unique IDs to header elements in a BeautifulSoup object, and
-        update internal table of contents accordingly.
+        Assign unique IDs to header elements in the BeautifulSoup object, and
+        update internal table of contents accordingly. Also add "hover anchors"
+        to headers in the BeautifulSoup object.
         The resulting ToC is a list of objects, each in the form:
         {
             "text": "Header Content as Text",
@@ -363,6 +357,7 @@ class DactylPage:
         uniqIDs = {}
         headermap = {}
         headers = self.soup.find_all(name=re.compile("h[1-6]"))
+        hoveranchor_contents = self.data.get("hover_anchors", False)
         for h in headers:
             h_id = self.idify(h.get_text())
             if h_id not in uniqIDs.keys():
@@ -378,6 +373,17 @@ class DactylPage:
                 "id": h_id,
                 "level": int(h.name[1])
             })
+
+            if hoveranchor_contents:
+                hoverlink = self.soup.new_tag("a", attrs={
+                        "href": "#"+h_id,
+                        "class": "hover_anchor",
+                        "aria-hidden": "true"})
+                # parse & insert the configured text/HTML contents for the anchors
+                hoverlink.append(BeautifulSoup(hoveranchor_contents, "html.parser"))
+                h.append(hoverlink)
+
+
             # ElasticSearch doesn't like dots in keys, so escape those
             escaped_name = h.get_text().replace(".","-")
             headermap[escaped_name] = "#"+h_id
@@ -434,6 +440,7 @@ class DactylPage:
             page_toc=self.legacy_toc(),
             headers=self.toc,
             **context,
+            **self.filter_exports(),
         )
         return out_html
 
@@ -520,12 +527,42 @@ class DactylPage:
 
     def gain_filters(self, filterlist):
         """
-        Called by target to add its filters to this page's.
+        Add the target's filters to this page's list.
         """
         if "filters" in self.data:
             self.data["filters"] = filterlist + self.data["filters"]
         else:
             self.data["filters"] = filterlist
+        for filter_name in filterlist:
+            self.config.load_filter(filter_name)
+
+    def filter_exports(self):
+        """
+        Return a set of values exported by filters to be added to the context
+        when preprocessing and rending the page.
+        """
+
+        exported_vals = {}
+        page_filters = self.filters(save=False)
+        for filter_name in page_filters:
+            if filter_name not in self.config.filters.keys():
+                logger.debug("Skipping unloaded filter '%s'" % filter_name)
+                continue
+            if "export" in dir(self.config.filters[filter_name]):
+                for key,val in self.config.filters[filter_name].export.items():
+                    if key in exported_vals.keys():
+                        logger.warning("Export '{key}' from filter {filter_name} overwrites previous value. Another filter exported the same key?".format(key=key, filter_name=filter_name))
+                    exported_vals[key] = val
+        return exported_vals
+
+    def is_virtual(self):
+        """
+        Returns True if this is a "virtual" page that does not have a real HTML
+        output. These types of pages are essentially placeholders for navigation.
+        """
+        if "//" in self.data["html"]:
+            return True
+        return False
 
     def filters(self, save=True):
         """

@@ -18,8 +18,13 @@ def filter_html(html, mode="html", target={}, **kwargs):
         return html
 
     html = html.replace("<h5", "<h6")
+    html = html.replace("</h5", "</h6")
     html = html.replace("<h4", "<h5")
+    html = html.replace("</h4", "</h5")
     html = html.replace("<h3", "<h4")
+    html = html.replace("</h3", "</h4")
     html = html.replace("<h2", "<h3")
+    html = html.replace("</h2", "</h3")
     html = html.replace("<h1", "<h2")
+    html = html.replace("</h1", "</h2")
     return html
