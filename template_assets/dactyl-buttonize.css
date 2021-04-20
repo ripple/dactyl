@@ -1,4 +1,6 @@
-a.button {
+/* Stand-alone CSS for use with the buttonize filter. Skip if you use
+   Bootstrap. */
+a.btn-primary {
   color: white;
   background: #0000EE;
   text-decoration: none;

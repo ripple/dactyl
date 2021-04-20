@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html >
 <head>
-    <title>Intelligent Cross-References - Dactyl Examples</title>
+    <title>External Links - Dactyl Examples</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width">
@@ -55,8 +55,7 @@
     <h4>In this page:</h4>
   </div>
   <ul id="page-toc" class="list-group card-body" role="directory">
-    <li class="level-1"><a class="nav-link" href="#intelligent-cross-references">Intelligent Cross-References</a></li>
-    <li class="level-2"><a class="nav-link" href="#anchors">Anchors</a></li>
+    <li class="level-1"><a class="nav-link" href="#external-links">External Links</a></li>
   </ul>
 </div>      </aside>
 
@@ -68,29 +67,14 @@
 
     <li class="active breadcrumb-item"><a href="index.html">Index</a></li>
     <li class="active breadcrumb-item"><a href="filters.html">Filters</a></li>
-    <li class="active breadcrumb-item">Intelligent Cross-References</li>
+    <li class="active breadcrumb-item">External Links</li>
   </ul>
 </nav><!--/.breadcrumbs-wrap-->            <section class="pt-3 p-md-3">
               <article class="dactyl-content">
-                <h1 id="intelligent-cross-references">Intelligent Cross-References<a aria-hidden="true" class="hover_anchor" href="#intelligent-cross-references">¶</a></h1>
-<p>Intelligent cross-references are a feature designed to be a link when they can be, and text directing people to a different target (guide) if not. Here's some examples for testing:</p>
-<p><a href="filter-examples-callouts.html">This should link to the callouts demo page.</a></p>
-<p>You can link by HTML filename: <a href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></p>
-<p>Or by MD filename: <a href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></p>
-<p>If the MD filename is ambiguous, you can specify the full path:
-<a href="filter-examples-xrefs.html">Intelligent Cross-References</a></p>
-<p>For an example of an inline cross reference, see <a href="gfm-compat.html">GitHub Markdown Compatibility</a>.</p>
-<p>Also, demonstrating that context, spaces, and case mostly don't matter:</p>
-<ul>
-<li><a href="includes.html">Includes</a></li>
-<li>(Above this should be a cross-reference to the includes test.)</li>
-</ul>
-<h2 id="anchors">Anchors<a aria-hidden="true" class="hover_anchor" href="#anchors">¶</a></h2>
-<p>You can use anchors but the generated labels always use the page name: <a href="gfm-compat.html#code-blocks">GitHub Markdown Compatibility</a></p>
-<p>If you want to refer to a specific anchor, the workaround is to use an explicit label: <a href="gfm-compat.html#code-blocks">Code Blocks</a></p>
-<p>If the cross-reference appears in multiple targets, Dactyl chooses the first such target listed for the file. For example, if you want to refer to the Conditionals page using the conditionals target (when linking it from the filterexamples target), you have to change the order listed in the config file. Dactyl will always use the "everything" target since that's the first one listed:</p>
-<p><a href="conditionals.html">Conditionals</a></p>
-<p>If you want to specify a different target, you have to use conditional text in Jinja templating syntax instead of smart xrefs.</p>
+                <h1 id="external-links">External Links<a aria-hidden="true" class="hover_anchor" href="#external-links">¶</a></h1>
+<p>This filter adds an "external link" icon to <a class="external-link" href="https://en.wikipedia.org/wiki/Hyperlink" target="_blank">links to outside websites <i aria-hidden="true" class="fa fa-external-link"></i></a>. Well, it's not actually all that smart. It doesn't know what website it's on, so it adds the icon to any link whose URL starts with <code>http:</code> or <code>https:</code>. It also sets all external links to open in a new tab/window.</p>
+<p>A <a href="filters.html">link to another page</a> won't have the icon.</p>
+<p>If you try to combine this filter with the <a class="btn btn-primary external-link" href="https://dactyl.link/filter-examples-buttonize.html" target="_blank">button links filter <i aria-hidden="true" class="fa fa-external-link"></i></a>, make sure <strong>buttonize runs first</strong>. Otherwise, external links will not get styled as buttons when intended.</p>
               </article>
             </section>
       </main>
@@ -195,7 +179,7 @@
   </div>
 
       
-  <div class="nav-item active">
+  <div class="nav-item ">
     <a class="nav-link nav-leaf" href="filter-examples-xrefs.html">Intelligent Cross-References</a>
   </div>
 
@@ -215,7 +199,7 @@
   </div>
 
       
-  <div class="nav-item ">
+  <div class="nav-item active">
     <a class="nav-link nav-leaf" href="filter-examples-external_links.html">External Links</a>
   </div>
 

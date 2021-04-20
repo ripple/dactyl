@@ -32,7 +32,7 @@
   <div class="collapse navbar-collapse justify-content-end" id="navbarHolder">
     <ul class="nav navbar-nav">
           <li class="nav-item active-parent">
-            <a class="nav-link" href="tests-index.html">Tests</a>
+            <a class="nav-link" href="features.html">Features</a>
           </li>
           <li class="nav-item ">
             <a class="nav-link" href="filters.html">Filters</a>
@@ -71,12 +71,12 @@
     
 
     <li class="active breadcrumb-item"><a href="index.html">Index</a></li>
-    <li class="active breadcrumb-item"><a href="tests-index.html">Tests</a></li>
+    <li class="active breadcrumb-item"><a href="features.html">Features</a></li>
     <li class="active breadcrumb-item">GitHub Markdown Compatibility</li>
   </ul>
 </nav><!--/.breadcrumbs-wrap-->            <section class="pt-3 p-md-3">
               <article class="dactyl-content">
-                <h1 id="github-markdown-compatibility">GitHub Markdown Compatibility</h1>
+                <h1 id="github-markdown-compatibility">GitHub Markdown Compatibility<a aria-hidden="true" class="hover_anchor" href="#github-markdown-compatibility">¶</a></h1>
 <p>GitHub-Flavored Markdown has some stuff that Dactyl doesn't do and vice-versa, and various edge cases that the two may interpret differently.</p>
 <ul>
 <li><a href="#gfm-features-not-supported">GFM Features Not Supported</a></li>
@@ -85,7 +85,7 @@
 <li><a href="#header-ids">Header IDs</a></li>
 <li><a href="#code-blocks">Code Blocks</a></li>
 </ul>
-<h2 id="gfm-features-not-supported">GFM Features Not Supported</h2>
+<h2 id="gfm-features-not-supported">GFM Features Not Supported<a aria-hidden="true" class="hover_anchor" href="#gfm-features-not-supported">¶</a></h2>
 <p>Dactyl doesn't do any of the following:</p>
 <ul>
 <li>https://github.com/gitlabhq/gitlabhq/blob/master/doc/markdown/markdown.md#url-auto-linking</li>
@@ -98,7 +98,7 @@
 <li><a href="https://github.com/gitlabhq/gitlabhq/blob/master/doc/markdown/markdown.md#special-gitlab-references">GitLab references</a></li>
 </ul>
 <p><strong>Suggestion:</strong> Avoid using these.</p>
-<h2 id="line-breaks">Line Breaks</h2>
+<h2 id="line-breaks">Line Breaks<a aria-hidden="true" class="hover_anchor" href="#line-breaks">¶</a></h2>
 <p>You can have hard-wrapped paragraphs in Markdown. This
 means that not every single-line break introduces a
 new paragraph (<code>&lt;p&gt;</code> tag). Generally, we don't write
@@ -109,18 +109,18 @@ unnecessary churn in diffs.)</p>
 line break by ending a line with two spaces<br/>
 as demonstrated in this paragraph.</p>
 <p>But watch out -- some editors (like <a href="https://atom.io/docs">Atom</a>) tend to strip off trailing spaces!</p>
-<h2 id="preprocessing">Preprocessing</h2>
+<h2 id="preprocessing">Preprocessing<a aria-hidden="true" class="hover_anchor" href="#preprocessing">¶</a></h2>
 <p>Dactyl does preprocessing with Jinja, so you can do <a href="conditionals.html">conditional text</a> and <a href="includes.html">includes</a>. GitHub doesn't have stuff like that.</p>
 <p><strong>Suggestion:</strong> For docs that are meant to be viewed on GitHub, use Dactyl's "Githubify mode" (TODO: better docs on that) to do pre-processing only and export a markdown file you can push elsewhere. Be careful not to overwrite the original (with the prepropessing directives) with the processed export version.</p>
 <p><strong>Caution:</strong> The pre-processing doesn't know anything about Markdown syntax, so it might catch Jinja-esque syntax in things that weren't meant to be interpreted as such. Use <a href="http://jinja.pocoo.org/docs/dev/templates/#escaping">Jinja's escaping syntax</a> to fix that. E.g.:</p>
 <p>The {% raw %} block type leaves things inside of it unprocessed.</p>
 <p>You can also use the variable delimiter to print a literal, e.g. {{ '{{' }} will come out as {{</p>
-<h2 id="header-ids">Header IDs</h2>
+<h2 id="header-ids">Header IDs<a aria-hidden="true" class="hover_anchor" href="#header-ids">¶</a></h2>
 <p>You can link to headers within a markdown document because each header has a unique ID based on its text.</p>
 <p>Beware of slight differences across markdown parsers. In most cases, Dactyl's header formula matches GitHub's.</p>
 <p><strong>Caution:</strong> Header IDs are case-sensitive and always lower case, for both GitHub-Flavored and Dactyl markdown.</p>
 <p>For a detailed comparison of many edge cases, see <a href="header_stress_test.html">Header Stress Test (Dactyl)</a> vs. <a href="https://gist.github.com/mDuo13/44b624bf82b5a2230153559c2344b4cb">Header Stress Test (GitHub Gist)</a>.</p>
-<h2 id="code-blocks">Code Blocks</h2>
+<h2 id="code-blocks">Code Blocks<a aria-hidden="true" class="hover_anchor" href="#code-blocks">¶</a></h2>
 <p>You can do code blocks either by the "indented" syntax or with code fences.</p>
 <p>Generally, we recommend using code fences. <a href="lists-and-codeblocks.html">Code blocks inside lists</a> are an exception where you should use indentation to demarcate code blocks.</p>
 <p>Dactyl automatically does <a href="code-highlighting.html">syntax highlighting</a> on included code blocks. If you use a language definition in the code blocks, Dactyl uses that to apply the correct syntax highlighting where possible.</p>
@@ -131,74 +131,174 @@ as demonstrated in this paragraph.</p>
       <aside class="sidebar col-md-5 col-lg-3 order-md-1" role="complementary">
 
 
-<div class="dactyl-tree-nav">
-  <div class="sidenav-parent">
-    <a href="index.html">Index</a>
+<nav class="nav flex-column dactyl-tree-nav">
+  <div class="nav-item nav-parent">
+    <a class="nav-link" href="index.html">Index</a>
   </div>
-  <div id="sidenav" role="tablist" aria-multiselectable="true">
-      <div class="card active">
-  <div class="card-header" role="tab" id="sidenav_cat_head_1_1">
-    <a class=" sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_1" aria-expanded="true" aria-controls="sidenav_collapse_1_1"></a>
-    <h5 class="card-title">
-        <a class="sidenav_cat_title active-parent" href="tests-index.html">Tests</a>
-    </h5>
-  </div><!-- /.card-header -->
+    
+  <div class="nav-item active-parent">
 
-  <div class="card-body card-body-single collapse show" role="tabpanel" id="sidenav_collapse_1_1">
-    <ul class="sidebar_pagelist">
-          <li class="leaf-child"><a class="" href="code-highlighting.html">Code Highlighting</a></li>
-          <li class="leaf-child"><a class="" href="includes.html">Includes Test</a></li>
-          <li class="leaf-child"><a class="" href="with-frontmatter.html">Page With Frontmatter</a></li>
-          <li class="leaf-child"><a class="" href="cli-vars.html">Commandline Variables</a></li>
-          <li class="leaf-child"><a class="" href="conditionals.html">Conditionals Test</a></li>
-          <li class="leaf-child"><a class="" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></li>
-          <li class="leaf-child"><a class=" active" href="gfm-compat.html">GitHub Markdown Compatibility</a></li>
-          <li class="leaf-child"><a class="" href="header_stress_test.html">Header Stress Test</a></li>
-    </ul>
-  </div><!--/.card-body-->
-</div><!--/.card-->
 
-      <div class="card active">
-  <div class="card-header" role="tab" id="sidenav_cat_head_1_2">
-    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_2" aria-expanded="false" aria-controls="sidenav_collapse_1_2"></a>
-    <h5 class="card-title">
-        <a class="sidenav_cat_title " href="filters.html">Filters</a>
-    </h5>
-  </div><!-- /.card-header -->
+      <a class="nav-toggler " role="button" data-toggle="collapse" href="#tree_nav_group_1" aria-expanded="true" aria-controls="tree_nav_group_1"></a>
+    <a class="nav-link" href="features.html">Features</a>
 
-  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_2">
-    <ul class="sidebar_pagelist">
-          <li class="leaf-child"><a class="" href="filter-examples-callouts.html">Callouts Demonstration</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-xrefs.html">Intelligent Cross-References</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-buttonize.html">Buttonize Filter</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-badges.html">Badges</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
-    </ul>
-  </div><!--/.card-body-->
-</div><!--/.card-->
+    <nav class="nav flex-column show " id="tree_nav_group_1">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="code-highlighting.html">Code Highlighting</a>
+  </div>
 
-      <div class="card active">
-  <div class="card-header" role="tab" id="sidenav_cat_head_1_3">
-    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_3" aria-expanded="false" aria-controls="sidenav_collapse_1_3"></a>
-    <h5 class="card-title">
-        <a class="sidenav_cat_title " href="extending-index.html">Extending Dactyl</a>
-    </h5>
-  </div><!-- /.card-header -->
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="includes.html">Includes</a>
+  </div>
 
-  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_3">
-    <ul class="sidebar_pagelist">
-          <li class="leaf-child"><a class="" href="extending-extend-templates.html">Template Extension</a></li>
-          <li class="leaf-child"><a class="" href="extending-hierarchy.html">Hierarchy Demo</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-patriots.html">Custom Filter</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-patriots2.html">Custom Filter 2</a></li>
-          <li class="leaf-child"><a class="" href="extending-include_code.html">Code Includer</a></li>
-          <li class="leaf-child"><a class="" href="debug.html">Debug</a></li>
-    </ul>
-  </div><!--/.card-body-->
-</div><!--/.card-->
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="frontmatter.html">Frontmatter</a>
+  </div>
 
-  </div><!--/.sidenav-->
-</div><!-- /.dactyl-tree-nav -->      </aside>
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="cli-vars.html">Commandline Variables</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="link-checking.html">Link Checking</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="conditionals.html">Conditionals</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a>
+  </div>
+
+      
+  <div class="nav-item active">
+    <a class="nav-link nav-leaf" href="gfm-compat.html">GitHub Markdown Compatibility</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="header_stress_test.html">Header Stress Test</a>
+  </div>
+
+      
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_1_10" aria-expanded="false" aria-controls="tree_nav_group_1_10"></a>
+    <a class="nav-link" href="virtual-pages.html">Virtual Pages</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_1_10">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/#">Dactyl Homepage</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/">Virtual Placeholder</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2" aria-expanded="false" aria-controls="tree_nav_group_2"></a>
+    <a class="nav-link" href="filters.html">Filters</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_2">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-callouts.html">Callouts Demonstration</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-xrefs.html">Intelligent Cross-References</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-buttonize.html">Buttonize Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-badges.html">Badges</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-external_links.html">External Links</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_3" aria-expanded="false" aria-controls="tree_nav_group_3"></a>
+    <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_3">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="extending-extend-templates.html">Template Extension</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="extending-hierarchy.html">Hierarchy Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots.html">Custom Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots2.html">Custom Filter 2</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="extending-include_code.html">Code Includer</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="debug.html">Debug</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+</nav>      </aside>
     </div><!--/.row (main layout)-->
   </div>
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html >
 <head>
-    <title>Intelligent Cross-References - Dactyl Examples</title>
+    <title>Virtual Pages - Dactyl Examples</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width">
@@ -31,10 +31,10 @@
   </button>
   <div class="collapse navbar-collapse justify-content-end" id="navbarHolder">
     <ul class="nav navbar-nav">
-          <li class="nav-item ">
+          <li class="nav-item active-parent">
             <a class="nav-link" href="features.html">Features</a>
           </li>
-          <li class="nav-item active-parent">
+          <li class="nav-item ">
             <a class="nav-link" href="filters.html">Filters</a>
           </li>
           <li class="nav-item ">
@@ -55,8 +55,7 @@
     <h4>In this page:</h4>
   </div>
   <ul id="page-toc" class="list-group card-body" role="directory">
-    <li class="level-1"><a class="nav-link" href="#intelligent-cross-references">Intelligent Cross-References</a></li>
-    <li class="level-2"><a class="nav-link" href="#anchors">Anchors</a></li>
+    <li class="level-1"><a class="nav-link" href="#virtual-pages">Virtual Pages</a></li>
   </ul>
 </div>      </aside>
 
@@ -67,30 +66,33 @@
     
 
     <li class="active breadcrumb-item"><a href="index.html">Index</a></li>
-    <li class="active breadcrumb-item"><a href="filters.html">Filters</a></li>
-    <li class="active breadcrumb-item">Intelligent Cross-References</li>
+    <li class="active breadcrumb-item"><a href="features.html">Features</a></li>
+    <li class="active breadcrumb-item">Virtual Pages</li>
   </ul>
 </nav><!--/.breadcrumbs-wrap-->            <section class="pt-3 p-md-3">
               <article class="dactyl-content">
-                <h1 id="intelligent-cross-references">Intelligent Cross-References<a aria-hidden="true" class="hover_anchor" href="#intelligent-cross-references">¶</a></h1>
-<p>Intelligent cross-references are a feature designed to be a link when they can be, and text directing people to a different target (guide) if not. Here's some examples for testing:</p>
-<p><a href="filter-examples-callouts.html">This should link to the callouts demo page.</a></p>
-<p>You can link by HTML filename: <a href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></p>
-<p>Or by MD filename: <a href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></p>
-<p>If the MD filename is ambiguous, you can specify the full path:
-<a href="filter-examples-xrefs.html">Intelligent Cross-References</a></p>
-<p>For an example of an inline cross reference, see <a href="gfm-compat.html">GitHub Markdown Compatibility</a>.</p>
-<p>Also, demonstrating that context, spaces, and case mostly don't matter:</p>
-<ul>
-<li><a href="includes.html">Includes</a></li>
-<li>(Above this should be a cross-reference to the includes test.)</li>
-</ul>
-<h2 id="anchors">Anchors<a aria-hidden="true" class="hover_anchor" href="#anchors">¶</a></h2>
-<p>You can use anchors but the generated labels always use the page name: <a href="gfm-compat.html#code-blocks">GitHub Markdown Compatibility</a></p>
-<p>If you want to refer to a specific anchor, the workaround is to use an explicit label: <a href="gfm-compat.html#code-blocks">Code Blocks</a></p>
-<p>If the cross-reference appears in multiple targets, Dactyl chooses the first such target listed for the file. For example, if you want to refer to the Conditionals page using the conditionals target (when linking it from the filterexamples target), you have to change the order listed in the config file. Dactyl will always use the "everything" target since that's the first one listed:</p>
-<p><a href="conditionals.html">Conditionals</a></p>
-<p>If you want to specify a different target, you have to use conditional text in Jinja templating syntax instead of smart xrefs.</p>
+                <h1 id="virtual-pages">Virtual Pages<a aria-hidden="true" class="hover_anchor" href="#virtual-pages">¶</a></h1>
+<p>"Virtual Pages" are placeholders for pages or websites that are not part of the Dactyl site, but that you want to link from within the Dactyl-generated navigation. Dactyl's built-in templates automatically create links to virtual pages in the appropriate places within the navigation.</p>
+<p>Dactyl does not build an associated output HTML file for these pages, so they are linked from PDF builds but their contents are not part of the generated PDF. The <a href="link-checking.html">link checker</a> treats virtual pages the same as other external links, so it checks links <em>to</em> them but not <em>in</em> the virtual pages.</p>
+<p>The "Dactyl Homepage" link listed under this page is an example of a Virtual Page. To create a virtual link, add a stanza such as the following to the page array in your config file:</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span>   <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Dactyl Homepage</span>
+    <span class="nt">parent</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">virtual-pages.html</span>
+    <span class="nt">html</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">https://dactyl.link/</span>
+    <span class="nt">targets</span><span class="p">:</span>
+        <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">everything</span>
+</code></pre></div>
+<p>Specifically, a virtual page is <strong>any page with <code>//</code> in its <code>html</code> attribute.</strong></p>
+<p>You can also define a virtual page using a <code>.md</code> file with <a href="frontmatter.html">frontmatter</a>. For example, you could have a file with the following contents:</p>
+<div class="codehilite"><pre><span></span><code>---
+html: https://dactyl.link/
+blurb: This is an example of a virtual page defined by MD frontmatter.
+category: Features
+<span class="gu">parent: virtual-pages.html</span>
+<span class="gu">---</span>
+<span class="gh"># Virtual Placeholder</span>
+
+The actual Markdown contents of a "virtual page" are mostly ignored. However, they can be used to provide metadata such as the title and blurb used in navigation on other pages.
+</code></pre></div>
               </article>
             </section>
       </main>
@@ -103,13 +105,13 @@
     <a class="nav-link" href="index.html">Index</a>
   </div>
     
-  <div class="nav-item ">
+  <div class="nav-item active-parent">
 
 
-      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_1" aria-expanded="false" aria-controls="tree_nav_group_1"></a>
+      <a class="nav-toggler " role="button" data-toggle="collapse" href="#tree_nav_group_1" aria-expanded="true" aria-controls="tree_nav_group_1"></a>
     <a class="nav-link" href="features.html">Features</a>
 
-    <nav class="nav flex-column collapse" id="tree_nav_group_1">
+    <nav class="nav flex-column show " id="tree_nav_group_1">
       
   <div class="nav-item ">
     <a class="nav-link nav-leaf" href="code-highlighting.html">Code Highlighting</a>
@@ -156,13 +158,13 @@
   </div>
 
       
-  <div class="nav-item ">
+  <div class="nav-item active">
 
 
-      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_1_10" aria-expanded="false" aria-controls="tree_nav_group_1_10"></a>
+      <a class="nav-toggler " role="button" data-toggle="collapse" href="#tree_nav_group_1_10" aria-expanded="true" aria-controls="tree_nav_group_1_10"></a>
     <a class="nav-link" href="virtual-pages.html">Virtual Pages</a>
 
-    <nav class="nav flex-column collapse" id="tree_nav_group_1_10">
+    <nav class="nav flex-column show " id="tree_nav_group_1_10">
       
   <div class="nav-item ">
     <a class="nav-link nav-leaf" href="https://dactyl.link/#">Dactyl Homepage</a>
@@ -182,20 +184,20 @@
   </div>
 
     
-  <div class="nav-item active-parent">
+  <div class="nav-item ">
 
 
-      <a class="nav-toggler " role="button" data-toggle="collapse" href="#tree_nav_group_2" aria-expanded="true" aria-controls="tree_nav_group_2"></a>
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2" aria-expanded="false" aria-controls="tree_nav_group_2"></a>
     <a class="nav-link" href="filters.html">Filters</a>
 
-    <nav class="nav flex-column show " id="tree_nav_group_2">
+    <nav class="nav flex-column collapse" id="tree_nav_group_2">
       
   <div class="nav-item ">
     <a class="nav-link nav-leaf" href="filter-examples-callouts.html">Callouts Demonstration</a>
   </div>
 
       
-  <div class="nav-item active">
+  <div class="nav-item ">
     <a class="nav-link nav-leaf" href="filter-examples-xrefs.html">Intelligent Cross-References</a>
   </div>
 

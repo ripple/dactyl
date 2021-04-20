@@ -32,7 +32,7 @@
   <div class="collapse navbar-collapse justify-content-end" id="navbarHolder">
     <ul class="nav navbar-nav">
           <li class="nav-item active-parent">
-            <a class="nav-link" href="tests-index.html">Tests</a>
+            <a class="nav-link" href="features.html">Features</a>
           </li>
           <li class="nav-item ">
             <a class="nav-link" href="filters.html">Filters</a>
@@ -69,12 +69,12 @@
     
 
     <li class="active breadcrumb-item"><a href="index.html">Index</a></li>
-    <li class="active breadcrumb-item"><a href="tests-index.html">Tests</a></li>
+    <li class="active breadcrumb-item"><a href="features.html">Features</a></li>
     <li class="active breadcrumb-item">Code Highlighting</li>
   </ul>
 </nav><!--/.breadcrumbs-wrap-->            <section class="pt-3 p-md-3">
               <article class="dactyl-content">
-                <h1 id="code-highlighting">Code Highlighting</h1>
+                <h1 id="code-highlighting">Code Highlighting<a aria-hidden="true" class="hover_anchor" href="#code-highlighting">¶</a></h1>
 <p>Dactyl automatically adds syntax highlighting to code blocks when it parses Markdown, using the <a href="https://pygments.org/">Pygments</a>-derived <a href="https://python-markdown.github.io/extensions/code_hilite/">CodeHilite</a> extension. Parsing the syntax highlighting at compile time like this is faster and less work for readers' computers than in-browser syntax highlighting such as using <a href="https://highlightjs.readthedocs.io/en/latest/api.html">highlight.js</a>. (If you prefer highlight.js's output, though, you can still run it to overwrite Dactyl's syntax highlighting.)</p>
 <p>Example of a code segment colored by Dactyl's built-in highlighting:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">unacceptable_chars</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"[^A-Za-z0-9._ ]+"</span><span class="p">)</span>
@@ -86,31 +86,31 @@
         <span class="n">s</span> <span class="o">=</span> <span class="s2">"_"</span>
     <span class="k">return</span> <span class="n">s</span>
 </code></pre></div>
-<h2 id="requirements">Requirements</h2>
+<h2 id="requirements">Requirements<a aria-hidden="true" class="hover_anchor" href="#requirements">¶</a></h2>
 <p>The highlighting requires a stylesheet to define the colors and styles used. Dactyl's default stylesheet includes an example or you can define your own. You can output one of Pygments' default stylesheets from the commandline as in the following example:</p>
 <div class="codehilite"><pre><span></span><code>$ pygmentize -S default -f html -a .codehilite &gt; default.css
 </code></pre></div>
-<h2 id="languages">Languages</h2>
+<h2 id="languages">Languages<a aria-hidden="true" class="hover_anchor" href="#languages">¶</a></h2>
 <p>Dactyl's code highlighting supports the same <a href="https://pygments.org/languages/">programming languages that Pygments supports</a>. By default it attempts to auto-detect the language, but you can add a language code to the first line of a fenced code block to specify the language.</p>
 <p>Example code:</p>
-<div class="codehilite"><pre><span></span><code><span class="err">```js</span>
-<span class="err">function slugify(s) {</span>
-<span class="err">  const unacceptable_chars = /[^A-Za-z0-9._ ]+/</span>
-<span class="err">  const whitespace_regex = /\s+/</span>
-<span class="err">  s = s.replace(unacceptable_chars, "")</span>
-<span class="err">  s = s.replace(whitespace_regex, "_")</span>
-<span class="err">  s = s.toLowerCase()</span>
-<span class="err">  if (!s) {</span>
-<span class="err">    s = "_"</span>
-<span class="err">  }</span>
-<span class="err">  return s</span>
-<span class="err">}</span>
+<div class="codehilite"><pre><span></span><code><span class="err">```</span><span class="n">js</span>
+<span class="n">function</span> <span class="n">slugify</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">const</span> <span class="n">unacceptable_chars</span> <span class="o">=</span> <span class="o">/</span><span class="p">[</span><span class="o">^</span><span class="n">A</span><span class="o">-</span><span class="n">Za</span><span class="o">-</span><span class="n">z0</span><span class="o">-</span><span class="mf">9.</span><span class="n">_</span> <span class="p">]</span><span class="o">+/</span>
+  <span class="k">const</span> <span class="n">whitespace_regex</span> <span class="o">=</span> <span class="o">/</span>\<span class="n">s</span><span class="o">+/</span>
+  <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">unacceptable_chars</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+  <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">whitespace_regex</span><span class="p">,</span> <span class="s2">"_"</span><span class="p">)</span>
+  <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">toLowerCase</span><span class="p">()</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">s</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="s2">"_"</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="n">s</span>
+<span class="p">}</span>
 <span class="err">```</span>
 </code></pre></div>
 <p>Output:</p>
 <div class="codehilite"><pre><span></span><code><span class="kd">function</span> <span class="nx">slugify</span><span class="p">(</span><span class="nx">s</span><span class="p">)</span> <span class="p">{</span>
-  <span class="kr">const</span> <span class="nx">unacceptable_chars</span> <span class="o">=</span> <span class="sr">/[^A-Za-z0-9._ ]+/</span>
-  <span class="kr">const</span> <span class="nx">whitespace_regex</span> <span class="o">=</span> <span class="sr">/\s+/</span>
+  <span class="kd">const</span> <span class="nx">unacceptable_chars</span> <span class="o">=</span> <span class="sr">/[^A-Za-z0-9._ ]+/</span>
+  <span class="kd">const</span> <span class="nx">whitespace_regex</span> <span class="o">=</span> <span class="sr">/\s+/</span>
   <span class="nx">s</span> <span class="o">=</span> <span class="nx">s</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="nx">unacceptable_chars</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
   <span class="nx">s</span> <span class="o">=</span> <span class="nx">s</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="nx">whitespace_regex</span><span class="p">,</span> <span class="s2">"_"</span><span class="p">)</span>
   <span class="nx">s</span> <span class="o">=</span> <span class="nx">s</span><span class="p">.</span><span class="nx">toLowerCase</span><span class="p">()</span>
@@ -120,7 +120,7 @@
   <span class="k">return</span> <span class="nx">s</span>
 <span class="p">}</span>
 </code></pre></div>
-<h2 id="disabling">Disabling</h2>
+<h2 id="disabling">Disabling<a aria-hidden="true" class="hover_anchor" href="#disabling">¶</a></h2>
 <p>If for some reason you want to turn off syntax highlighting, you can add <code>no_highlighting: true</code> to your config file at the global, target, or page level.</p>
               </article>
             </section>
@@ -129,74 +129,174 @@
       <aside class="sidebar col-md-5 col-lg-3 order-md-1" role="complementary">
 
 
-<div class="dactyl-tree-nav">
-  <div class="sidenav-parent">
-    <a href="index.html">Index</a>
+<nav class="nav flex-column dactyl-tree-nav">
+  <div class="nav-item nav-parent">
+    <a class="nav-link" href="index.html">Index</a>
   </div>
-  <div id="sidenav" role="tablist" aria-multiselectable="true">
-      <div class="card active">
-  <div class="card-header" role="tab" id="sidenav_cat_head_1_1">
-    <a class=" sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_1" aria-expanded="true" aria-controls="sidenav_collapse_1_1"></a>
-    <h5 class="card-title">
-        <a class="sidenav_cat_title active-parent" href="tests-index.html">Tests</a>
-    </h5>
-  </div><!-- /.card-header -->
+    
+  <div class="nav-item active-parent">
 
-  <div class="card-body card-body-single collapse show" role="tabpanel" id="sidenav_collapse_1_1">
-    <ul class="sidebar_pagelist">
-          <li class="leaf-child"><a class=" active" href="code-highlighting.html">Code Highlighting</a></li>
-          <li class="leaf-child"><a class="" href="includes.html">Includes Test</a></li>
-          <li class="leaf-child"><a class="" href="with-frontmatter.html">Page With Frontmatter</a></li>
-          <li class="leaf-child"><a class="" href="cli-vars.html">Commandline Variables</a></li>
-          <li class="leaf-child"><a class="" href="conditionals.html">Conditionals Test</a></li>
-          <li class="leaf-child"><a class="" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></li>
-          <li class="leaf-child"><a class="" href="gfm-compat.html">GitHub Markdown Compatibility</a></li>
-          <li class="leaf-child"><a class="" href="header_stress_test.html">Header Stress Test</a></li>
-    </ul>
-  </div><!--/.card-body-->
-</div><!--/.card-->
 
-      <div class="card active">
-  <div class="card-header" role="tab" id="sidenav_cat_head_1_2">
-    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_2" aria-expanded="false" aria-controls="sidenav_collapse_1_2"></a>
-    <h5 class="card-title">
-        <a class="sidenav_cat_title " href="filters.html">Filters</a>
-    </h5>
-  </div><!-- /.card-header -->
+      <a class="nav-toggler " role="button" data-toggle="collapse" href="#tree_nav_group_1" aria-expanded="true" aria-controls="tree_nav_group_1"></a>
+    <a class="nav-link" href="features.html">Features</a>
 
-  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_2">
-    <ul class="sidebar_pagelist">
-          <li class="leaf-child"><a class="" href="filter-examples-callouts.html">Callouts Demonstration</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-xrefs.html">Intelligent Cross-References</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-buttonize.html">Buttonize Filter</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-badges.html">Badges</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
-    </ul>
-  </div><!--/.card-body-->
-</div><!--/.card-->
+    <nav class="nav flex-column show " id="tree_nav_group_1">
+      
+  <div class="nav-item active">
+    <a class="nav-link nav-leaf" href="code-highlighting.html">Code Highlighting</a>
+  </div>
 
-      <div class="card active">
-  <div class="card-header" role="tab" id="sidenav_cat_head_1_3">
-    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_3" aria-expanded="false" aria-controls="sidenav_collapse_1_3"></a>
-    <h5 class="card-title">
-        <a class="sidenav_cat_title " href="extending-index.html">Extending Dactyl</a>
-    </h5>
-  </div><!-- /.card-header -->
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="includes.html">Includes</a>
+  </div>
 
-  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_3">
-    <ul class="sidebar_pagelist">
-          <li class="leaf-child"><a class="" href="extending-extend-templates.html">Template Extension</a></li>
-          <li class="leaf-child"><a class="" href="extending-hierarchy.html">Hierarchy Demo</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-patriots.html">Custom Filter</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-patriots2.html">Custom Filter 2</a></li>
-          <li class="leaf-child"><a class="" href="extending-include_code.html">Code Includer</a></li>
-          <li class="leaf-child"><a class="" href="debug.html">Debug</a></li>
-    </ul>
-  </div><!--/.card-body-->
-</div><!--/.card-->
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="frontmatter.html">Frontmatter</a>
+  </div>
 
-  </div><!--/.sidenav-->
-</div><!-- /.dactyl-tree-nav -->      </aside>
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="cli-vars.html">Commandline Variables</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="link-checking.html">Link Checking</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="conditionals.html">Conditionals</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="gfm-compat.html">GitHub Markdown Compatibility</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="header_stress_test.html">Header Stress Test</a>
+  </div>
+
+      
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_1_10" aria-expanded="false" aria-controls="tree_nav_group_1_10"></a>
+    <a class="nav-link" href="virtual-pages.html">Virtual Pages</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_1_10">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/#">Dactyl Homepage</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/">Virtual Placeholder</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2" aria-expanded="false" aria-controls="tree_nav_group_2"></a>
+    <a class="nav-link" href="filters.html">Filters</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_2">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-callouts.html">Callouts Demonstration</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-xrefs.html">Intelligent Cross-References</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-buttonize.html">Buttonize Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-badges.html">Badges</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-external_links.html">External Links</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_3" aria-expanded="false" aria-controls="tree_nav_group_3"></a>
+    <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_3">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="extending-extend-templates.html">Template Extension</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="extending-hierarchy.html">Hierarchy Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots.html">Custom Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots2.html">Custom Filter 2</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="extending-include_code.html">Code Includer</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="debug.html">Debug</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+</nav>      </aside>
     </div><!--/.row (main layout)-->
   </div>
 

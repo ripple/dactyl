@@ -25,7 +25,7 @@
   <div class="collapse navbar-collapse justify-content-end" id="navbarHolder">
     <ul class="nav navbar-nav">
           <li class="nav-item ">
-            <a class="nav-link" href="tests-index.html">Tests</a>
+            <a class="nav-link" href="features.html">Features</a>
           </li>
           <li class="nav-item ">
             <a class="nav-link" href="filters.html">Filters</a>
@@ -62,15 +62,17 @@
 
 <div class="children-display">
   <ul>
-          <li class="level-1"><a href="tests-index.html">Tests</a></li>
-              <li class="level-2"><a href="code-highlighting.html">Code Highlighting</a></li>
-      <li class="level-2"><a href="includes.html">Includes Test</a></li>
-      <li class="level-2"><a href="with-frontmatter.html">Page With Frontmatter</a></li>
+          <li class="level-1"><a href="features.html">Features</a></li>
+              <li class="level-2"><a href="code-highlighting.html">Code Highlighting</a><p class="blurb child-blurb">Dactyl automatically adds syntax highlighting to code blocks.</p></li>
+      <li class="level-2"><a href="includes.html">Includes</a></li>
+      <li class="level-2"><a href="frontmatter.html">Frontmatter</a></li>
       <li class="level-2"><a href="cli-vars.html">Commandline Variables</a></li>
-      <li class="level-2"><a href="conditionals.html">Conditionals Test</a></li>
+      <li class="level-2"><a href="link-checking.html">Link Checking</a></li>
+      <li class="level-2"><a href="conditionals.html">Conditionals</a></li>
       <li class="level-2"><a href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></li>
       <li class="level-2"><a href="gfm-compat.html">GitHub Markdown Compatibility</a></li>
       <li class="level-2"><a href="header_stress_test.html">Header Stress Test</a></li>
+      <li class="level-2"><a href="virtual-pages.html">Virtual Pages</a></li>
 
       <li class="level-1"><a href="filters.html">Filters</a></li>
               <li class="level-2"><a href="filter-examples-callouts.html">Callouts Demonstration</a></li>
@@ -78,6 +80,7 @@
       <li class="level-2"><a href="filter-examples-buttonize.html">Buttonize Filter</a></li>
       <li class="level-2"><a href="filter-examples-badges.html">Badges</a></li>
       <li class="level-2"><a href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
+      <li class="level-2"><a href="filter-examples-external_links.html">External Links</a></li>
 
       <li class="level-1"><a href="extending-index.html">Extending Dactyl</a></li>
               <li class="level-2"><a href="extending-extend-templates.html">Template Extension</a></li>
@@ -96,74 +99,174 @@
       <aside class="sidebar col-md-5 col-lg-3 order-md-1" role="complementary">
 
 
-<div class="dactyl-tree-nav">
-  <div class="sidenav-parent">
-    <a href="index.html">Index</a>
+<nav class="nav flex-column dactyl-tree-nav">
+  <div class="nav-item nav-parent">
+    <a class="nav-link" href="index.html">Index</a>
   </div>
-  <div id="sidenav" role="tablist" aria-multiselectable="true">
-      <div class="card active">
-  <div class="card-header" role="tab" id="sidenav_cat_head_1_1">
-    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_1" aria-expanded="false" aria-controls="sidenav_collapse_1_1"></a>
-    <h5 class="card-title">
-        <a class="sidenav_cat_title " href="tests-index.html">Tests</a>
-    </h5>
-  </div><!-- /.card-header -->
+    
+  <div class="nav-item ">
 
-  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_1">
-    <ul class="sidebar_pagelist">
-          <li class="leaf-child"><a class="" href="code-highlighting.html">Code Highlighting</a></li>
-          <li class="leaf-child"><a class="" href="includes.html">Includes Test</a></li>
-          <li class="leaf-child"><a class="" href="with-frontmatter.html">Page With Frontmatter</a></li>
-          <li class="leaf-child"><a class="" href="cli-vars.html">Commandline Variables</a></li>
-          <li class="leaf-child"><a class="" href="conditionals.html">Conditionals Test</a></li>
-          <li class="leaf-child"><a class="" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></li>
-          <li class="leaf-child"><a class="" href="gfm-compat.html">GitHub Markdown Compatibility</a></li>
-          <li class="leaf-child"><a class="" href="header_stress_test.html">Header Stress Test</a></li>
-    </ul>
-  </div><!--/.card-body-->
-</div><!--/.card-->
 
-      <div class="card active">
-  <div class="card-header" role="tab" id="sidenav_cat_head_1_2">
-    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_2" aria-expanded="false" aria-controls="sidenav_collapse_1_2"></a>
-    <h5 class="card-title">
-        <a class="sidenav_cat_title " href="filters.html">Filters</a>
-    </h5>
-  </div><!-- /.card-header -->
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_1" aria-expanded="false" aria-controls="tree_nav_group_1"></a>
+    <a class="nav-link" href="features.html">Features</a>
 
-  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_2">
-    <ul class="sidebar_pagelist">
-          <li class="leaf-child"><a class="" href="filter-examples-callouts.html">Callouts Demonstration</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-xrefs.html">Intelligent Cross-References</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-buttonize.html">Buttonize Filter</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-badges.html">Badges</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
-    </ul>
-  </div><!--/.card-body-->
-</div><!--/.card-->
+    <nav class="nav flex-column collapse" id="tree_nav_group_1">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="code-highlighting.html">Code Highlighting</a>
+  </div>
 
-      <div class="card active">
-  <div class="card-header" role="tab" id="sidenav_cat_head_1_3">
-    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_3" aria-expanded="false" aria-controls="sidenav_collapse_1_3"></a>
-    <h5 class="card-title">
-        <a class="sidenav_cat_title " href="extending-index.html">Extending Dactyl</a>
-    </h5>
-  </div><!-- /.card-header -->
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="includes.html">Includes</a>
+  </div>
 
-  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_3">
-    <ul class="sidebar_pagelist">
-          <li class="leaf-child"><a class="" href="extending-extend-templates.html">Template Extension</a></li>
-          <li class="leaf-child"><a class="" href="extending-hierarchy.html">Hierarchy Demo</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-patriots.html">Custom Filter</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-patriots2.html">Custom Filter 2</a></li>
-          <li class="leaf-child"><a class="" href="extending-include_code.html">Code Includer</a></li>
-          <li class="leaf-child"><a class="" href="debug.html">Debug</a></li>
-    </ul>
-  </div><!--/.card-body-->
-</div><!--/.card-->
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="frontmatter.html">Frontmatter</a>
+  </div>
 
-  </div><!--/.sidenav-->
-</div><!-- /.dactyl-tree-nav -->      </aside>
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="cli-vars.html">Commandline Variables</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="link-checking.html">Link Checking</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="conditionals.html">Conditionals</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="gfm-compat.html">GitHub Markdown Compatibility</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="header_stress_test.html">Header Stress Test</a>
+  </div>
+
+      
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_1_10" aria-expanded="false" aria-controls="tree_nav_group_1_10"></a>
+    <a class="nav-link" href="virtual-pages.html">Virtual Pages</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_1_10">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/#">Dactyl Homepage</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/">Virtual Placeholder</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2" aria-expanded="false" aria-controls="tree_nav_group_2"></a>
+    <a class="nav-link" href="filters.html">Filters</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_2">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-callouts.html">Callouts Demonstration</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-xrefs.html">Intelligent Cross-References</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-buttonize.html">Buttonize Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-badges.html">Badges</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-external_links.html">External Links</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_3" aria-expanded="false" aria-controls="tree_nav_group_3"></a>
+    <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_3">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="extending-extend-templates.html">Template Extension</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="extending-hierarchy.html">Hierarchy Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots.html">Custom Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots2.html">Custom Filter 2</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="extending-include_code.html">Code Includer</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="debug.html">Debug</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+</nav>      </aside>
     </div><!--/.row (main layout)-->
   </div>
 

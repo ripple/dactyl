@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html >
 <head>
-    <title>Conditionals Test - Dactyl Examples</title>
+    <title>Conditionals - Dactyl Examples</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width">
@@ -32,7 +32,7 @@
   <div class="collapse navbar-collapse justify-content-end" id="navbarHolder">
     <ul class="nav navbar-nav">
           <li class="nav-item active-parent">
-            <a class="nav-link" href="tests-index.html">Tests</a>
+            <a class="nav-link" href="features.html">Features</a>
           </li>
           <li class="nav-item ">
             <a class="nav-link" href="filters.html">Filters</a>
@@ -55,7 +55,7 @@
     <h4>In this page:</h4>
   </div>
   <ul id="page-toc" class="list-group card-body" role="directory">
-    <li class="level-1"><a class="nav-link" href="#conditional-include-test">Conditional Include Test</a></li>
+    <li class="level-1"><a class="nav-link" href="#conditionals">Conditionals</a></li>
   </ul>
 </div>      </aside>
 
@@ -66,14 +66,41 @@
     
 
     <li class="active breadcrumb-item"><a href="index.html">Index</a></li>
-    <li class="active breadcrumb-item"><a href="tests-index.html">Tests</a></li>
-    <li class="active breadcrumb-item">Conditionals Test</li>
+    <li class="active breadcrumb-item"><a href="features.html">Features</a></li>
+    <li class="active breadcrumb-item">Conditionals</li>
   </ul>
 </nav><!--/.breadcrumbs-wrap-->            <section class="pt-3 p-md-3">
               <article class="dactyl-content">
-                <h1 id="conditional-include-test">Conditional Include Test</h1>
+                <h1 id="conditionals">Conditionals<a aria-hidden="true" class="hover_anchor" href="#conditionals">¶</a></h1>
+<p>You can use the preprocessor to hide or show certain content based on various conditions. For example, you can have a page used in multiple targets, but omit certain portions from the output in some targets. Or, you can have text and markup that only shows up in HTML mode but not PDF mode or similar rules.</p>
+<p>You can use any of <a href="https://github.com/ripple/dactyl/#pre-processing">the fields available to the preprocessor</a> for your conditionals, including <a href="cli-vars.html">commandline variables</a> and any fields defined in the <a href="with-frontmatter.html">frontmatter</a>.</p>
+<p>Example of printing different text by :</p>
+<div class="codehilite"><pre><span></span><code><span class="cp">{%</span> <span class="k">if</span> <span class="nv">currentpage.condition</span> <span class="o">==</span> <span class="s1">'tests-2'</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">some text that only appears when the "condition" field of the current page is "tests-2"</span>
+<span class="cp">{%</span> <span class="k">else</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">some text that appears when not tests-2</span>
+<span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span><span class="x"></span>
+
+<span class="x">some text that always appears</span>
+</code></pre></div>
+<p>Result:</p>
 <p>some text that appears when not tests-2</p>
 <p>some text that always appears</p>
+<hr/>
+<p>Example of printing different text in different</p>
+<div class="codehilite"><pre><span></span><code><span class="cp">{%</span> <span class="k">if</span> <span class="nv">mode</span> <span class="o">==</span> <span class="s1">'pdf'</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">This is PDF mode.</span>
+<span class="cp">{%</span> <span class="k">elif</span> <span class="nv">mode</span> <span class="o">==</span> <span class="s1">'html'</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">This is HTML mode.</span>
+<span class="cp">{%</span> <span class="k">elif</span> <span class="nv">mode</span> <span class="o">==</span> <span class="s1">'md'</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">This is MD mode (See also: `--githubify`)</span>
+<span class="cp">{%</span> <span class="k">elif</span> <span class="nv">mode</span> <span class="o">==</span> <span class="s1">'es'</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">This is ElasticSearch indexing mode (JSON).</span>
+<span class="cp">{%</span> <span class="k">else</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">We should not reach this case.</span>
+<span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span><span class="x"></span>
+</code></pre></div>
+<p>Result:</p>
 <p>This is HTML mode.</p>
               </article>
             </section>
@@ -82,74 +109,174 @@
       <aside class="sidebar col-md-5 col-lg-3 order-md-1" role="complementary">
 
 
-<div class="dactyl-tree-nav">
-  <div class="sidenav-parent">
-    <a href="index.html">Index</a>
+<nav class="nav flex-column dactyl-tree-nav">
+  <div class="nav-item nav-parent">
+    <a class="nav-link" href="index.html">Index</a>
   </div>
-  <div id="sidenav" role="tablist" aria-multiselectable="true">
-      <div class="card active">
-  <div class="card-header" role="tab" id="sidenav_cat_head_1_1">
-    <a class=" sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_1" aria-expanded="true" aria-controls="sidenav_collapse_1_1"></a>
-    <h5 class="card-title">
-        <a class="sidenav_cat_title active-parent" href="tests-index.html">Tests</a>
-    </h5>
-  </div><!-- /.card-header -->
+    
+  <div class="nav-item active-parent">
 
-  <div class="card-body card-body-single collapse show" role="tabpanel" id="sidenav_collapse_1_1">
-    <ul class="sidebar_pagelist">
-          <li class="leaf-child"><a class="" href="code-highlighting.html">Code Highlighting</a></li>
-          <li class="leaf-child"><a class="" href="includes.html">Includes Test</a></li>
-          <li class="leaf-child"><a class="" href="with-frontmatter.html">Page With Frontmatter</a></li>
-          <li class="leaf-child"><a class="" href="cli-vars.html">Commandline Variables</a></li>
-          <li class="leaf-child"><a class=" active" href="conditionals.html">Conditionals Test</a></li>
-          <li class="leaf-child"><a class="" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a></li>
-          <li class="leaf-child"><a class="" href="gfm-compat.html">GitHub Markdown Compatibility</a></li>
-          <li class="leaf-child"><a class="" href="header_stress_test.html">Header Stress Test</a></li>
-    </ul>
-  </div><!--/.card-body-->
-</div><!--/.card-->
 
-      <div class="card active">
-  <div class="card-header" role="tab" id="sidenav_cat_head_1_2">
-    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_2" aria-expanded="false" aria-controls="sidenav_collapse_1_2"></a>
-    <h5 class="card-title">
-        <a class="sidenav_cat_title " href="filters.html">Filters</a>
-    </h5>
-  </div><!-- /.card-header -->
+      <a class="nav-toggler " role="button" data-toggle="collapse" href="#tree_nav_group_1" aria-expanded="true" aria-controls="tree_nav_group_1"></a>
+    <a class="nav-link" href="features.html">Features</a>
 
-  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_2">
-    <ul class="sidebar_pagelist">
-          <li class="leaf-child"><a class="" href="filter-examples-callouts.html">Callouts Demonstration</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-xrefs.html">Intelligent Cross-References</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-buttonize.html">Buttonize Filter</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-badges.html">Badges</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a></li>
-    </ul>
-  </div><!--/.card-body-->
-</div><!--/.card-->
+    <nav class="nav flex-column show " id="tree_nav_group_1">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="code-highlighting.html">Code Highlighting</a>
+  </div>
 
-      <div class="card active">
-  <div class="card-header" role="tab" id="sidenav_cat_head_1_3">
-    <a class="collapsed sidenav_cat_toggler" role="button" data-toggle="collapse" href="#sidenav_collapse_1_3" aria-expanded="false" aria-controls="sidenav_collapse_1_3"></a>
-    <h5 class="card-title">
-        <a class="sidenav_cat_title " href="extending-index.html">Extending Dactyl</a>
-    </h5>
-  </div><!-- /.card-header -->
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="includes.html">Includes</a>
+  </div>
 
-  <div class="card-body card-body-single collapse " role="tabpanel" id="sidenav_collapse_1_3">
-    <ul class="sidebar_pagelist">
-          <li class="leaf-child"><a class="" href="extending-extend-templates.html">Template Extension</a></li>
-          <li class="leaf-child"><a class="" href="extending-hierarchy.html">Hierarchy Demo</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-patriots.html">Custom Filter</a></li>
-          <li class="leaf-child"><a class="" href="filter-examples-patriots2.html">Custom Filter 2</a></li>
-          <li class="leaf-child"><a class="" href="extending-include_code.html">Code Includer</a></li>
-          <li class="leaf-child"><a class="" href="debug.html">Debug</a></li>
-    </ul>
-  </div><!--/.card-body-->
-</div><!--/.card-->
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="frontmatter.html">Frontmatter</a>
+  </div>
 
-  </div><!--/.sidenav-->
-</div><!-- /.dactyl-tree-nav -->      </aside>
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="cli-vars.html">Commandline Variables</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="link-checking.html">Link Checking</a>
+  </div>
+
+      
+  <div class="nav-item active">
+    <a class="nav-link nav-leaf" href="conditionals.html">Conditionals</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="gfm-compat.html">GitHub Markdown Compatibility</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="header_stress_test.html">Header Stress Test</a>
+  </div>
+
+      
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_1_10" aria-expanded="false" aria-controls="tree_nav_group_1_10"></a>
+    <a class="nav-link" href="virtual-pages.html">Virtual Pages</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_1_10">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/#">Dactyl Homepage</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/">Virtual Placeholder</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2" aria-expanded="false" aria-controls="tree_nav_group_2"></a>
+    <a class="nav-link" href="filters.html">Filters</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_2">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-callouts.html">Callouts Demonstration</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-xrefs.html">Intelligent Cross-References</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-buttonize.html">Buttonize Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-badges.html">Badges</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-external_links.html">External Links</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_3" aria-expanded="false" aria-controls="tree_nav_group_3"></a>
+    <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_3">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="extending-extend-templates.html">Template Extension</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="extending-hierarchy.html">Hierarchy Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots.html">Custom Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots2.html">Custom Filter 2</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="extending-include_code.html">Code Includer</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="debug.html">Debug</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+</nav>      </aside>
     </div><!--/.row (main layout)-->
   </div>
 
