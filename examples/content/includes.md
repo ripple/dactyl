@@ -1,4 +1,4 @@
-# Includes Test
+# Includes
 
 This page demonstrates including a file using the [preprocessor's `include` syntax](https://jinja.palletsprojects.com/en/2.11.x/templates/#include). The path to including a file is always relative to the **`content_path`** from the config.
 

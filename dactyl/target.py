@@ -234,7 +234,7 @@ class DactylTarget:
         for p in pages:
             if "html" not in p.data.keys():
                 logger.error("page has no html somehow? %s"%p.data)
-            if p.data["html"] in html_outs:
+            if p.data["html"] in html_outs and not p.is_virtual():
                 recoverable_error(("Repeated output filename '%s'. The earlier "+
                     "instances will be overwritten") % p.data["html"],
                     self.config.bypass_errors)

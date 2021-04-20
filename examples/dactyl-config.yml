@@ -8,6 +8,8 @@ filter_paths:
 defaults: &defaults
     hover_anchors: "¶"
 
+spelling_file: spelling.txt
+
 targets:
     -   name: everything
         display_name: Dactyl Examples
@@ -28,9 +30,9 @@ targets:
         <<: *defaults
 
 pages:
-    -   name: Tests
-        html: tests-index.html
-        category: Tests
+    -   name: Features
+        html: features.html
+        category: Features
         section_header: true
         parent: index.html
         template: landing.html
@@ -39,57 +41,71 @@ pages:
 
     -   md: code-highlighting.md
         html: code-highlighting.html
-        parent: tests-index.html
+        parent: features.html
         targets:
             - everything
 
     -   md: includes.md
-        category: Tests
-        parent: tests-index.html
+        category: Features
+        parent: features.html
         targets:
             - everything
 
-    -   md: with-frontmatter.md
-        html: with-frontmatter.html
-        parent: tests-index.html
+    -   md: frontmatter.md
+        html: frontmatter.html
+        parent: features.html
         targets:
             - everything
 
     -   md: cli-vars.md
         html: cli-vars.html
-        parent: tests-index.html
+        parent: features.html
         targets:
             - everything
 
-    -   md: link-types.md
+    -   md: link-checking.md
         targets:
             - everything
 
-    -   name: Conditionals Test
-        category: Tests
-        md: conditionals.md
-        parent: tests-index.html
+    -   md: conditionals.md
+        category: Features
+        parent: features.html
         targets:
             - everything
             - conditionals
 
     -   name: Lists and Code Blocks Demo
-        category: Tests
+        category: Features
         md: lists-and-codeblocks.md
-        parent: tests-index.html
+        parent: features.html
         targets:
             - everything
 
     -   name: GitHub Markdown Compatibility
-        category: Tests
+        category: Features
         md: gfm-compat.md
-        parent: tests-index.html
+        parent: features.html
         targets:
             - everything
 
     -   md: header_stress_test.md
-        category: Tests
-        parent: tests-index.html
+        category: Features
+        parent: features.html
+        targets:
+            - everything
+
+    -   md: virtual-pages.md
+        targets:
+            - everything
+
+    -   name: Dactyl Homepage
+        parent: virtual-pages.html
+        html: https://dactyl.link/#
+        blurb: This is a placeholder that shows up in navigation but does not have an actual output file. Use this if you want to link to external resources at a specific place in your navigation.
+        targets:
+            - everything
+
+    -   md: virtual-placeholder.md
         targets:
             - everything
 

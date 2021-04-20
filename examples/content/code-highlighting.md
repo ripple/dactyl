@@ -1,3 +1,6 @@
+---
+blurb: Dactyl automatically adds syntax highlighting to code blocks.
+---
 # Code Highlighting
 
 Dactyl automatically adds syntax highlighting to code blocks when it parses Markdown, using the [Pygments](https://pygments.org/)-derived [CodeHilite](https://python-markdown.github.io/extensions/code_hilite/) extension. Parsing the syntax highlighting at compile time like this is faster and less work for readers' computers than in-browser syntax highlighting such as using [highlight.js](https://highlightjs.readthedocs.io/en/latest/api.html). (If you prefer highlight.js's output, though, you can still run it to overwrite Dactyl's syntax highlighting.)

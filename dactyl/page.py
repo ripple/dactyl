@@ -555,6 +555,15 @@ class DactylPage:
                     exported_vals[key] = val
         return exported_vals
 
+    def is_virtual(self):
+        """
+        Returns True if this is a "virtual" page that does not have a real HTML
+        output. These types of pages are essentially placeholders for navigation.
+        """
+        if "//" in self.data["html"]:
+            return True
+        return False
+
     def filters(self, save=True):
         """
         Returns the names of filters to use when processing this page.
