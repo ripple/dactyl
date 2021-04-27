@@ -8,7 +8,7 @@
 {% block main %}
   <article class="pt-3 p-md-3">
     <div class="content">
-        <p>This page has been moved! You should be redirected automatically. If not, <a href="{{target.prefix}}{{currentpage.redirect_url}}">click here to go to the new {{currentpage.name}} page</a>.
+        <p>This page has been moved! You should be redirected automatically. If not, <a href="{% if "//" not in currentpage.redirect_url %}{{target.prefix}}{% endif %}{{currentpage.redirect_url}}">click here to go to the new {{currentpage.name}} page</a>.
     </div>
   </article>
 {% endblock %}

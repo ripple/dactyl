@@ -15,7 +15,7 @@
 
     {% if currentpage.html != "index.html" %}
     {%- for page in ns.crumbs %}
-    <li class="active breadcrumb-item"><a href="{{ target.prefix }}{{ page.html }}">{{ page.name }}</a></li>
+    <li class="active breadcrumb-item"><a href="{% if "//" not in page.html %}{{ currentpage.prefix }}{% endif %}{{ page.html }}">{{ page.name }}</a></li>
     {% endfor %}
     {% endif %}
     <li class="active breadcrumb-item">{{ currentpage.name }}</li>

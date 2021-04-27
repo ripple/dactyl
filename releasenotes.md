@@ -1,3 +1,8 @@
+# v0.14.2 Release Notes
+
+This release fixes a couple bugs in the built-in templates when using virtual pages with a `prefix` value. It also changes to use the `prefix` value inherited at the page level so that individual pages can overwrite the value if necessary. (A 404 page, for example, might want to use a separate prefix since it may be used at different paths.)
+
+
 # v0.14.1 Release Notes
 
 This release removes a couple of debug statements that broke compatibility with Python 3.5. (Python 3.5 has reached end of life, but Dactyl still works with it for now if you use the right versions of its dependencies.)
