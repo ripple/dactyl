@@ -290,7 +290,7 @@ class DactylBuilder:
         else:
             preferred_undefined = jinja2.ChainableUndefined
 
-        loaderset = [jinja2.PackageLoader(__name__)]
+        loaderset = [jinja2.PackageLoader(PACKAGE_NAME)]
         if "template_path" in self.config:
             loaderset.insert(0, jinja2.FileSystemLoader(self.config["template_path"]))
         env = jinja2.Environment(undefined=preferred_undefined,

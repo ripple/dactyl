@@ -81,12 +81,12 @@ class ApiDef:
         """Sets up the environment used to inject OpenAPI data into Markdown
         templates"""
         if template_path is None:
-            loader = jinja2.PackageLoader(__name__)
+            loader = jinja2.PackageLoader(PACKAGE_NAME)
         else:
             logger.debug("OpenAPI spec: preferring templates from %s"%template_path)
             loader = jinja2.ChoiceLoader([
                 jinja2.FileSystemLoader(template_path),
-                jinja2.PackageLoader(__name__)
+                jinja2.PackageLoader(PACKAGE_NAME)
             ])
         self.env = jinja2.Environment(loader=loader, extensions=['jinja2.ext.i18n'])
         self.env.lstrip_blocks = True

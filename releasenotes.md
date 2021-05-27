@@ -1,3 +1,11 @@
+# v0.14.3 Release Notes
+
+This release adds compatibility with Jinja 3.x and includes two minor improvements to the style checker:
+
+- No longer attempts to check inlined SVG elements. (This caused false reports of misspelled words when the SVG contained text elements without whitespace between them.)
+- Spelling file can now contain comments starting with `#`. (Only lines _starting_ with `#` are treated as comments.)
+
+
 # v0.14.2 Release Notes
 
 This release fixes a couple bugs in the built-in templates when using virtual pages with a `prefix` value. It also changes to use the `prefix` value inherited at the page level so that individual pages can overwrite the value if necessary. (A 404 page, for example, might want to use a separate prefix since it may be used at different paths.)

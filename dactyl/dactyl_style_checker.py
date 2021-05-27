@@ -108,12 +108,13 @@ class DactylStyleChecker:
     def load_words_from_file(self, fhandle):
         """
         Read a file or file-like object line by line and add the words
-        from that file to the built-in dictionary.
+        from that file to the built-in dictionary. Lines starting with # are
+        treated as comments and ignored.
         """
         new_words = []
         for line in fhandle:
             word = line.strip().lower()
-            if word:
+            if word and word[0] != "#":
                 new_words.append(word)
         if new_words:
             self.spell.word_frequency.load_words(new_words)
@@ -170,6 +171,10 @@ class DactylStyleChecker:
         # sometimes it's useful for Dactyl filters to wrap stuff in them. So
         # let's strip any of those out.
         [div.unwrap() for div in page.soup.find_all(name="div")]
+
+        # Inlined SVG elements can't be formatted the same way, so remove them.
+        # They won't be spell-checked.
+        [svg.decompose() for svg in page.soup.find_all(name="svg")]
 
         # Sometimes certain elements don't have whitespace between then, so
         # .get_text() will mash words together. Adding ". " makes them register

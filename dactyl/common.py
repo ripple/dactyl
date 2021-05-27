@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 logger.propagate = False
 
+PACKAGE_NAME = "dactyl" # Used for Jinja PackageLoader
+
 PDF_USE_DEFAULT = "__DEFAULT_FILENAME__"
 NO_PDF = "__NO_PDF__"
 ES_USE_DEFAULT = "__ES_USE_DEFAULT__"
