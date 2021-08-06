@@ -44,6 +44,7 @@ class DactylBuilder:
         self.target = target
         self.config = config
         self.mode = mode
+        self.only_page = only_page
         # Generate a unique nonce per-run to be used for tempdir folder names
         self.nonce = str(time.time()).replace(".","")
 
@@ -92,31 +93,24 @@ class DactylBuilder:
             os.makedirs(run_dir)
         return run_dir
 
-    def build_one(self, only_page):
-        """
-        Helper for building just a single page from the target.
-        """
-        self.build_all(only_page=only_page)
-
-    @staticmethod
-    def match_only_page(only_page, currentpage_data):
+    def match_only_page(self, currentpage_data):
         """
         Returns a boolean indicating whether currentpage (object) matches the
         only_page parameter (string). Used for build_one()
         """
-        if not only_page:
+        if not self.only_page:
             return False
-        if only_page[-5:] == ".html":
-            if (currentpage_data["html"] == only_page or
-                    os.path.basename(currentpage_data["html"]) == only_page):
+        if self.only_page[-5:] == ".html":
+            if (currentpage_data["html"] == self.only_page or
+                    os.path.basename(currentpage_data["html"]) == self.only_page):
                 return True
-        elif only_page[-3:] == ".md":
-            if "md" in currentpage_data and (currentpage_data["md"] == only_page or
-                    os.path.basename(currentpage_data["md"]) == only_page):
+        elif self.only_page[-3:] == ".md":
+            if "md" in currentpage_data and (currentpage_data["md"] == self.only_page or
+                    os.path.basename(currentpage_data["md"]) == self.only_page):
                 return True
         return False
 
-    def build_all(self, only_page=None):
+    def build(self):
         """
         Build and write all pages in the target, according to the set mode,
         and upload their entries to ElasticSearch if requested.
@@ -144,8 +138,8 @@ class DactylBuilder:
                 logger.debug("skipping virtual page: %s" % page)
                 continue
 
-            if only_page:
-                if self.match_only_page(only_page, page.data):
+            if self.only_page:
+                if self.match_only_page(page.data):
                     matched_only = True
                 else:
                     logger.debug("only_page mode: skipping page %s" % page)
@@ -173,21 +167,21 @@ class DactylBuilder:
             elif self.mode == "es":
                 page_text = es_json_s
             else:
-                exit("build_all() error: unknown mode: %s" % self.mode)
+                exit("build() error: unknown mode: %s" % self.mode)
 
             if page_text:
                 self.write_page(page_text, page.filepath(self.mode))
             else:
                 logger.warning("not writing empty page '%s'"%page.data["name"])
 
-        if only_page and not matched_only:
-            exit("Didn't find requested 'only' page '%s'" % only_page)
+        if self.only_page and not matched_only:
+            exit("Didn't find requested 'only' page '%s'" % self.only_page)
 
         if self.es_upload != NO_ES_UP:
             self.upload_es(es_data)
 
         if self.mode == "pdf":
-            self.assemble_pdf(only_page)
+            self.assemble_pdf()
 
 
     def template_for_page(self, page, mode=None):
@@ -414,10 +408,10 @@ class DactylBuilder:
         logger.debug("ElasticSearch base URL is '%s'" % es_base_url)
         return es_base_url
 
-    def assemble_pdf(self, only_page=None):
+    def assemble_pdf(self):
         """
         Use Prince to combine temporary HTML files into a PDF.
-        Called at the end of build_all()
+        Called at the end of build()
         """
         assert self.pdf_filename != NO_PDF
 
@@ -449,10 +443,10 @@ class DactylBuilder:
             args.append('--no-warn-css')
 
         pages = [p for p in self.target.pages if not p.is_virtual()]
-        if only_page:
-            pages = [p for p in pages if self.match_only_page(only_page, p.data)][:1]
+        if self.only_page:
+            pages = [p for p in pages if self.match_only_page(p.data)][:1]
             if not len(pages):
-                recoverable_error("Couldn't find 'only' page %s" % only_page,
+                recoverable_error("Couldn't find 'only' page %s" % self.only_page,
                     self.config.bypass_errors)
                 return
 
@@ -572,7 +566,7 @@ def main(cli_args, config):
     else:
         mode = "html"
 
-    builder = DactylBuilder(target, config, mode)
+    builder = DactylBuilder(target, config, mode, cli_args.only)
 
     if mode == "pdf":
         builder.pdf_filename = cli_args.pdf
@@ -600,10 +594,9 @@ def main(cli_args, config):
 
     if cli_args.only:
         logger.info("building page %s..."%cli_args.only)
-        builder.build_one(cli_args.only)
     else:
         logger.info("building target %s..."%target.name)
-        builder.build_all()
+    builder.build()
     logger.info("done building")
 
     builder.copy_static()

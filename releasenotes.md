@@ -1,3 +1,13 @@
+# v0.14.4 Release Notes
+
+This release fixes several bugs:
+
+- The link checker no longer crashes if an &lt;img&gt; element in the contents is missing the `src` attribute. The link checker writes a log message when it encounters an image like this but does not record it as a broken link. (In HTML5, CSS files can set the path of such images using a `content` rule.)
+- "Watch" mode now looks for changes to all files in the template and content directories, not just ones matching limited patterns.
+- When using "watch" mode with "only" mode, builds after the first one now build only the specified page instead of rebuilding all pages on any update.
+
+Also, updated the example CSS's dependencies.
+
 # v0.14.3 Release Notes
 
 This release adds compatibility with Jinja 3.x and includes two minor improvements to the style checker:
