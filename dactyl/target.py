@@ -215,6 +215,8 @@ class DactylTarget:
                                     [p.data["name"] for p in swagger_pages])
                     pages += swagger_pages
                 except Exception as e:
+                    import traceback
+                    traceback.print_tb(e.__traceback__)
                     recoverable_error("Error when parsing OpenAPI definition %s: %s" %
                                       (page_data, e), self.config.bypass_errors)
                     # Omit the API def from the page list if an error occurred

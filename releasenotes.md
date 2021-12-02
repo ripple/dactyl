@@ -1,3 +1,7 @@
+# v0.14.5 Release Notes
+
+This release fixes a bug with the OpenAPI spec parser that caused it to fail when used with Jinja 3.x. This same bug also caused some fields to show as "Optional" or "May be omitted" when they were required.
+
 # v0.14.4 Release Notes
 
 This release fixes several bugs:
