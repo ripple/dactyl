@@ -254,8 +254,12 @@ def check_directory(top_dir, offline=False, site_prefix=None):
                 # Check <img> tags
                 imgs = soup.find_all('img')
                 for img in imgs:
-                    if "src" not in img.attrs or not img["src"].strip():
-                        logger.warning("Broken image with no src in %s" % in_file)
+                    if "src" not in img.attrs:
+                        logger.info(("Image with no src in %s. " % in_file)+
+                            "This may be OK if using setting content URL in CSS." )
+                        continue
+                    elif not img["src"].strip():
+                        logger.warning("Image with empty src in %s" % in_file)
                         broken_links.append( (in_file, img["src"]) )
                         num_links_checked += 1
                         continue

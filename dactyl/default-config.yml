@@ -51,10 +51,21 @@ skip_preprocessor: false
 template_allow_undefined: true
 preprocessor_allow_undefined: true
 
-## By default, generates HTML paths from md paths by replacing / with -
-## Set this to false to make default HTML paths mirror the folder structure of
-## the input md files.
-flatten_default_html_paths: true
+## How to generate default HTML paths from Markdown files. These can be
+## overwritten by the "html" field of the page definition.
+## In all cases, the file extension is changed from .md to .html.
+## Available formulas include:
+## "flatten": The default. Use the full path to the md file, except replace /
+##            with - so all files end up in one output folder.
+## "path": Use the full path to the md file including folders. This can make
+##         for prettier URLs but requires you to handle absolute paths correctly
+## "tail": Use just the filename, not the whole path. This can result in
+##         duplicates if you have files with the same name in different folders,
+##         for example if you have multiple "overview.md" docs. You should
+##         change the duplicates individually using "html" parameters in the
+##         page definitions, as needed.
+# Legacy parameter: flatten_default_html_paths: true
+default_html_names: flatten
 
 ## Set this to true to disable Dactyl's built-in syntax highlighting
 no_highlighting: false

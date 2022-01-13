@@ -9,7 +9,7 @@ from dactyl.target import DactylTarget
 
 class TestDactylPage(unittest.TestCase):
     def test_target_from_pages(self):
-        files=["../examples/content/filter-examples/badges.md","../examples/content/filter-examples/buttonize.md"]
+        files=["../examples/content/filters/badges.md","../examples/content/filters/buttonize.md"]
         t = DactylTarget(config=mockconfig, inpages=files)
         t.load_pages()
 

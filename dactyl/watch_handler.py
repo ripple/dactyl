@@ -9,9 +9,9 @@ class UpdaterHandler(PatternMatchingEventHandler):
     """Updates to pattern-matched files means rendering."""
     def __init__(self, builder):
         self.builder = builder
-        patterns = ["*template-*.html",
-                    "*.md",
-                    "*code_samples/*"]
+        # Match on any change. Note, this causes an infinite build loop if the
+        # output directory is inside the template or content directory.
+        patterns = ["*"]
         PatternMatchingEventHandler.__init__(self, patterns)
 
     def on_any_event(self, event):
@@ -20,6 +20,6 @@ class UpdaterHandler(PatternMatchingEventHandler):
         #  should not cause watch mode to fail
         self.builder.config.bypass_errors=True
         self.builder.config.load_pages()
-        self.builder.build_all()
+        self.builder.build()
         logger.info("done rendering")
         self.builder.copy_static()

@@ -41,7 +41,7 @@ But watch out -- some editors (like [Atom](https://atom.io/docs)) tend to strip 
 
 Dactyl does preprocessing with Jinja, so you can do [conditional text](conditionals.html) and [includes](includes.html). GitHub doesn't have stuff like that.
 
-**Suggestion:** For docs that are meant to be viewed on GitHub, use Dactyl's "Githubify mode" (TODO: better docs on that) to do pre-processing only and export a markdown file you can push elsewhere. Be careful not to overwrite the original (with the prepropessing directives) with the processed export version.
+**Suggestion:** For docs that are meant to be viewed on GitHub, use Dactyl's `--md` option. This does pre-processing only, and exports Markdown files suitable for GitHub or elsewhere. Be careful not to overwrite the original files (with the prepropessing directives) with the processed export version.
 
 **Caution:** The pre-processing doesn't know anything about Markdown syntax, so it might catch Jinja-esque syntax in things that weren't meant to be interpreted as such. Use [Jinja's escaping syntax](http://jinja.pocoo.org/docs/dev/templates/#escaping) to fix that. E.g.:
 

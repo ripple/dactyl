@@ -11,7 +11,7 @@ import re
 def filter_soup(soup, logger=None, **kwargs):
     """make links ending in > render like buttons"""
     buttonlinks = soup.find_all("a", string=re.compile("(&gt;|>)$"))
-    logger.debug(f"Button links found: {buttonlinks}")
+    # logger.debug(f"Button links found: {buttonlinks}")
     for link in buttonlinks:
         link.string=link.string[:-1].strip()
 

@@ -22,7 +22,7 @@
   {% for child in parent.children %}
     {% if child.nav_omit is defined and child.nav_omit %}{# skip pages that are omitted from navigation #}
     {% elif ns.count_printed < count_limit %}
-      <li class="level-{{indent_level}}"><a href="{{target.prefix}}{{child.html}}">{{child.name}}</a>{% if show_blurbs and child.blurb is defined %}<p class="blurb child-blurb">{{child.blurb}}</p>{% endif %}</li>
+      <li class="level-{{indent_level}}"><a href="{% if "//" not in child.html %}{{currentpage.prefix}}{% endif %}{{child.html}}">{{child.name}}</a>{% if show_blurbs and child.blurb is defined %}<p class="blurb child-blurb">{{child.blurb}}</p>{% endif %}</li>
       {% set ns.count_printed = ns.count_printed + 1 %}
       {% if indent_level+1 <= depth_limit %}
         {# recursively print descendants #}

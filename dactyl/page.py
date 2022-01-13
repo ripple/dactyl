@@ -159,10 +159,13 @@ class DactylPage:
 
         logger.debug("Need to generate html filename for page %s" % self)
         if "md" in self.data:
-            # TODO: support other formulas including "tail" or "pretty"
             new_filename = re.sub(r"[.]md$", ".html", self.data["md"])
-            if self.config.get("flatten_default_html_paths", True):
+            name_formula = self.config.get("default_html_names", "flatten")
+            if name_formula == "flatten":
                 new_filename = new_filename.replace(os.sep, "-")
+            elif name_formula == "tail":
+                new_filename = new_filename.split(os.sep)[-1]
+            # the "path" formula is a no-op here.
             self.data["html"] = new_filename
         elif "name" in self.data:
             new_filename = slugify(self.data["name"]).lower()+".html"
@@ -173,7 +176,7 @@ class DactylPage:
         self.data[PROVIDED_FILENAME_KEY] = True
 
         logger.debug("Generated html filename '%s' for page: %s" %
-                    (new_filename, self))
+                    (self.data["html"], self))
 
     def provide_name(self):
         """

@@ -9,7 +9,7 @@
       {% for page in pages %}
         {% if page.parent is defined and page.parent == "index.html" %}
           <li class="nav-item {% if currentpage == page %}active{% elif page.is_ancestor_of(currentpage.html) %}active-parent{% endif %}">
-            <a class="nav-link" href="{{ target.prefix }}{{ page.html }}">{{ page.name }}</a>
+            <a class="nav-link" href="{% if "//" not in page.html %}{{ currentpage.prefix }}{% endif %}{{ page.html }}">{{ page.name }}</a>
           </li>
         {% endif %}
       {% endfor %}

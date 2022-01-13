@@ -81,12 +81,12 @@ class ApiDef:
         """Sets up the environment used to inject OpenAPI data into Markdown
         templates"""
         if template_path is None:
-            loader = jinja2.PackageLoader(__name__)
+            loader = jinja2.PackageLoader(PACKAGE_NAME)
         else:
             logger.debug("OpenAPI spec: preferring templates from %s"%template_path)
             loader = jinja2.ChoiceLoader([
                 jinja2.FileSystemLoader(template_path),
-                jinja2.PackageLoader(__name__)
+                jinja2.PackageLoader(PACKAGE_NAME)
             ])
         self.env = jinja2.Environment(loader=loader, extensions=['jinja2.ext.i18n'])
         self.env.lstrip_blocks = True
@@ -167,7 +167,7 @@ class ApiDef:
             schema["title"] = title
             if "example" in schema:
                 try:
-                    j = json.dumps(schema["example"], indent=4, default=self.json_default)
+                    j = self.json_pp(schema["example"])
                     schema["example"] = j
                 except Exception as e:
                     logger.debug("%s example isn't json: %s"%(title,j))
@@ -245,7 +245,7 @@ class ApiDef:
                     return ""
 
             try:
-                ex_pp = json.dumps(ex, indent=4, separators=(',', ': '), default=self.json_default)
+                ex_pp = self.json_pp(ex)
             except TypeError as e:
                 traceback.print_tb(e.__traceback__)
                 logger.debug("json dumps failed on example '%s'"%ex)
@@ -387,6 +387,7 @@ class ApiDef:
             "debug": logger.debug,
             "slugify": slugify,
             "md_escape": self.md_escape,
+            "json_pp": self.json_pp
         }
 
     @staticmethod
@@ -402,6 +403,12 @@ class ApiDef:
                 s += "\\"
             s += c
         return s
+
+    def json_pp(self, j):
+        """
+        Pretty-print function for JSON
+        """
+        return json.dumps(j, indent=4, default=self.json_default)
 
     @staticmethod
     def json_default(o):

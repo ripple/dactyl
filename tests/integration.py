@@ -56,19 +56,19 @@ class TestDactyl(unittest.TestCase):
 
     def test_generate_pdf_from_config(self):
         subprocess.check_call(["dactyl_build","--pdf"])
-        assert os.path.isfile("out/Dactyl_Examples.pdf")
+        assert os.path.isfile("out/Dactyl_A_Heroic_Doc_Tool.pdf")
 
     def test_generate_pdf_only_one_page(self):
         subprocess.check_call(["dactyl_build","-c","dactyl-config.yml","--only","gfm-compat.md","--pdf"])
-        assert os.path.isfile("out/Dactyl_Examples.pdf")
+        assert os.path.isfile("out/Dactyl_A_Heroic_Doc_Tool.pdf")
 
     def test_build_from_target(self):
         subprocess.check_call(["dactyl_build","-t","filterdemos"])
-        assert os.path.isfile("out/filter-examples-callouts.html")
-        assert os.path.isfile("out/filter-examples-xrefs.html")
-        assert os.path.isfile("out/filter-examples-buttonize.html")
-        assert os.path.isfile("out/filter-examples-badges.html")
-        assert os.path.isfile("out/filter-examples-multicode_tabs.html")
+        assert os.path.isfile("out/callouts.html")
+        assert os.path.isfile("out/xrefs.html")
+        assert os.path.isfile("out/buttonize.html")
+        assert os.path.isfile("out/badges.html")
+        assert os.path.isfile("out/multicode_tabs.html")
 
     def test_dactyl_link_checker(self):
         # Build some docs to link-check
@@ -94,11 +94,11 @@ class TestDactyl(unittest.TestCase):
         assert os.path.isfile("out/conditionals.json")
         assert os.path.isfile("out/lists-and-codeblocks.json")
         assert os.path.isfile("out/gfm-compat.json")
-        assert os.path.isfile("out/filter-examples-callouts.json")
-        assert os.path.isfile("out/filter-examples-xrefs.json")
-        assert os.path.isfile("out/filter-examples-buttonize.json")
-        assert os.path.isfile("out/filter-examples-badges.json")
-        assert os.path.isfile("out/filter-examples-multicode_tabs.json")
+        assert os.path.isfile("out/callouts.json")
+        assert os.path.isfile("out/xrefs.json")
+        assert os.path.isfile("out/buttonize.json")
+        assert os.path.isfile("out/badges.json")
+        assert os.path.isfile("out/multicode_tabs.json")
 
     def test_elastic_search_single_page(self):
         subprocess.check_call(["dactyl_build","--es","--pages","content/gfm-compat.md"])
@@ -110,11 +110,11 @@ class TestDactyl(unittest.TestCase):
         assert os.path.isfile("out/conditionals.md")
         assert os.path.isfile("out/lists-and-codeblocks.md")
         assert os.path.isfile("out/gfm-compat.md")
-        assert os.path.isfile("out/filter-examples/callouts.md")
-        assert os.path.isfile("out/filter-examples/xrefs.md")
-        assert os.path.isfile("out/filter-examples/buttonize.md")
-        assert os.path.isfile("out/filter-examples/badges.md")
-        assert os.path.isfile("out/filter-examples/multicode_tabs.md")
+        assert os.path.isfile("out/filters/callouts.md")
+        assert os.path.isfile("out/filters/xrefs.md")
+        assert os.path.isfile("out/filters/buttonize.md")
+        assert os.path.isfile("out/filters/badges.md")
+        assert os.path.isfile("out/filters/multicode_tabs.md")
 
     def test_generate_markdown_only_one_page(self):
         subprocess.check_call(["dactyl_build","-c","dactyl-config.yml","--only","gfm-compat.md","--md"])

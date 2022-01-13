@@ -7,12 +7,21 @@ filter_paths:
 
 defaults: &defaults
     hover_anchors: "¶"
+    skip_cover: true
 
 spelling_file: spelling.txt
+default_html_names: tail
+
+cover_page:
+    html: index.html
+    md: index.md
+    name: Index
+    pdf_template: pdf-cover.html
+    template: landing.html
 
 targets:
     -   name: everything
-        display_name: Dactyl Examples
+        display_name: "Dactyl: A Heroic Doc Tool"
         filters:
             - demote_headers
         demote_headers_pdf_only: true
@@ -30,6 +39,14 @@ targets:
         <<: *defaults
 
 pages:
+    -   md: usage/usage.md
+    -   md: usage/config.md
+    -   md: usage/editing.md
+    -   md: usage/link-checking.md
+    -   md: usage/style-checking.md
+    -   md: usage/elasticsearch.md
+    -   md: usage/openapi.md
+
     -   name: Features
         html: features.html
         category: Features
@@ -60,10 +77,6 @@ pages:
     -   md: cli-vars.md
         html: cli-vars.html
         parent: features.html
-        targets:
-            - everything
-
-    -   md: link-checking.md
         targets:
             - everything
 
@@ -109,16 +122,9 @@ pages:
         targets:
             - everything
 
-    -   name: Filters
-        category: Filters
-        section_header: true
-        parent: index.html
-        template: landing.html
-        targets:
-            - everything
-            - filterdemos
+    -   md: filters/filters.md
 
-    -   md: filter-examples/callouts.md
+    -   md: filters/callouts.md
         category: Filters
         parent: filters.html
         targets:
@@ -127,7 +133,7 @@ pages:
         filters:
             - callouts
 
-    -   md: filter-examples/xrefs.md
+    -   md: filters/xrefs.md
         category: Filters
         parent: filters.html
         targets:
@@ -136,7 +142,7 @@ pages:
         filters:
             - xrefs
 
-    -   md: filter-examples/buttonize.md
+    -   md: filters/buttonize.md
         category: Filters
         parent: filters.html
         targets:
@@ -145,7 +151,7 @@ pages:
         filters:
             - buttonize
 
-    -   md: filter-examples/badges.md
+    -   md: filters/badges.md
         category: Filters
         parent: filters.html
         targets:
@@ -154,7 +160,7 @@ pages:
         filters:
             - badges
 
-    -   md: filter-examples/multicode_tabs.md
+    -   md: filters/multicode_tabs.md
         category: Filters
         parent: filters.html
         targets:
@@ -163,7 +169,7 @@ pages:
         filters:
             - multicode_tabs
 
-    -   md: filter-examples/external_links.md
+    -   md: filters/external_links.md
         targets:
             - everything
             - filterdemos
@@ -177,7 +183,7 @@ pages:
         targets:
             - everything
 
-    -   md: extending/extend-templates.md
+    -   md: extending/templates.md
         category: Extending
         parent: extending-index.html
         targets:
