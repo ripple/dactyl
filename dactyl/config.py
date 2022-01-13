@@ -35,7 +35,6 @@ class DactylConfig:
         else:
             logger.debug("No config file specified, trying ./dactyl-config.yml")
             self.load_config_from_file(DEFAULT_CONFIG_FILE)
-        self.check_consistency()
         self.load_filters()
 
         self.page_cache = []
@@ -53,6 +52,8 @@ class DactylConfig:
         try:
             with open(config_file, "r", encoding="utf-8") as f:
                 loaded_config = yaml.load(f)
+            if loaded_config is None:
+                loaded_config = {}
         except FileNotFoundError as e:
             if config_file == DEFAULT_CONFIG_FILE:
                 logger.info("Couldn't read a config file; using generic config")
@@ -75,6 +76,12 @@ class DactylConfig:
                 logger.warning("Deprecation warning: Global field pdf_template has "
                               +"been renamed default_pdf_template")
 
+        if "flatten_default_html_paths" in loaded_config:
+            if loaded_config["flatten_default_html_paths"] == True:
+                loaded_config["default_html_names"] = "flatten"
+            else:
+                loaded_config["default_html_names"] = "path"
+
         self.config.update(loaded_config)
 
     def check_consistency(self):
@@ -96,7 +103,7 @@ class DactylConfig:
 
         # Check page list for consistency
         for page in self.config["pages"]:
-            if "targets" not in page:
+            if "targets" not in page: #CURSOR
                 if "name" in page:
                     logger.warning("Page %s is not part of any targets." %
                                  page["name"])
@@ -131,6 +138,11 @@ class DactylConfig:
             else:
                 # OpenAPI specs are too much work to load at this time
                 self.page_cache.append(OPENAPI_SPEC_PLACEHOLDER)
+
+        # Check consistency here instead of earlier so that we have frontmatter
+        # from pages first. (Otherwise, we raise false alarms about pages not
+        # being part of any target.)
+        self.check_consistency()
 
     def load_filters(self):
         # Figure out which filters we need

@@ -2,14 +2,14 @@
 
 Intelligent cross-references are a feature designed to be a link when they can be, and text directing people to a different target (guide) if not. Here's some examples for testing:
 
-[This should link to the callouts demo page.](XREF: filter-examples-callouts.html)
+{#[This should link to the callouts demo page.](XREF: callouts.html)#}
 
 You can link by HTML filename: [ ](XREF: lists-and-codeblocks.html)
 
 Or by MD filename: [](XREF:lists-and-codeblocks.md)
 
 If the MD filename is ambiguous, you can specify the full path:
-[](xref: filter-examples/xrefs.md)
+[](xref: filters/xrefs.md)
 
 For an example of an inline cross reference, see [](xref:gfm-compat.html).
 

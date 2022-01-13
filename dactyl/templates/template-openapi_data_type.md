@@ -45,7 +45,7 @@
 {% endif -%}
 {% if example is defined %}- **Example:**
 
-        {{example|indent(8,indentfirst=False)}}
+        {{example|indent(8,first=False)}}
 
 {% endif -%}
 
@@ -54,8 +54,9 @@ This type can contain the following fields:
 
 | Field | Type | Required? | Description |
 |-------|------|-----------|-------------|
+{%- set required_fields = required if required is defined else [] -%}
 {%- for name,field in properties.items() %}
-| `{{name}}` | {{field.type|title}}{% if "items" in field.keys() and "title" in field["items"].keys() %} of [{{field["items"].title}}]({{type_link(field["items"].title)}}){% endif %} {% if field["title"] is defined %}([{{field.title}}]({{type_link(field.title)}})){% endif %} | {{"Required" if field.required else "Optional"}} | {{field.description}} |
+| `{{name}}` | {{field.type|title}}{% if "items" in field.keys() and "title" in field["items"].keys() %} of [{{field["items"].title}}]({{type_link(field["items"].title)}}){% endif %} {% if field["title"] is defined %}([{{field.title}}]({{type_link(field.title)}})){% endif %} | {{"Required" if name in required_fields else "Optional"}} | {{field.description}} |
 {%- endfor %}
 
 {% if additionalProperties is defined and additionalProperties == True %}This type MUST NOT contain any additional fields.{% endif %}

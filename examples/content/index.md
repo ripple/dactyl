@@ -20,10 +20,3 @@ virtualenv -p `which python3` venv_dactyl
 source venv_dactyl/bin/activate
 pip3 install dactyl
 ```
-
-
-## Documentation
-
-Dactyl's documentation is built from this repository's [examples/](examples/) section. You can see the finished version at:
-
-> <https://dactyl.link>

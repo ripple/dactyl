@@ -1,6 +1,7 @@
 ---
-html: link-checking.html
-parent: features.html
+parent: usage.html
+targets:
+  - everything
 ---
 # Link Checking
 

@@ -1,18 +1,15 @@
 # {{summary}}
 
+```
+{{method|upper}} {{path}}
+```
+
 {{description}}
 
 ## Request Format
 
-```
-{{method|upper}} {{path}}
-{%- if method in ["post","put","delete"] and requestBody is defined %}
-
-{{ x_example_request_body }}
-{% endif %}
-```
-
 {% if path_params|length %}
+#### Path Parameters
 This API method uses the following path parameters:
 
 | Field | Value | Required? | Description |
@@ -24,6 +21,7 @@ This API method uses the following path parameters:
 {% endif %}
 
 {% if query_params|length %}
+#### Query Parameters
 This API method uses the following query parameters:
 
 | Field | Value | Required? | Description |
@@ -35,11 +33,28 @@ This API method uses the following query parameters:
 {% endif %}
 
 {% if requestBody is defined %}
+### Request Body
 {{requestBody.description}}
 
 {% if requestBody.content is defined %}
 
 {% for mediatype,thisbody in requestBody.content.items() %}
+{% if thisbody.examples is defined and thisbody.examples|length > 0 %}
+
+<!-- MULTICODE_BLOCK_START -->
+
+{% for body_name,body_sample in thisbody.examples.items() %}
+_{{body_name}}_
+
+```{%if mediatype == "application/json"%}json{%endif%}
+{{json_pp(body_sample)}}
+```
+{% endfor %}
+
+<!-- MULTICODE_BLOCK_END -->
+
+{% endif %}
+
 {% if thisbody.schema is defined %}
 **Media type:** {{mediatype|replace("*","\*")}}
 
@@ -51,8 +66,9 @@ The request uses the following fields:
 
 | Field | Type | Required? | Description |
 |-------|------|-----------|-------------|
+{%- set required_fields = thisbody.schema.required if thisbody.schema.required is defined else [] -%}
 {%- for name,field in thisbody.schema.properties.items() %}
-| `{{name}}` | {{field.type|title}}{% if "items" in field.keys() and "title" in field["items"].keys() %} of [{{field["items"].title}}]({{type_link(field["items"].title)}}){% endif %} {% if field["title"] is defined %}([{{field.title}}]({{type_link(field.title)}})){% endif %} | {{"Required" if field.required else "May be omitted"}} | {% if field.description is defined %}{{field.description}}{% endif %} |
+| `{{name}}` | {{field.type|title}}{% if "items" in field.keys() and "title" in field["items"].keys() %} of [{{field["items"].title}}]({{type_link(field["items"].title)}}){% endif %} {% if field["title"] is defined %}([{{field.title}}]({{type_link(field.title)}})){% endif %} | {{"Required" if name in required_fields else "Optional"}} | {% if field.description is defined %}{{field.description}}{% endif %} |
 {%- endfor %}
 {% endif %}
 
@@ -81,21 +97,27 @@ The response uses the following fields:
 
 | Field | Type | Required? | Description |
 |-------|------|-----------|-------------|
+{%- set required_fields = thisbody.schema.required if thisbody.schema.required is defined else [] -%}
 {%- for name,field in thisbody.schema.properties.items() %}
-| `{{name}}` | {{field.type|title}}{% if "items" in field.keys() and "title" in field["items"].keys() %} of [{{field["items"].title}}]({{type_link(field["items"].title)}}){% endif %} {% if field["title"] is defined %}([{{field.title}}]({{type_link(field.title)}})){% endif %} | {{ "Required" if field.required else "May be omitted"}} | {% if field.description is defined %}{{field.description}}{% endif %} |
+| `{{name}}` | {{field.type|title}}{% if "items" in field.keys() and "title" in field["items"].keys() %} of [{{field["items"].title}}]({{type_link(field["items"].title)}}){% endif %} {% if field["title"] is defined %}([{{field.title}}]({{type_link(field.title)}})){% endif %} | {{ "Required" if name in required_fields else "Optional"}} | {% if field.description is defined %}{{field.description}}{% endif %} |
 {%- endfor %}
 {% endif %}{# TODO: handle allOf, etc. #}
 
 {% if thisbody.examples is defined and thisbody.examples|length > 0 %}
 #### Example Response(s)
 
-{% for body_name,body_sample in thisbody.examples %}
+<!-- MULTICODE_BLOCK_START -->
+
+{% for body_name,body_sample in thisbody.examples.items() %}
 _{{body_name}}_
 
-```
-{{body_sample|pprint}}
+```{%if mediatype == "application/json"%}json{%endif%}
+{{json_pp(body_sample)}}
 ```
 {% endfor %}
+
+<!-- MULTICODE_BLOCK_END -->
+
 {% endif %}
 
 {% endif %}

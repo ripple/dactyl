@@ -1,62 +1,46 @@
-# v0.14.5 Release Notes
+# v0.15.0 Release Notes
 
-This release fixes a bug with the OpenAPI spec parser that caused it to fail when used with Jinja 3.x. This same bug also caused some fields to show as "Optional" or "May be omitted" when they were required.
+This release improves OpenAPI spec parsing, adds a new formula for picking default filenames, overhauls Dactyl's own documentation, and fixes the following minor bugs:
 
-# v0.14.4 Release Notes
+- Fixes a bug that caused the default breadcrumbs template to throw an error when the page hierarchy wasn't as expected.
+- Fixes a bug where Dactyl would warn about pages not belonging to any targets if the targets those pages belonged to were defined in frontmatter instead of in the config file.
 
-This release fixes several bugs:
+## OpenAPI Spec Parsing
 
-- The link checker no longer crashes if an &lt;img&gt; element in the contents is missing the `src` attribute. The link checker writes a log message when it encounters an image like this but does not record it as a broken link. (In HTML5, CSS files can set the path of such images using a `content` rule.)
-- "Watch" mode now looks for changes to all files in the template and content directories, not just ones matching limited patterns.
-- When using "watch" mode with "only" mode, builds after the first one now build only the specified page instead of rebuilding all pages on any update.
+Fixes some bugs where fields were not shown as required in the tables for request bodies and response bodies. Fixes a few other typos in the default templates.
 
-Also, updated the example CSS's dependencies.
+The API endpoint template is now capable of displaying multiple example request bodies and request bodies. (Previously, if you specified multiple response bodies, it could cause Dactyl to fail when trying to build docs from the spec.) If the examples use JSON, the template also applies syntax highlighting by default. The examples are displayed in tabs if the [`multicode_tabs` filter](https://dactyl.link/multicode_tabs.html) is enabled.
 
-# v0.14.3 Release Notes
+A new function, `json_pp()` is available to custom OpenAPI spec templates. This function produces a pretty-printed version of a JSON input.
 
-This release adds compatibility with Jinja 3.x and includes two minor improvements to the style checker:
+## "Tail" HTML filename formula
 
-- No longer attempts to check inlined SVG elements. (This caused false reports of misspelled words when the SVG contained text elements without whitespace between them.)
-- Spelling file can now contain comments starting with `#`. (Only lines _starting_ with `#` are treated as comments.)
+Every HTML file Dactyl builds needs a unique filename to be written to. If you don't specify it in the page definition (example: `html: my-file.html`), Dactyl generates one for you. Previously, you had two options for how to generate filenames from Markdown files: to "flatten" or not. This release adds a new formula, "tail", and changes the config parameter to specify this.
 
 
-# v0.14.2 Release Notes
-
-This release fixes a couple bugs in the built-in templates when using virtual pages with a `prefix` value. It also changes to use the `prefix` value inherited at the page level so that individual pages can overwrite the value if necessary. (A 404 page, for example, might want to use a separate prefix since it may be used at different paths.)
-
-
-# v0.14.1 Release Notes
-
-This release removes a couple of debug statements that broke compatibility with Python 3.5. (Python 3.5 has reached end of life, but Dactyl still works with it for now if you use the right versions of its dependencies.)
-
-# v0.14.0 Release notes
-
-This release improves the built-in templates, improves the documentation in the examples, and introduces the concept of "Virtual Pages". Virtual pages are placeholders for links to external sites, which you can insert into the automatically-generated navigation with a stanza similar to a page built by Dactyl.
-
-To add a Virtual Page, add a page to your config with an `html` value containing `//`. For example,
+The new option looks like this (put it anywhere in your config file at the top level):
 
 ```yaml
--   name: Dactyl Homepage
-    blurb: Go to the online home of Dactyl.
-    html: https://dactyl.link/
-    parent: virtual-pages.html
-    targets:
-        - everything
+default_html_names: tail
+# Valid options are "tail", "path", or "flatten". The default is "flatten".
 ```
 
-Dactyl's built-in templates automatically add the page to generated navigation. Use the `parent` field to specify where in the hierarchy the virtual page should appear. The page also shows up as an item in the page lists for the preprocessor and templates so custom templates and pages can list it also.
 
-## Breaking Changes
+With this formula, the generated page names are based on the filename of the source Markdown file _only_. For example, if your input Markdown file was at `usage/editing.md`, the generated filename with each of the formulas would look like this:
 
-Most projects using Dactyl won't experience breaking changes from this release, but the following changes may potentially require action in certain circumstances:
+| Formula   | Generated HTML Name  |
+|:----------|:---------------------|
+| `flatten` | `usage-editing.html` |
+| `path`    | `usage/editing.html` |
+| `tail`    | `editing.html`       |
 
-- The `buttonize` filter now uses Bootstrap's `btn btn-primary` classes instead of adding a `button` class.
-- The built-in `tree-nav.html` template and its associated CSS have been significantly updated to fix bugs with deeper levels of navigation and to simplify the generated HTML.
-- The `children.html` template no longer omits blurbs beyond the top level by default.
+Some notes on the formulas:
 
-## Other Changes
+- **flatten**: The default. Use the full path to the md file, except it replaces `/` with `-` so all files end up in one output folder. This is convenient for viewing files locally or zipping them into one big folder.
+- **path**: Use the full path to the md file including folders. This results in the output having a folder structure that mirrors the input folder. This can make for prettier URLs, but requires you to handle absolute paths correctly in your templates and hyperlinks.
+- **tail**: Use just the filename, not the whole path. This can result in duplicates if you have files with the same name in different folders, for example if you have multiple docs named "overview.md". You should change the duplicates individually using `html` parameters in the page definitions, as needed.
 
-- The default PDF templates (`simple.html` and `pdf-cover.html`) better handle frontmatter and hierarchy fields.
-- The SCSS for the tree nav has been split into a separate file to make it easier to include in external projects.
-- Updated many of the examples including their URLs.
-- Fixed integration test for the style checker.
+
+### Backwards Compatibility
+
+The old `flatten_default_html_paths` config parameter is deprecated, but still accepted for backwards compatibility. If set to `true`, it uses the `flatten` formula. (This was and continues to be the default.) If set to `false`, it uses the `path` formula.
