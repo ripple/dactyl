@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html >
+<head>
+    <title>Usage - Dactyl: A Heroic Doc Tool</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width">
+
+    <!-- Blocking JS resources -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- Stylesheet -->
+    <link href="template_assets/dactyl.css" rel="stylesheet" />
+
+
+
+    <script>
+        $(document).ready(function() {
+            $(".multicode").minitabs();
+            make_code_expandable();
+        });
+    </script>
+
+</head>
+
+<body class="sidebar-both  " data-spy="scroll" data-target="#page-toc-wrapper" data-offset="0">
+<nav class="navbar fixed-top navbar-expand-lg navbar-light bg-white px-2">
+  <a href="/" class="navbar-brand"><h1>Dactyl: A Heroic Doc Tool</h1></a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHolder" aria-controls="navbarHolder" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse justify-content-end" id="navbarHolder">
+    <ul class="nav navbar-nav">
+          <li class="nav-item active">
+            <a class="nav-link" href="usage.html">Usage</a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="features.html">Features</a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="filters.html">Filters</a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
+          </li>
+    </ul><!-- /.navbar-nav -->
+
+
+
+  </div><!--/#navbarHolder-->
+</nav>
+  <div class="container-fluid" role="document" id="main_content_wrapper">
+    <div class="row">
+      <!-- Right sidebar first so it's at the beginning for mobile layouts -->
+      <aside class="right-sidebar col-lg-3 order-lg-4" role="complementary">
+<div class="card" id="page-toc-wrapper">
+  <div class="card-header">
+    <h4>In this page:</h4>
+  </div>
+  <ul id="page-toc" class="list-group card-body" role="directory">
+    <li class="level-1"><a class="nav-link" href="#usage">Usage</a></li>
+    <li class="level-2"><a class="nav-link" href="#ad-hoc-usage">Ad-Hoc Usage</a></li>
+    <li class="level-3"><a class="nav-link" href="#building-pdf">Building PDF</a></li>
+    <li class="level-2"><a class="nav-link" href="#specifying-a-config-file">Specifying a Config File</a></li>
+    <li class="level-2"><a class="nav-link" href="#specifying-a-target">Specifying a Target</a></li>
+    <li class="level-2"><a class="nav-link" href="#static-files">Static Files</a></li>
+    <li class="level-2"><a class="nav-link" href="#listing-available-targets">Listing Available Targets</a></li>
+    <li class="level-2"><a class="nav-link" href="#building-markdown">Building Markdown</a></li>
+    <li class="level-2"><a class="nav-link" href="#building-only-one-page">Building Only One Page</a></li>
+    <li class="level-2"><a class="nav-link" href="#watch-mode">Watch Mode</a></li>
+  </ul>
+</div>      </aside>
+
+      <!-- main column -->
+      <main class="main col-md-7 col-lg-6 order-md-3  " role="main" id="main_content_body">
+<nav class="breadcrumbs-wrap p-0 p-md-3" aria-label="breadcrumb">
+  <ul class="breadcrumb">
+    
+
+    <li class="active breadcrumb-item"><a href="index.html">Index</a></li>
+    <li class="active breadcrumb-item">Usage</li>
+  </ul>
+</nav><!--/.breadcrumbs-wrap-->            <section class="pt-3 p-md-3">
+              <article class="dactyl-content">
+                <h1 id="usage">Usage<a aria-hidden="true" class="hover_anchor" href="#usage">¶</a></h1>
+<p>Dactyl is intended to be used with a config file (typically <code>dactyl-config.yml</code>) that specifies a full list of files to build with necessary metadata and other config. So, if you've got this set up, you can run Dactyl like this:</p>
+<div class="codehilite"><pre><span></span><code>dactyl_build
+</code></pre></div>
+<p>By default, this outputs HTML. You can also build a PDF or even <a href="#building-markdown">Markdown</a>. For a full list of Dactyl's commandline options, use the <code>-h</code> parameter.</p>
+<h2 id="ad-hoc-usage">Ad-Hoc Usage<a aria-hidden="true" class="hover_anchor" href="#ad-hoc-usage">¶</a></h2>
+<p>Simple ("Ad-Hoc") usage:</p>
+<div class="codehilite"><pre><span></span><code>$ dactyl_build --pages input1.md input2.md
+</code></pre></div>
+<p>By default, the resulting HTML pages are written to a folder called <code>out/</code> in the current working directory. You can specify a different output path in the config file or by using the <code>-o</code> parameter.</p>
+<h3 id="building-pdf">Building PDF<a aria-hidden="true" class="hover_anchor" href="#building-pdf">¶</a></h3>
+<p>Dactyl generates PDFs by making temporary HTML files and running <a href="http://www.princexml.com/">Prince</a>. Use the <code>--pdf</code> command to generate a PDF. Dactyl tries to come up with a sensible output filename by default, or you can provide one (which must end in <code>.pdf</code>):</p>
+<div class="codehilite"><pre><span></span><code>$ dactyl_build --pages input1.md input2.md --pdf MyGuide.pdf
+</code></pre></div>
+<h2 id="specifying-a-config-file">Specifying a Config File<a aria-hidden="true" class="hover_anchor" href="#specifying-a-config-file">¶</a></h2>
+<p>By default, Dactyl looks for a config file named <code>dactyl-config.yml</code> in the current working directory. You can specify an alternate config file with the <code>-c</code> or <code>--config</code> parameter:</p>
+<div class="codehilite"><pre><span></span><code>$ dactyl_build -c path/to/alt-config.yml
+</code></pre></div>
+<p>For more information on configuration, see the <code>default-config.yml</code> and the <a href="examples/">examples</a> folder.</p>
+<h2 id="specifying-a-target">Specifying a Target<a aria-hidden="true" class="hover_anchor" href="#specifying-a-target">¶</a></h2>
+<p>If your config file contains more than one <strong>target</strong>, Dactyl builds the first one by default. You can specify a different target by passing its <code>name</code> value with the <code>-t</code> parameter:</p>
+<div class="codehilite"><pre><span></span><code>$ dactyl_build -t non-default-target
+</code></pre></div>
+<h2 id="static-files">Static Files<a aria-hidden="true" class="hover_anchor" href="#static-files">¶</a></h2>
+<p>Your templates may require certain static files (such as JavaScript, CSS, and images) to display properly. Your content may have its own static files (such as diagrams and figures). By default, Dactyl assumes that templates have static files in the <code>assets/</code> folder. You can configure this path and also specify one or more paths to static files referenced by your content. When you build, Dactyl copies files from these folders to the output folder by default depending on which mode you're building:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Build Mode</th>
+<th align="left">Files copied to output folder by default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">HTML</td>
+<td align="left">Both template and content static files</td>
+</tr>
+<tr>
+<td align="left">PDF</td>
+<td align="left">Neither template nor content static files (cannot be overridden)</td>
+</tr>
+<tr>
+<td align="left">Markdown</td>
+<td align="left">Content static files only</td>
+</tr>
+<tr>
+<td align="left">ElasticSearch JSON</td>
+<td align="left">Neither template nor content static files</td>
+</tr>
+</tbody>
+</table>
+<p>You can use a commandline flag to explicitly specify what gets copied to the output folder, except in the case of PDF. (In PDF mode, Dactyl writes only the final PDF to the output folder.) The flags are as follows:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Flag (long version)</th>
+<th align="left">Short version</th>
+<th align="left">Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>--copy_static</code></td>
+<td align="left"><code>-s</code></td>
+<td align="left">Copy all static files to the out dir.</td>
+</tr>
+<tr>
+<td align="left"><code>--no_static</code></td>
+<td align="left"><code>-S</code></td>
+<td align="left">Don't copy any static files to the out dir.</td>
+</tr>
+<tr>
+<td align="left"><code>--template_static</code></td>
+<td align="left"><code>-T</code></td>
+<td align="left">Copy only templates' static files to the out dir</td>
+</tr>
+<tr>
+<td align="left"><code>--content_static</code></td>
+<td align="left"><code>-C</code></td>
+<td align="left">Copy only the content's static files to the out dir</td>
+</tr>
+</tbody>
+</table>
+<p>The following config file parameters control what paths Dactyl checks for static content:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>template_static_path</code></td>
+<td><code>assets/</code></td>
+<td>Static files belonging to the templates.</td>
+</tr>
+<tr>
+<td><code>content_static_path</code></td>
+<td>(None)</td>
+<td>Static files belonging to content. This can be a single folder path, as a string, or an array of paths to files or folders. Dactyl copies all files and folders (regardless of whether the current target uses them).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="listing-available-targets">Listing Available Targets<a aria-hidden="true" class="hover_anchor" href="#listing-available-targets">¶</a></h2>
+<p>If you have a lot of targets, it can be hard to remember what the short names for each are. If you provide the <code>-l</code> flag, Dactyl will list available targets and then quit without doing anything:</p>
+<div class="codehilite"><pre><span></span><code>$ dactyl_build -l
+tests        Dactyl Test Suite
+rc-install        Ripple Connect v2.6.3 Installation Guide
+rc-release-notes        
+kc-rt-faq        Ripple Trade Migration FAQ
+</code></pre></div>
+<h2 id="building-markdown">Building Markdown<a aria-hidden="true" class="hover_anchor" href="#building-markdown">¶</a></h2>
+<p>This mode runs the pre-processor only, so you can generate Markdown files that are more likely to display properly in conventional Markdown parsers (like the one built into GitHub). Use the <code>--md</code> flag to output Markdown files, skipping the HTML/PDF templates entirely.</p>
+<div class="codehilite"><pre><span></span><code>$ dactyl_build --md
+</code></pre></div>
+<h2 id="building-only-one-page">Building Only One Page<a aria-hidden="true" class="hover_anchor" href="#building-only-one-page">¶</a></h2>
+<p>If you only want to build a single page, you can use the <code>--only</code> flag, followed by the filename you want to build (either the input filename ending in <code>.md</code> or the output filename ending in <code>.html</code>):</p>
+<div class="codehilite"><pre><span></span><code>dactyl_build --only index.html --pdf
+</code></pre></div>
+<p>This command can be combined with the <code>--pdf</code> or <code>--md</code> flags. You can also use it with the <code>--target</code> setting (in case you want the context from the target even though you're only building one page.)</p>
+<h2 id="watch-mode">Watch Mode<a aria-hidden="true" class="hover_anchor" href="#watch-mode">¶</a></h2>
+<p>You can use the <code>-w</code> flag to make Dactyl run continuously, watching for changes to its input templates or markdown files. Whenever it detects that a file has changed, Dactyl automatically rebuilds the output in whatever the current mode is, (HTML, PDF, or Markdown).</p>
+<p>To be detected as a change, the file has to match one of the following patterns:</p>
+<div class="codehilite"><pre><span></span><code>*.md
+*/code_samples/*
+template-*.html
+</code></pre></div>
+<p>Beware: some configurations can lead to an infinite loop. (For example, if your output directory is a subdirectory of your content directory and you use Dactyl in <code>--md</code> mode.)</p>
+<p><strong>Limitations:</strong> Watch mode can be combined with <code>--only</code>, but re-builds the page even when it detects changes to unrelated pages. Watch mode doesn't detect changes to the config file, static files, or filters.</p>
+<p>To stop watching, interrupt the Dactyl process (Ctrl-C in most terminals).</p>
+              </article>
+            </section>
+      </main>
+      <!-- Left sidebar last so it's at the end for mobile -->
+      <aside class="sidebar col-md-5 col-lg-3 order-md-1" role="complementary">
+
+
+<nav class="nav flex-column dactyl-tree-nav">
+  <div class="nav-item nav-parent">
+    <a class="nav-link" href="index.html">Index</a>
+  </div>
+    
+  <div class="nav-item active">
+
+
+      <a class="nav-toggler " role="button" data-toggle="collapse" href="#tree_nav_group_1" aria-expanded="true" aria-controls="tree_nav_group_1"></a>
+    <a class="nav-link" href="usage.html">Usage</a>
+
+    <nav class="nav flex-column show " id="tree_nav_group_1">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="config.html">Configuration</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="link-checking.html">Link Checking</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="style-checking.html">Style Checking</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="elasticsearch.html">ElasticSearch Compatibility</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="openapi.html">OpenAPI Specifications</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2" aria-expanded="false" aria-controls="tree_nav_group_2"></a>
+    <a class="nav-link" href="features.html">Features</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_2">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="code-highlighting.html">Code Highlighting</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="includes.html">Includes</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="frontmatter.html">Frontmatter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="cli-vars.html">Commandline Variables</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="conditionals.html">Conditionals</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="gfm-compat.html">GitHub Markdown Compatibility</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="header_stress_test.html">Header Stress Test</a>
+  </div>
+
+      
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2_9" aria-expanded="false" aria-controls="tree_nav_group_2_9"></a>
+    <a class="nav-link" href="virtual-pages.html">Virtual Pages</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_2_9">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/#">Dactyl Homepage</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/">Virtual Placeholder</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_3" aria-expanded="false" aria-controls="tree_nav_group_3"></a>
+    <a class="nav-link" href="filters.html">Filters</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_3">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="callouts.html">Callouts Demonstration</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="xrefs.html">Intelligent Cross-References</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="buttonize.html">Buttonize Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="badges.html">Badges</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="multicode_tabs.html">Multi Code-Tabs Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="external_links.html">External Links</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_4" aria-expanded="false" aria-controls="tree_nav_group_4"></a>
+    <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_4">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="templates.html">Templates</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="hierarchy.html">Hierarchy Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots.html">Custom Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots2.html">Custom Filter 2</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="include_code.html">Code Includer</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="debug.html">Debug</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+</nav>      </aside>
+    </div><!--/.row (main layout)-->
+  </div>
+
+<footer class="dactyl-footer px-2" role="contentinfo">
+
+  <section class="container-fluid p-5 pl-sm-0">
+
+
+    <div class="absolute_bottom_footer">
+    </div><!-- /.absolute_bottom_footer -->
+
+  </section>
+</footer>
+
+<!-- Jump to top button -->
+<a href="#main_content_wrapper" class="jump-to-top btn btn-primary btn-lg" role="button" title="Return to top of page">Top</a>
+<!-- Non-blocking resources -->
+<!-- Bootstrap JS -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+<!-- Dactyl JS -->
+<script src="https://dactyl.link/template_assets/dactyl.js"></script>
+<!-- fontawesome icons -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+
+</body>
+</html>

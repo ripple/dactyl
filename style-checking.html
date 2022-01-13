@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html >
+<head>
+    <title>Style Checking - Dactyl: A Heroic Doc Tool</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width">
+
+    <!-- Blocking JS resources -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- Stylesheet -->
+    <link href="template_assets/dactyl.css" rel="stylesheet" />
+
+
+
+    <script>
+        $(document).ready(function() {
+            $(".multicode").minitabs();
+            make_code_expandable();
+        });
+    </script>
+
+</head>
+
+<body class="sidebar-both  " data-spy="scroll" data-target="#page-toc-wrapper" data-offset="0">
+<nav class="navbar fixed-top navbar-expand-lg navbar-light bg-white px-2">
+  <a href="/" class="navbar-brand"><h1>Dactyl: A Heroic Doc Tool</h1></a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHolder" aria-controls="navbarHolder" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse justify-content-end" id="navbarHolder">
+    <ul class="nav navbar-nav">
+          <li class="nav-item active-parent">
+            <a class="nav-link" href="usage.html">Usage</a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="features.html">Features</a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="filters.html">Filters</a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
+          </li>
+    </ul><!-- /.navbar-nav -->
+
+
+
+  </div><!--/#navbarHolder-->
+</nav>
+  <div class="container-fluid" role="document" id="main_content_wrapper">
+    <div class="row">
+      <!-- Right sidebar first so it's at the beginning for mobile layouts -->
+      <aside class="right-sidebar col-lg-3 order-lg-4" role="complementary">
+<div class="card" id="page-toc-wrapper">
+  <div class="card-header">
+    <h4>In this page:</h4>
+  </div>
+  <ul id="page-toc" class="list-group card-body" role="directory">
+    <li class="level-1"><a class="nav-link" href="#style-checking">Style Checking</a></li>
+    <li class="level-2"><a class="nav-link" href="#discouraged-words-and-phrases">Discouraged Words and Phrases</a></li>
+    <li class="level-2"><a class="nav-link" href="#spell-checking">Spell Checking</a></li>
+    <li class="level-2"><a class="nav-link" href="#length-metrics">Length Metrics</a></li>
+    <li class="level-2"><a class="nav-link" href="#readability-scores">Readability Scores</a></li>
+    <li class="level-3"><a class="nav-link" href="#readability-goals">Readability Goals</a></li>
+  </ul>
+</div>      </aside>
+
+      <!-- main column -->
+      <main class="main col-md-7 col-lg-6 order-md-3  " role="main" id="main_content_body">
+<nav class="breadcrumbs-wrap p-0 p-md-3" aria-label="breadcrumb">
+  <ul class="breadcrumb">
+    
+
+    <li class="active breadcrumb-item"><a href="index.html">Index</a></li>
+    <li class="active breadcrumb-item"><a href="usage.html">Usage</a></li>
+    <li class="active breadcrumb-item">Style Checking</li>
+  </ul>
+</nav><!--/.breadcrumbs-wrap-->            <section class="pt-3 p-md-3">
+              <article class="dactyl-content">
+                <h1 id="style-checking">Style Checking<a aria-hidden="true" class="hover_anchor" href="#style-checking">¶</a></h1>
+<p>The style checker is experimental. It is only suitable for English text. It reports several details about document contents that may be helpful for identifying documents whose readability you could improve. These details are:</p>
+<ul>
+<li>Discouraged words and phrases.</li>
+<li>Page length details.</li>
+<li>Readability scores.</li>
+<li>Spell-checking.</li>
+</ul>
+<p>Example usage:</p>
+<div class="codehilite"><pre><span></span><code>$ dactyl_style_checker
+</code></pre></div>
+<p>The style checker re-generates contents in-memory (never writing it out), unlike the link checker which requires you to run <code>dactyl_build</code> first. It only checks contents that come from Markdown, not from HTML templates.</p>
+<p>The style checker uses the first target in the config file unless you specify another target with <code>-t</code>. You can check just one file by passing its HTML path in the <code>--only</code> parameter.</p>
+<p>The exit code of the command is 0 (success) if it found no discouraged words, the spell checker found no unknown words, and no pages failed their configured readability goals. Otherwise, the exit code of the command is 1 (failure).</p>
+<h2 id="discouraged-words-and-phrases">Discouraged Words and Phrases<a aria-hidden="true" class="hover_anchor" href="#discouraged-words-and-phrases">¶</a></h2>
+<p>You can suggest specific words or phrases to discourage. The style checker checks for instances of these words and phrases in documents' content, and suggests alternatives based on the phrase file. Dactyl does not check text in <code>&lt;code&gt;</code>, <code>&lt;pre&gt;</code>, and <code>&lt;tt&gt;</code> elements since those are intended to be code samples.</p>
+<p>To configure lists of discouraged words and phrases, add the following config options:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Field</th>
+<th align="left">Value</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>word_substitutions_file</code></td>
+<td align="left">String</td>
+<td align="left">The path to a YAML file with a single top-level map. The keys are the words to discourage and the values are suggestions of words to replace them with.</td>
+</tr>
+<tr>
+<td align="left"><code>phrase_substitutions_file</code></td>
+<td align="left">String</td>
+<td align="left">The path to a YAML file with a single top-level map. The keys are phrases to discourage and the values are suggestions of phrases to replace them with.</td>
+</tr>
+</tbody>
+</table>
+<p>You can add an exemption to a specific discouraged word/phrase rule with an HTML comment. The exemption applies to the whole output (HTML) file in which it appears.</p>
+<div class="codehilite"><pre><span></span><code>Maybe the word "will" is a discouraged word, but you really want to use it here without flagging it as a violation? Adding a comment like this <span class="c">&lt;!-- STYLE_OVERRIDE: will --&gt;</span> makes it so.
+</code></pre></div>
+<h2 id="spell-checking">Spell Checking<a aria-hidden="true" class="hover_anchor" href="#spell-checking">¶</a></h2>
+<p>Dactyl uses <a href="https://pyspellchecker.readthedocs.io/en/latest/">pyspellchecker</a> to report possible spelling errors and suggest corrections. The built-in dictionary is not very thorough; you can extend it by providing a dictionary file with more words. Spell checking is case-insensitive.</p>
+<p>If you want the spell checker to skip a page, put <code>skip_spell_checker: true</code> in the page definition.</p>
+<p>If you want to ignore one or more words on a single page only, add a comment such as the following anywhere in the page:</p>
+<div class="codehilite"><pre><span></span><code><span class="c">&lt;!-- IGNORE_SPELLING: affectednodes, creatednode, deletednode, modifiednode --&gt;</span>
+</code></pre></div>
+<p>To extend the built-in dictionary used for all files, add the following field to the config. (You cannot remove words from the built-in dictionary.)</p>
+<table>
+<thead>
+<tr>
+<th align="left">Field</th>
+<th align="left">Value</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>spelling_file</code></td>
+<td align="left">String</td>
+<td align="left">Path to a text file with words to add to the dictionary. Each line of the file should contain a single word (case-insensitive).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="length-metrics">Length Metrics<a aria-hidden="true" class="hover_anchor" href="#length-metrics">¶</a></h2>
+<p>Dactyl reports the number of characters of text, number of sentences, and number of words in each document. These counts only include text contents (the parts generated from Markdown). They do not include code samples (not even inlined code words), or images/figures. The sentence counts are estimates. Headings, list items, and table cells each count as one sentence in these metrics. The summary includes the averages across all pages, and the stats for the three longest and shortest pages.</p>
+<p>These metrics are intended to be helpful for choosing documents that would be better off combined or split up. They can also be useful for interpreting readability scores, which tend to be less reliable for very short documents.</p>
+<h2 id="readability-scores">Readability Scores<a aria-hidden="true" class="hover_anchor" href="#readability-scores">¶</a></h2>
+<p>The style checker reports readability scores based on several formulas implemented in the <a href="https://github.com/shivam5992/textstat">textstat library</a>. These can help you identify documents with a high proportion of big words and long sentences.</p>
+<blockquote>
+<p><strong>Caution:</strong> Readability formulas are not very smart. Trying to get a high readability score can actually decrease the clarity of your writing if you aren't mindful of other factors. Things readability formulas usually don't take into account include: brevity; complexity of the high-level structure; logical connections such as cause and effect; and precise use of language. They tend to score tables and bulleted lists badly even though those structure are very helpful for actual readability.</p>
+</blockquote>
+<p>By default, Dactyl prints the readability scores for each page as it analyzes them. The <code>-q</code> option hides this output. The summary at the end lists the average scores for all pages analyzed and the three pages with the worst Flesch Reading Ease scores.</p>
+<h3 id="readability-goals">Readability Goals<a aria-hidden="true" class="hover_anchor" href="#readability-goals">¶</a></h3>
+<p>You can set readability goals for individual pages or an entire target by adding the <code>readability_goals</code> field. This field should contain a map of readability metrics to target scores. Goals defined for individual pages override goals set for the entire target. Dactyl compares a page's readability scores to any goals set and reports a list of pages that failed their goals in the summary. The goal passes if the page's score is equal better (easier to read) than the stated goal value, and fails otherwise. For Flesch Reading Ease, higher scores represent better readability; for the other tests, <em>lower</em> scores represent better readability.</p>
+<p><strong>Note:</strong> Since very short pages tend to have inconsistent and unreliable readability scores, Dactyl does not calculate readability scores for pages with fewer than 10 "sentences". (Bullet points, headings, and table cells each count as separate "sentences" for this purpose.)</p>
+<p>Example configuration:</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">targets</span><span class="p">:</span>
+
+  <span class="p p-Indicator">-</span> <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">my-target</span>
+    <span class="nt">display_name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Example Target</span>
+    <span class="nt">readability_goals</span><span class="p">:</span>
+        <span class="nt">flesch_reading_ease</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">50</span>
+        <span class="nt">automated_readability_index</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">12</span>
+</code></pre></div>
+<p>The available readability tests are:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Field Name</th>
+<th align="left">Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>flesch_reading_ease</code></td>
+<td align="left"><a href="https://en.wikipedia.org/wiki/Flesch%E2%80%93Kincaid_readability_tests#Flesch_reading_ease">Flesch reading ease</a>. Maximum score 121.22; no limit on how negative the score can be.</td>
+</tr>
+<tr>
+<td align="left"><code>smog_index</code></td>
+<td align="left"><a href="https://en.wikipedia.org/wiki/SMOG">SMOG grade</a>. Gives an estimated grade level.</td>
+</tr>
+<tr>
+<td align="left"><code>coleman_liau_index</code></td>
+<td align="left"><a href="https://en.wikipedia.org/wiki/Coleman%E2%80%93Liau_index">Coleman-Liau index</a>. Gives an estimated grade level.</td>
+</tr>
+<tr>
+<td align="left"><code>automated_readability_index</code></td>
+<td align="left"><a href="https://en.wikipedia.org/wiki/Automated_readability_index">Automated readability index</a>. Gives an estimated grade level.</td>
+</tr>
+<tr>
+<td align="left"><code>dale_chall_readability_score</code></td>
+<td align="left"><a href="https://en.wikipedia.org/wiki/Dale%E2%80%93Chall_readability_formula">Dale-Chall readability formula</a>. Decimal representing difficulty; lower values map to lower grade levels.</td>
+</tr>
+<tr>
+<td align="left"><code>linsear_write_formula</code></td>
+<td align="left"><a href="https://en.wikipedia.org/wiki/Linsear_Write">Linsear Write formula</a>. Gives an estimated grade level.</td>
+</tr>
+<tr>
+<td align="left"><code>gunning_fog</code></td>
+<td align="left"><a href="https://en.wikipedia.org/wiki/Gunning_fog_index">Gunning fog index</a>. Gives an estimated grade level.</td>
+</tr>
+</tbody>
+</table>
+<p>Estimated grade levels are based on the United States school system and are given as decimal approximations. For example, <code>11.5</code> represents somewhere between 11th and 12th grade (high school junior to senior).</p>
+              </article>
+            </section>
+      </main>
+      <!-- Left sidebar last so it's at the end for mobile -->
+      <aside class="sidebar col-md-5 col-lg-3 order-md-1" role="complementary">
+
+
+<nav class="nav flex-column dactyl-tree-nav">
+  <div class="nav-item nav-parent">
+    <a class="nav-link" href="index.html">Index</a>
+  </div>
+    
+  <div class="nav-item active-parent">
+
+
+      <a class="nav-toggler " role="button" data-toggle="collapse" href="#tree_nav_group_1" aria-expanded="true" aria-controls="tree_nav_group_1"></a>
+    <a class="nav-link" href="usage.html">Usage</a>
+
+    <nav class="nav flex-column show " id="tree_nav_group_1">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="config.html">Configuration</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="link-checking.html">Link Checking</a>
+  </div>
+
+      
+  <div class="nav-item active">
+    <a class="nav-link nav-leaf" href="style-checking.html">Style Checking</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="elasticsearch.html">ElasticSearch Compatibility</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="openapi.html">OpenAPI Specifications</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2" aria-expanded="false" aria-controls="tree_nav_group_2"></a>
+    <a class="nav-link" href="features.html">Features</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_2">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="code-highlighting.html">Code Highlighting</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="includes.html">Includes</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="frontmatter.html">Frontmatter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="cli-vars.html">Commandline Variables</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="conditionals.html">Conditionals</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="gfm-compat.html">GitHub Markdown Compatibility</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="header_stress_test.html">Header Stress Test</a>
+  </div>
+
+      
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2_9" aria-expanded="false" aria-controls="tree_nav_group_2_9"></a>
+    <a class="nav-link" href="virtual-pages.html">Virtual Pages</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_2_9">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/#">Dactyl Homepage</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/">Virtual Placeholder</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_3" aria-expanded="false" aria-controls="tree_nav_group_3"></a>
+    <a class="nav-link" href="filters.html">Filters</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_3">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="callouts.html">Callouts Demonstration</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="xrefs.html">Intelligent Cross-References</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="buttonize.html">Buttonize Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="badges.html">Badges</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="multicode_tabs.html">Multi Code-Tabs Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="external_links.html">External Links</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_4" aria-expanded="false" aria-controls="tree_nav_group_4"></a>
+    <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_4">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="templates.html">Templates</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="hierarchy.html">Hierarchy Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots.html">Custom Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots2.html">Custom Filter 2</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="include_code.html">Code Includer</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="debug.html">Debug</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+</nav>      </aside>
+    </div><!--/.row (main layout)-->
+  </div>
+
+<footer class="dactyl-footer px-2" role="contentinfo">
+
+  <section class="container-fluid p-5 pl-sm-0">
+
+
+    <div class="absolute_bottom_footer">
+    </div><!-- /.absolute_bottom_footer -->
+
+  </section>
+</footer>
+
+<!-- Jump to top button -->
+<a href="#main_content_wrapper" class="jump-to-top btn btn-primary btn-lg" role="button" title="Return to top of page">Top</a>
+<!-- Non-blocking resources -->
+<!-- Bootstrap JS -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+<!-- Dactyl JS -->
+<script src="https://dactyl.link/template_assets/dactyl.js"></script>
+<!-- fontawesome icons -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+
+</body>
+</html>

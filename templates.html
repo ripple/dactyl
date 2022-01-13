@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html >
+<head>
+    <title>Templates - Dactyl: A Heroic Doc Tool</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width">
+
+    <!-- Blocking JS resources -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- Stylesheet -->
+    <link href="template_assets/dactyl.css" rel="stylesheet" />
+
+
+
+    <script>
+        $(document).ready(function() {
+            $(".multicode").minitabs();
+            make_code_expandable();
+        });
+    </script>
+
+</head>
+
+<body class="sidebar-both  " data-spy="scroll" data-target="#page-toc-wrapper" data-offset="0">
+<nav class="navbar fixed-top navbar-expand-lg navbar-light bg-white px-2">
+  <a href="/" class="navbar-brand"><h1>Dactyl: A Heroic Doc Tool</h1></a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHolder" aria-controls="navbarHolder" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse justify-content-end" id="navbarHolder">
+    <ul class="nav navbar-nav">
+          <li class="nav-item ">
+            <a class="nav-link" href="usage.html">Usage</a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="features.html">Features</a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="filters.html">Filters</a>
+          </li>
+          <li class="nav-item active-parent">
+            <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
+          </li>
+    </ul><!-- /.navbar-nav -->
+
+
+
+  </div><!--/#navbarHolder-->
+</nav>
+  <div class="container-fluid" role="document" id="main_content_wrapper">
+    <div class="row">
+      <!-- Right sidebar first so it's at the beginning for mobile layouts -->
+      <aside class="right-sidebar col-lg-3 order-lg-4" role="complementary">
+
+<div id="use-case-related">
+  <h4>Related Pages</h4>
+  <ul>
+      <li><a href="frontmatter.html">Frontmatter</a></li>
+      <li><a href="code-highlighting.html">Code Highlighting</a></li>
+  </ul>
+  <hr />
+<div class="card" id="page-toc-wrapper">
+  <div class="card-header">
+    <h4>In this page:</h4>
+  </div>
+  <ul id="page-toc" class="list-group card-body" role="directory">
+    <li class="level-1"><a class="nav-link" href="#templates">Templates</a></li>
+    <li class="level-2"><a class="nav-link" href="#built-in-templates">Built-In Templates</a></li>
+    <li class="level-3"><a class="nav-link" href="#page-templates">Page Templates</a></li>
+    <li class="level-3"><a class="nav-link" href="#module-templates">Module Templates</a></li>
+    <li class="level-4"><a class="nav-link" href="#children-module">Children Module</a></li>
+    <li class="level-4"><a class="nav-link" href="#tree-nav-module">Tree Nav Module</a></li>
+    <li class="level-2"><a class="nav-link" href="#template-data">Template Data</a></li>
+  </ul>
+</div></div>
+
+      </aside>
+
+      <!-- main column -->
+      <main class="main col-md-7 col-lg-6 order-md-3  " role="main" id="main_content_body">
+<nav class="breadcrumbs-wrap p-0 p-md-3" aria-label="breadcrumb">
+  <ul class="breadcrumb">
+    
+
+    <li class="active breadcrumb-item"><a href="index.html">Index</a></li>
+    <li class="active breadcrumb-item"><a href="extending-index.html">Extending Dactyl</a></li>
+    <li class="active breadcrumb-item">Templates</li>
+  </ul>
+</nav><!--/.breadcrumbs-wrap-->            <section class="pt-3 p-md-3">
+              <article class="dactyl-content">
+                <h1 id="templates">Templates<a aria-hidden="true" class="hover_anchor" href="#templates">¶</a></h1>
+<p>Dactyl provides built-in templates that are fairly full-featured, but you can also write your own, including ones that extent or repurpose parts of the built-in templates, and get updates automatically when Dactyl is updated. As an example, this page uses a custom template that addsa "related pages" module to the right-hand sidebar.</p>
+<h2 id="built-in-templates">Built-In Templates<a aria-hidden="true" class="hover_anchor" href="#built-in-templates">¶</a></h2>
+<p>Many of the built-in templates work better if you set certain fields on your target or page definitions. Here's a list of those fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>prefix</code></td>
+<td>The base path for this site. Use <code>/</code> for a site served from the top-level of its domain. Required for navigation if your site has subfolders or "pretty URLs".</td>
+</tr>
+<tr>
+<td><code>logo</code></td>
+<td>URL or path for a logo image to use in the top-left. If not defined, uses a text header instead.</td>
+</tr>
+<tr>
+<td><code>google_analytics_tag</code></td>
+<td>String tag to use with Google Analytics, e.g. "UA-00000000-0". If not defined, doesn't load Google Analytics.</td>
+</tr>
+<tr>
+<td><code>repository</code></td>
+<td>URL to this site's source repository on GitHub. Required for the "Edit on GitHub" button.</td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td>The fully-qualified URL for the base of the site. Required by the sitemap and Google Search templates.</td>
+</tr>
+<tr>
+<td><code>stylesheet</code></td>
+<td>URL or path to the default stylesheet. The default includes Bootstrap 4.5 as well as custom CSS for code tabs, callouts, and the page layout. See the <a href="./dactyl/styles/">styles dir</a> for the source SCSS. The default is served by dactyl.link.</td>
+</tr>
+<tr>
+<td><code>dactyljs</code></td>
+<td>URL or path to the Dactyl JavaScript file to use. This defines "jump to top" and code tab behavior. The default is served by dactyl.link.</td>
+</tr>
+<tr>
+<td><code>bootstrapjs</code></td>
+<td>URL or path to the Bootstrap JavaScript file to use. The default is served by BootstrapCDN.</td>
+</tr>
+<tr>
+<td><code>fontawesomecss</code></td>
+<td>URL or path to FontAwesome (v4) CSS file to use. The default is served by BootstrapCDN.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="page-templates">Page Templates<a aria-hidden="true" class="hover_anchor" href="#page-templates">¶</a></h3>
+<p>The following built-in templates represent <strong>full pages</strong>, so you can use them with the <code>default_template:</code> and <code>template:</code> settings in the config file or frontmatter. You can also derive your own templates from these templates using <code>{% extends 'template' %}</code> syntax.</p>
+<table>
+<thead>
+<tr>
+<th>Template</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>404.html</code></td>
+<td>Contains an error message intended to be used as a custom 404 page.</td>
+</tr>
+<tr>
+<td><code>base.html</code></td>
+<td>A general purpose template with a 3-column layout, fixed header, and a footer. The navigation uses the hierarchy (<code>parent</code> and <code>child</code>) fields introduced by Dactyl v0.10.0. This uses <a href="https://getbootstrap.com/docs/4.5/">Bootstrap 4.5.0</a>. Most of the other built-in templates are derived from this template.</td>
+</tr>
+<tr>
+<td><code>doc.html</code></td>
+<td>Specialized for individual documents. This is the new default template. The right sidebar has an in-page table of contents, and this runs code tab and syntax highlighting JavaScript by default. (You still need to enable the multicode_tabs filter in your <code>dactyl-config.yml</code> file to get code tab syntax.)</td>
+</tr>
+<tr>
+<td><code>landing.html</code></td>
+<td>A landing page that displays a list of child pages in the center column.</td>
+</tr>
+<tr>
+<td><code>pdf-cover.html</code></td>
+<td>A cover page and table of contents for PDFs.</td>
+</tr>
+<tr>
+<td><code>redirect.html</code></td>
+<td>Redirects the user to another URL, as set by the page's <code>redirect_url</code> field. Useful for deprecating pages.</td>
+</tr>
+<tr>
+<td><code>simple.html</code></td>
+<td>A minimal template with no dependencies.</td>
+</tr>
+<tr>
+<td><code>template-sitemap.txt</code></td>
+<td>A template for a text <a href="https://support.google.com/webmasters/answer/183668?hl=en">sitemap</a> for use by search engines.</td>
+</tr>
+</tbody>
+</table>
+<p>When extending the default templates, you many of them have blocks you can replace. For the full list, see <a href="./dactyl/templates/">the templates</a> directly.</p>
+<h3 id="module-templates">Module Templates<a aria-hidden="true" class="hover_anchor" href="#module-templates">¶</a></h3>
+<p>The following built-in templates are partial modules you can use with <code>{% include 'templatehere.html' %}</code> blocks from other templates. Many of these pieces are used by the page templates above, as well:</p>
+<table>
+<thead>
+<tr>
+<th>Template</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>algolia-docsearch.html</code></td>
+<td>Provides a search box (and accompanying resources) powered by <a href="https://docsearch.algolia.com/">Algolia DocSearch</a>. To use this, you must provide your Algolia API key in the target's <code>algolia_api_key</code> field provide your index name in the target's <code>algolia_index_name</code> field.</td>
+</tr>
+<tr>
+<td><code>breadcrumbs.html</code></td>
+<td>Provides <a href="https://getbootstrap.com/docs/4.5/components/breadcrumb/">breadcrumbs</a> to the current page, based on the hierarchy fields.</td>
+</tr>
+<tr>
+<td><code>children.html</code></td>
+<td>Displays a bulleted list of children of the current page. You can modify the behavior by setting certain properties before including this template. (See below for an example.)</td>
+</tr>
+<tr>
+<td><code>footer.html</code></td>
+<td>A footer containing a copyright notice, license link, and language selector (if you have the right fields defined).</td>
+</tr>
+<tr>
+<td><code>github-edit.html</code></td>
+<td>A button that links to edit the current page's source file on GitHub. Requires the target's <code>repository</code> field to be the URL of the site's repository on GitHub.</td>
+</tr>
+<tr>
+<td><code>header.html</code></td>
+<td>A fixed header containing a logo, navigation to top-level pages, search, and Edit on GitHub buttons if the right fields are defined.</td>
+</tr>
+<tr>
+<td><code>language-dropdown.html</code></td>
+<td>A language-selector dropdown that points to the equivalent page in other languages, if you have multiple languages defined. (This is the one used in the header.)</td>
+</tr>
+<tr>
+<td><code>language-dropdown.html</code></td>
+<td>A horizontal language selector that points to the equivalent page in other languages, if you have multiple languages defined. (This is the one used in the footer.)</td>
+</tr>
+<tr>
+<td><code>page-toc.html</code></td>
+<td>A Bootstrap/ScrollSpy-ready table of contents based on the headers in the current page's Markdown contents.</td>
+</tr>
+<tr>
+<td><code>tree-nav.html</code></td>
+<td>Tree-style site navigation with collapsible levels. You can set a custom page to be the "top" of the tree to show only a subset of your site. Otherwise it uses the first page (usually the auto-provided cover page) as the top of the tree. Set <code>nav_omit: true</code> on a page to hide that page from this navigation.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="children-module">Children Module<a aria-hidden="true" class="hover_anchor" href="#children-module">¶</a></h4>
+<p>The following demonstrates how to use the <code>children.html</code> template to display a list of children of a page (including links):</p>
+<div class="codehilite"><pre><span></span><code>{ % set parent_html = 'some-parent.html' %}
+{ % set show_blurbs = True %}
+{ % set depth = 3 %}
+{ % include 'children.html' %}
+</code></pre></div>
+<p>You can omit any or all of the <code>{% set ... %}</code> statements to use the defaults:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>parent_html</code></td>
+<td>Which page's children to show. The HTML filename of that page.</td>
+<td>The current page.</td>
+</tr>
+<tr>
+<td><code>show_blurbs</code></td>
+<td>If True, add the child page's <code>blurb</code> attribute next to its link.</td>
+<td>False</td>
+</tr>
+<tr>
+<td><code>depth</code></td>
+<td>How many levels in the hierarchy to show below the parent.</td>
+<td>5</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tree-nav-module">Tree Nav Module<a aria-hidden="true" class="hover_anchor" href="#tree-nav-module">¶</a></h4>
+<p>The following shows how to display a subset of the tree nav (starting with the file <code>some_parent.html</code>) instead of the full tree:</p>
+<div class="codehilite"><pre><span></span><code>{ % set tree_top = pages|selectattr('html', 'defined_and_equalto', 'some_parent.html')|list|first %}
+{ % include 'tree-nav.html' %}
+</code></pre></div>
+<h2 id="template-data">Template Data<a aria-hidden="true" class="hover_anchor" href="#template-data">¶</a></h2>
+<p>Dactyl provides the following information to templates, which you can access with Jinja's templating syntax (e.g. <code>{{ target.display_name }}</code>):</p>
+<table>
+<thead>
+<tr>
+<th align="left">Field</th>
+<th align="left">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>target</code></td>
+<td align="left">The <a href="#targets">target</a> definition of the current target.</td>
+</tr>
+<tr>
+<td align="left"><code>pages</code></td>
+<td align="left">The <a href="#pages">array of page definitions</a> in the current target. Use this to generate navigation across pages. (The default templates don't do this, but you should.)</td>
+</tr>
+<tr>
+<td align="left"><code>currentpage</code></td>
+<td align="left">The definition of the page currently being rendered.</td>
+</tr>
+<tr>
+<td align="left"><code>categories</code></td>
+<td align="left">A de-duplicated array of categories that are used by at least one page in this target, sorted in the order they first appear.</td>
+</tr>
+<tr>
+<td align="left"><code>config</code></td>
+<td align="left">The global Dactyl config object.</td>
+</tr>
+<tr>
+<td align="left"><code>content</code></td>
+<td align="left">The parsed HTML content of the page currently being rendered.</td>
+</tr>
+<tr>
+<td align="left"><code>current_time</code></td>
+<td align="left">The current date as of rendering. The format is YYYY-MM-DD by default; you can also set the <code>time_format</code> field to a custom <a href="http://strftime.org/">stftime format string</a>.</td>
+</tr>
+<tr>
+<td align="left"><code>mode</code></td>
+<td align="left">The output format: either <code>html</code> (default), <code>pdf</code>, or <code>md</code>.</td>
+</tr>
+<tr>
+<td align="left"><code>page_toc</code></td>
+<td align="left">A table of contents generated from the current page's headers. Wrap this in a <code>&lt;ul&gt;</code> element.</td>
+</tr>
+<tr>
+<td align="left"><code>sidebar_content</code></td>
+<td align="left">(Deprecated alias for <code>page_toc</code>.)</td>
+</tr>
+</tbody>
+</table>
+              </article>
+            </section>
+      </main>
+      <!-- Left sidebar last so it's at the end for mobile -->
+      <aside class="sidebar col-md-5 col-lg-3 order-md-1" role="complementary">
+
+
+<nav class="nav flex-column dactyl-tree-nav">
+  <div class="nav-item nav-parent">
+    <a class="nav-link" href="index.html">Index</a>
+  </div>
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_1" aria-expanded="false" aria-controls="tree_nav_group_1"></a>
+    <a class="nav-link" href="usage.html">Usage</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_1">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="config.html">Configuration</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="link-checking.html">Link Checking</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="style-checking.html">Style Checking</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="elasticsearch.html">ElasticSearch Compatibility</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="openapi.html">OpenAPI Specifications</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2" aria-expanded="false" aria-controls="tree_nav_group_2"></a>
+    <a class="nav-link" href="features.html">Features</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_2">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="code-highlighting.html">Code Highlighting</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="includes.html">Includes</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="frontmatter.html">Frontmatter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="cli-vars.html">Commandline Variables</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="conditionals.html">Conditionals</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="gfm-compat.html">GitHub Markdown Compatibility</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="header_stress_test.html">Header Stress Test</a>
+  </div>
+
+      
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2_9" aria-expanded="false" aria-controls="tree_nav_group_2_9"></a>
+    <a class="nav-link" href="virtual-pages.html">Virtual Pages</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_2_9">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/#">Dactyl Homepage</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/">Virtual Placeholder</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_3" aria-expanded="false" aria-controls="tree_nav_group_3"></a>
+    <a class="nav-link" href="filters.html">Filters</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_3">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="callouts.html">Callouts Demonstration</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="xrefs.html">Intelligent Cross-References</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="buttonize.html">Buttonize Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="badges.html">Badges</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="multicode_tabs.html">Multi Code-Tabs Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="external_links.html">External Links</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item active-parent">
+
+
+      <a class="nav-toggler " role="button" data-toggle="collapse" href="#tree_nav_group_4" aria-expanded="true" aria-controls="tree_nav_group_4"></a>
+    <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
+
+    <nav class="nav flex-column show " id="tree_nav_group_4">
+      
+  <div class="nav-item active">
+    <a class="nav-link nav-leaf" href="templates.html">Templates</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="hierarchy.html">Hierarchy Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots.html">Custom Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots2.html">Custom Filter 2</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="include_code.html">Code Includer</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="debug.html">Debug</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+</nav>      </aside>
+    </div><!--/.row (main layout)-->
+  </div>
+
+<footer class="dactyl-footer px-2" role="contentinfo">
+
+  <section class="container-fluid p-5 pl-sm-0">
+
+
+    <div class="absolute_bottom_footer">
+    </div><!-- /.absolute_bottom_footer -->
+
+  </section>
+</footer>
+
+<!-- Jump to top button -->
+<a href="#main_content_wrapper" class="jump-to-top btn btn-primary btn-lg" role="button" title="Return to top of page">Top</a>
+<!-- Non-blocking resources -->
+<!-- Bootstrap JS -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+<!-- Dactyl JS -->
+<script src="https://dactyl.link/template_assets/dactyl.js"></script>
+<!-- fontawesome icons -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+
+</body>
+</html>

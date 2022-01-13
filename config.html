@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html >
+<head>
+    <title>Configuration - Dactyl: A Heroic Doc Tool</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width">
+
+    <!-- Blocking JS resources -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- Stylesheet -->
+    <link href="template_assets/dactyl.css" rel="stylesheet" />
+
+
+
+    <script>
+        $(document).ready(function() {
+            $(".multicode").minitabs();
+            make_code_expandable();
+        });
+    </script>
+
+</head>
+
+<body class="sidebar-both  " data-spy="scroll" data-target="#page-toc-wrapper" data-offset="0">
+<nav class="navbar fixed-top navbar-expand-lg navbar-light bg-white px-2">
+  <a href="/" class="navbar-brand"><h1>Dactyl: A Heroic Doc Tool</h1></a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHolder" aria-controls="navbarHolder" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse justify-content-end" id="navbarHolder">
+    <ul class="nav navbar-nav">
+          <li class="nav-item active-parent">
+            <a class="nav-link" href="usage.html">Usage</a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="features.html">Features</a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="filters.html">Filters</a>
+          </li>
+          <li class="nav-item ">
+            <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
+          </li>
+    </ul><!-- /.navbar-nav -->
+
+
+
+  </div><!--/#navbarHolder-->
+</nav>
+  <div class="container-fluid" role="document" id="main_content_wrapper">
+    <div class="row">
+      <!-- Right sidebar first so it's at the beginning for mobile layouts -->
+      <aside class="right-sidebar col-lg-3 order-lg-4" role="complementary">
+<div class="card" id="page-toc-wrapper">
+  <div class="card-header">
+    <h4>In this page:</h4>
+  </div>
+  <ul id="page-toc" class="list-group card-body" role="directory">
+    <li class="level-1"><a class="nav-link" href="#configuration">Configuration</a></li>
+    <li class="level-2"><a class="nav-link" href="#directory-paths">Directory Paths</a></li>
+    <li class="level-2"><a class="nav-link" href="#targets">Targets</a></li>
+    <li class="level-2"><a class="nav-link" href="#pages">Pages</a></li>
+  </ul>
+</div>      </aside>
+
+      <!-- main column -->
+      <main class="main col-md-7 col-lg-6 order-md-3  " role="main" id="main_content_body">
+<nav class="breadcrumbs-wrap p-0 p-md-3" aria-label="breadcrumb">
+  <ul class="breadcrumb">
+    
+
+    <li class="active breadcrumb-item"><a href="index.html">Index</a></li>
+    <li class="active breadcrumb-item"><a href="usage.html">Usage</a></li>
+    <li class="active breadcrumb-item">Configuration</li>
+  </ul>
+</nav><!--/.breadcrumbs-wrap-->            <section class="pt-3 p-md-3">
+              <article class="dactyl-content">
+                <h1 id="configuration">Configuration<a aria-hidden="true" class="hover_anchor" href="#configuration">¶</a></h1>
+<p>Dactyl is intended to be used with a config file containing a list of pages to parse. Pages are grouped into "targets" that represent a group of documents to be built together; a page can belong to multiple targets, and can even contain conditional syntax so that it builds differently depending on the target in question. Targets and pages can also use different templates from each other, and pages can inherit semi-arbitrary key/value pairs from the targets.</p>
+<p>The input pages in the config file should be specified relative to the <code>content_path</code>, which is <code>content/</code> by default. You can also specify a URL to pull in a Markdown file from a remote source, but if you do, Dactyl won't run any pre-processing on it.</p>
+<h2 id="directory-paths">Directory Paths<a aria-hidden="true" class="hover_anchor" href="#directory-paths">¶</a></h2>
+<p>An advanced setup would probably have a directory structure such as the following:</p>
+<div class="codehilite"><pre><span></span><code>.<span class="o">/</span>                      # <span class="nv">Top</span><span class="o">-</span><span class="nv">level</span> <span class="nv">dir</span><span class="c1">; this is where you run dactyl_*</span>
+.<span class="o">/</span><span class="nv">dactyl</span><span class="o">-</span><span class="nv">config</span>.<span class="nv">yml</span>     # <span class="nv">Default</span> <span class="nv">config</span> <span class="nv">file</span> <span class="nv">name</span>
+.<span class="o">/</span><span class="nv">content</span>               # <span class="nv">Dir</span> <span class="nv">containing</span> <span class="nv">your</span> .<span class="nv">md</span> <span class="nv">source</span> <span class="nv">files</span>
+<span class="o">---------/*/*</span>.<span class="nv">md</span>        # <span class="nv">You</span> <span class="nv">can</span> <span class="nv">sort</span> .<span class="nv">md</span> <span class="nv">files</span> <span class="nv">into</span> <span class="nv">subdirs</span> <span class="k">if</span> <span class="nv">you</span> <span class="nv">like</span>
+<span class="o">---------/</span><span class="nv">static</span><span class="cm">/*      # Static images referencd in your .md files</span>
+<span class="cm">./templates/template-*.html # Custom HTML Templates</span>
+<span class="cm">./assets                # Directory for static files referenced by templates</span>
+<span class="cm">./out                   # Directory where output gets generated. Can be deleted</span>
+</code></pre></div>
+<p>All of these paths can be configured.</p>
+<h2 id="targets">Targets<a aria-hidden="true" class="hover_anchor" href="#targets">¶</a></h2>
+<p>A target represents a group of pages, which can be built together or concatenated into a single PDF. You should have at least one target defined in the <code>targets</code> array of your Dactyl config file. A target definition should consist of a short <code>name</code> (used to specify the target in the commandline and elsewhere in the config file) and a human-readable <code>display_name</code> (used mostly by templates but also when listing targets on the commandline).</p>
+<p>A simple target definition:</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">targets</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>   <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">kc-rt-faq</span>
+        <span class="nt">display_name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Ripple Trade Migration FAQ</span>
+</code></pre></div>
+<p>In addition to <code>name</code> and <code>display_name</code>, a target definition can contain arbitrary key-values to be inherited by all pages in this target. Dictionary values are inherited such that keys that aren't set in the page are carried over from the target, recursively. The rest of the time, fields that appear in a page definition take precedence over fields that appear in a target definition.</p>
+<p>Some things you may want to set at the target level include <code>filters</code> (an array of filters to apply to pages in this target), <code>template</code> (template to use when building HTML), and <code>pdf_template</code> (template to use when building PDF). You can also use the custom values in templates and preprocessing. Some filters define additional fields that affect the filter's behavior.</p>
+<p>The following field names cannot be inherited: <code>name</code>, <code>display_name</code>, and <code>pages</code>.</p>
+<h2 id="pages">Pages<a aria-hidden="true" class="hover_anchor" href="#pages">¶</a></h2>
+<p>Each page represents one HTML file in your output. A page can belong to one or more targets. When building a target, all the pages belonging to that target are built in the order they appear in the <code>pages</code> array of your Dactyl config file.</p>
+<p>Example of a pages definition with two files:</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">pages</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span>   <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">RippleAPI</span>
+        <span class="nt">category</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">References</span>
+        <span class="nt">html</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reference-rippleapi.html</span>
+        <span class="nt">md</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">https://raw.githubusercontent.com/ripple/ripple-lib/0.17.2/docs/index.md</span>
+        <span class="nt">filters</span><span class="p">:</span>
+            <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">remove_doctoc</span>
+            <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">add_version</span>
+        <span class="nt">targets</span><span class="p">:</span>
+            <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">local</span>
+            <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">ripple.com</span>
+
+    <span class="p p-Indicator">-</span>   <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">rippled</span>
+        <span class="nt">category</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">References</span>
+        <span class="nt">html</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reference-rippled.html</span>
+        <span class="nt">md</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reference-rippled.md</span>
+        <span class="nt">targets</span><span class="p">:</span>
+            <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">local</span>
+            <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">ripple.com</span>
+</code></pre></div>
+<p>Each individual page definition can have the following fields:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Field</th>
+<th align="left">Type</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>targets</code></td>
+<td align="left">Array</td>
+<td align="left">The short names of the targets that should include this page.</td>
+</tr>
+<tr>
+<td align="left"><code>html</code></td>
+<td align="left">String</td>
+<td align="left"><em>(Optional)</em> The filename where this file should be written in the output directory. If omitted, Dactyl chooses a filename based on the <code>md</code> field (if provided), the <code>name</code> field (if provided), or the current time (as a last resort). By default, generated filenames flatten the folder structure of the md files. To instead replicate the folder structure of the source documents in auto-generated filenames, add <code>flatten_default_html_paths: true</code> to the top level of your Dactyl config file.</td>
+</tr>
+<tr>
+<td align="left"><code>name</code></td>
+<td align="left">String</td>
+<td align="left"><em>(Optional)</em> Human-readable display name for this page. If omitted but <code>md</code> is provided, Dactyl tries to guess the right file name by looking at the first two lines of the <code>md</code> source file.</td>
+</tr>
+<tr>
+<td align="left"><code>md</code></td>
+<td align="left">String</td>
+<td align="left"><em>(Optional)</em> The markdown filename to parse to generate this page, relative to the <strong>content_path</strong> in your config. If this is not provided, the source file is assumed to be empty. (You might do that if you use a nonstandard <code>template</code> for this page.)</td>
+</tr>
+<tr>
+<td align="left"><code>openapi_specification</code></td>
+<td align="left">String</td>
+<td align="left"><em>(Optional)</em> The file path or http(s) URL to an OpenAPI v3.0 specification to be parsed into generated documentation. If provided, this entry becomes expanded into a set of several pages that describe the methods and data types defined for the given API. The generated pages inherit the other fields of this page object. <strong>Experimental.</strong> If the path is a relative path, it is evaluated based on the directory Dactyl is called from, not the content directory.</td>
+</tr>
+<tr>
+<td align="left"><code>api_slug</code></td>
+<td align="left">String</td>
+<td align="left"><em>(Optional)</em> If this is an <code>openapi_specification</code> entry,</td>
+</tr>
+<tr>
+<td align="left"><code>category</code></td>
+<td align="left">String</td>
+<td align="left"><em>(Optional)</em> The name of a category to group this page into. This is used by Dactyl's built-in templates to organize the table of contents.</td>
+</tr>
+<tr>
+<td align="left"><code>template</code></td>
+<td align="left">String</td>
+<td align="left"><em>(Optional)</em> The filename of a custom <a href="http://jinja.pocoo.org/">Jinja</a> HTML template to use when building this page for HTML, relative to the <strong>template_path</strong> in your config.</td>
+</tr>
+<tr>
+<td align="left"><code>pdf_template</code></td>
+<td align="left">String</td>
+<td align="left"><em>(Optional)</em> The filename of a custom <a href="http://jinja.pocoo.org/">Jinja</a> HTML template to use when building this page for PDF, relative to the <strong>template_path</strong> in your config.</td>
+</tr>
+<tr>
+<td align="left"><code>openapi_md_template_path</code></td>
+<td align="left">String</td>
+<td align="left"><em>(Optional)</em> Path to a folder containing <a href="#openapi-spec-templates">templates to be used for OpenAPI spec parsing</a>. If omitted, use the <a href="dactyl/templates/">built-in templates</a>.</td>
+</tr>
+<tr>
+<td align="left"><code>parent</code></td>
+<td align="left">String</td>
+<td align="left"><em>(Optional)</em> The HTML filename of the page to treat as a parent of this one for purposes of hierarchy. If omitted, treat the page as a "top-level" page.</td>
+</tr>
+<tr>
+<td align="left">...</td>
+<td align="left">(Various)</td>
+<td align="left">Additional arbitrary key-value pairs as desired. These values can be used by templates or pre-processing.</td>
+</tr>
+</tbody>
+</table>
+<p>If the file specified by <code>md</code> begins with YAML frontmatter, separated by a line of exactly <code>---</code>, the frontmatter is used as a basis for these fields. Certain frontmatter fields are adapted from Jekyll format to Dactyl format: for example, <code>title</code> gets copied to <code>name</code> if the page does not have a <code>name</code>.</p>
+<p>The following fields are automatically added after a page has been parsed to HTML. (They're not available when preprocessing or rendering Markdown to HTML, but <em>are</em> available when rendering HTML templates.)</p>
+<table>
+<thead>
+<tr>
+<th align="left">Field</th>
+<th align="left">Type</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>plaintext</code></td>
+<td align="left">String</td>
+<td align="left">A plaintext-only version of the page's markdown content, with all Markdown and HTML syntax removed.</td>
+</tr>
+<tr>
+<td align="left"><code>headermap</code></td>
+<td align="left">Dictionary</td>
+<td align="left">A mapping of the page's headers to the unique IDs of those headers in the generated HTML version.</td>
+</tr>
+<tr>
+<td align="left"><code>blurb</code></td>
+<td align="left">String</td>
+<td align="left">An introductory blurb generated from the page's first paragraph of text.</td>
+</tr>
+<tr>
+<td align="left"><code>children</code></td>
+<td align="left">List</td>
+<td align="left">A list of pages, in order of appearance, that refer to this page as their <code>parent</code>. Each of these "child" pages is a reference to the page definition (dictionary) for that child.</td>
+</tr>
+<tr>
+<td align="left"><code>is_ancestor_of</code></td>
+<td align="left">Function</td>
+<td align="left">A function that takes one argument, the string identifying a potential child page by that child's <code>html</code> field. This function returns <code>True</code> if this page is a direct or indirect parent of the child page.</td>
+</tr>
+</tbody>
+</table>
+              </article>
+            </section>
+      </main>
+      <!-- Left sidebar last so it's at the end for mobile -->
+      <aside class="sidebar col-md-5 col-lg-3 order-md-1" role="complementary">
+
+
+<nav class="nav flex-column dactyl-tree-nav">
+  <div class="nav-item nav-parent">
+    <a class="nav-link" href="index.html">Index</a>
+  </div>
+    
+  <div class="nav-item active-parent">
+
+
+      <a class="nav-toggler " role="button" data-toggle="collapse" href="#tree_nav_group_1" aria-expanded="true" aria-controls="tree_nav_group_1"></a>
+    <a class="nav-link" href="usage.html">Usage</a>
+
+    <nav class="nav flex-column show " id="tree_nav_group_1">
+      
+  <div class="nav-item active">
+    <a class="nav-link nav-leaf" href="config.html">Configuration</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="link-checking.html">Link Checking</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="style-checking.html">Style Checking</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="elasticsearch.html">ElasticSearch Compatibility</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="openapi.html">OpenAPI Specifications</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2" aria-expanded="false" aria-controls="tree_nav_group_2"></a>
+    <a class="nav-link" href="features.html">Features</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_2">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="code-highlighting.html">Code Highlighting</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="includes.html">Includes</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="frontmatter.html">Frontmatter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="cli-vars.html">Commandline Variables</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="conditionals.html">Conditionals</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="lists-and-codeblocks.html">Lists and Code Blocks Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="gfm-compat.html">GitHub Markdown Compatibility</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="header_stress_test.html">Header Stress Test</a>
+  </div>
+
+      
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2_9" aria-expanded="false" aria-controls="tree_nav_group_2_9"></a>
+    <a class="nav-link" href="virtual-pages.html">Virtual Pages</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_2_9">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/#">Dactyl Homepage</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="https://dactyl.link/">Virtual Placeholder</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_3" aria-expanded="false" aria-controls="tree_nav_group_3"></a>
+    <a class="nav-link" href="filters.html">Filters</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_3">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="callouts.html">Callouts Demonstration</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="xrefs.html">Intelligent Cross-References</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="buttonize.html">Buttonize Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="badges.html">Badges</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="multicode_tabs.html">Multi Code-Tabs Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="external_links.html">External Links</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_4" aria-expanded="false" aria-controls="tree_nav_group_4"></a>
+    <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_4">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="templates.html">Templates</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="hierarchy.html">Hierarchy Demo</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots.html">Custom Filter</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="filter-examples-patriots2.html">Custom Filter 2</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="include_code.html">Code Includer</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="debug.html">Debug</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+</nav>      </aside>
+    </div><!--/.row (main layout)-->
+  </div>
+
+<footer class="dactyl-footer px-2" role="contentinfo">
+
+  <section class="container-fluid p-5 pl-sm-0">
+
+
+    <div class="absolute_bottom_footer">
+    </div><!-- /.absolute_bottom_footer -->
+
+  </section>
+</footer>
+
+<!-- Jump to top button -->
+<a href="#main_content_wrapper" class="jump-to-top btn btn-primary btn-lg" role="button" title="Return to top of page">Top</a>
+<!-- Non-blocking resources -->
+<!-- Bootstrap JS -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+<!-- Dactyl JS -->
+<script src="https://dactyl.link/template_assets/dactyl.js"></script>
+<!-- fontawesome icons -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+
+</body>
+</html>

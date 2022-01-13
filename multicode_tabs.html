@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html >
 <head>
-    <title>Multi Code-Tabs Filter - Dactyl Examples</title>
+    <title>Multi Code-Tabs Filter - Dactyl: A Heroic Doc Tool</title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width">
@@ -25,12 +25,15 @@
 
 <body class="sidebar-both  " data-spy="scroll" data-target="#page-toc-wrapper" data-offset="0">
 <nav class="navbar fixed-top navbar-expand-lg navbar-light bg-white px-2">
-  <a href="/" class="navbar-brand"><h1>Dactyl Examples</h1></a>
+  <a href="/" class="navbar-brand"><h1>Dactyl: A Heroic Doc Tool</h1></a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHolder" aria-controls="navbarHolder" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
   <div class="collapse navbar-collapse justify-content-end" id="navbarHolder">
     <ul class="nav navbar-nav">
+          <li class="nav-item ">
+            <a class="nav-link" href="usage.html">Usage</a>
+          </li>
           <li class="nav-item ">
             <a class="nav-link" href="features.html">Features</a>
           </li>
@@ -56,6 +59,8 @@
   </div>
   <ul id="page-toc" class="list-group card-body" role="directory">
     <li class="level-1"><a class="nav-link" href="#multi-code-tabs-filter">Multi Code-Tabs Filter</a></li>
+    <li class="level-2"><a class="nav-link" href="#syntax">Syntax</a></li>
+    <li class="level-2"><a class="nav-link" href="#with-custom-templates">With Custom Templates</a></li>
   </ul>
 </div>      </aside>
 
@@ -100,6 +105,33 @@
 <div class="code_sample" id="code-0-2" style="position: static;"><div class="codehilite"><pre><span></span><code>rippled account_info r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59 validated <span class="nb">true</span>
 </code></pre></div></div>
 </div>
+<h2 id="syntax">Syntax<a aria-hidden="true" class="hover_anchor" href="#syntax">¶</a></h2>
+<p>To display code in tabs, use the following syntax:</p>
+<div class="codehilite"><pre><span></span><code><span class="o">&lt;</span><span class="err">!</span><span class="o">--</span> <span class="n">MULTICODE_BLOCK_START</span> <span class="o">--&gt;</span>
+
+<span class="n">_First</span> <span class="n">Tab</span> <span class="n">Name_</span>
+
+<span class="err">```</span><span class="n">js</span>
+<span class="n">console</span><span class="p">.</span><span class="n">log</span><span class="p">(</span><span class="s">"First tab contents"</span><span class="p">);</span>
+<span class="err">```</span>
+
+<span class="n">_Second</span> <span class="n">Tab</span> <span class="n">Name_</span>
+
+<span class="err">```</span><span class="n">py</span>
+<span class="n">print</span><span class="p">(</span><span class="s">"Second tab contents"</span><span class="p">)</span>
+<span class="err">```</span>
+
+<span class="o">&lt;</span><span class="err">!</span><span class="o">--</span> <span class="n">MULTICODE_BLOCK_END</span> <span class="o">--&gt;</span>
+</code></pre></div>
+<p>There is no hard limit on the number of tabs you can have. If the total width of the tab names gets too long for the viewscreen, they get broken into multiple lines, which may not look that good depending on your CSS.</p>
+<p>Tabs can only contain code blocks, not other contents.</p>
+<h2 id="with-custom-templates">With Custom Templates<a aria-hidden="true" class="hover_anchor" href="#with-custom-templates">¶</a></h2>
+<p>These tabs require some CSS and JavaScript to work:</p>
+<ul>
+<li><a href="https://dactyl.link/template_assets/multicode_tabs.js">multicode_tabs.js</a></li>
+<li><a href="https://dactyl.link/template_assets/dactyl-multicode_tabs.css">dactyl-multicode_tabs.css</a></li>
+</ul>
+<p>If you're writing your own templates, you need to include these lines of code in your project to get the tabs to display properly. If you're using the built-in templates, they load this code automatically, so you don't need to do anything special.</p>
               </article>
             </section>
       </main>
@@ -116,9 +148,46 @@
 
 
       <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_1" aria-expanded="false" aria-controls="tree_nav_group_1"></a>
-    <a class="nav-link" href="features.html">Features</a>
+    <a class="nav-link" href="usage.html">Usage</a>
 
     <nav class="nav flex-column collapse" id="tree_nav_group_1">
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="config.html">Configuration</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="link-checking.html">Link Checking</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="style-checking.html">Style Checking</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="elasticsearch.html">ElasticSearch Compatibility</a>
+  </div>
+
+      
+  <div class="nav-item ">
+    <a class="nav-link nav-leaf" href="openapi.html">OpenAPI Specifications</a>
+  </div>
+
+    </nav>
+
+  </div>
+
+    
+  <div class="nav-item ">
+
+
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2" aria-expanded="false" aria-controls="tree_nav_group_2"></a>
+    <a class="nav-link" href="features.html">Features</a>
+
+    <nav class="nav flex-column collapse" id="tree_nav_group_2">
       
   <div class="nav-item ">
     <a class="nav-link nav-leaf" href="code-highlighting.html">Code Highlighting</a>
@@ -137,11 +206,6 @@
       
   <div class="nav-item ">
     <a class="nav-link nav-leaf" href="cli-vars.html">Commandline Variables</a>
-  </div>
-
-      
-  <div class="nav-item ">
-    <a class="nav-link nav-leaf" href="link-checking.html">Link Checking</a>
   </div>
 
       
@@ -168,10 +232,10 @@
   <div class="nav-item ">
 
 
-      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_1_10" aria-expanded="false" aria-controls="tree_nav_group_1_10"></a>
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_2_9" aria-expanded="false" aria-controls="tree_nav_group_2_9"></a>
     <a class="nav-link" href="virtual-pages.html">Virtual Pages</a>
 
-    <nav class="nav flex-column collapse" id="tree_nav_group_1_10">
+    <nav class="nav flex-column collapse" id="tree_nav_group_2_9">
       
   <div class="nav-item ">
     <a class="nav-link nav-leaf" href="https://dactyl.link/#">Dactyl Homepage</a>
@@ -194,38 +258,38 @@
   <div class="nav-item active-parent">
 
 
-      <a class="nav-toggler " role="button" data-toggle="collapse" href="#tree_nav_group_2" aria-expanded="true" aria-controls="tree_nav_group_2"></a>
+      <a class="nav-toggler " role="button" data-toggle="collapse" href="#tree_nav_group_3" aria-expanded="true" aria-controls="tree_nav_group_3"></a>
     <a class="nav-link" href="filters.html">Filters</a>
 
-    <nav class="nav flex-column show " id="tree_nav_group_2">
+    <nav class="nav flex-column show " id="tree_nav_group_3">
       
   <div class="nav-item ">
-    <a class="nav-link nav-leaf" href="filter-examples-callouts.html">Callouts Demonstration</a>
+    <a class="nav-link nav-leaf" href="callouts.html">Callouts Demonstration</a>
   </div>
 
       
   <div class="nav-item ">
-    <a class="nav-link nav-leaf" href="filter-examples-xrefs.html">Intelligent Cross-References</a>
+    <a class="nav-link nav-leaf" href="xrefs.html">Intelligent Cross-References</a>
   </div>
 
       
   <div class="nav-item ">
-    <a class="nav-link nav-leaf" href="filter-examples-buttonize.html">Buttonize Filter</a>
+    <a class="nav-link nav-leaf" href="buttonize.html">Buttonize Filter</a>
   </div>
 
       
   <div class="nav-item ">
-    <a class="nav-link nav-leaf" href="filter-examples-badges.html">Badges</a>
+    <a class="nav-link nav-leaf" href="badges.html">Badges</a>
   </div>
 
       
   <div class="nav-item active">
-    <a class="nav-link nav-leaf" href="filter-examples-multicode_tabs.html">Multi Code-Tabs Filter</a>
+    <a class="nav-link nav-leaf" href="multicode_tabs.html">Multi Code-Tabs Filter</a>
   </div>
 
       
   <div class="nav-item ">
-    <a class="nav-link nav-leaf" href="filter-examples-external_links.html">External Links</a>
+    <a class="nav-link nav-leaf" href="external_links.html">External Links</a>
   </div>
 
     </nav>
@@ -236,18 +300,18 @@
   <div class="nav-item ">
 
 
-      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_3" aria-expanded="false" aria-controls="tree_nav_group_3"></a>
+      <a class="nav-toggler collapsed" role="button" data-toggle="collapse" href="#tree_nav_group_4" aria-expanded="false" aria-controls="tree_nav_group_4"></a>
     <a class="nav-link" href="extending-index.html">Extending Dactyl</a>
 
-    <nav class="nav flex-column collapse" id="tree_nav_group_3">
+    <nav class="nav flex-column collapse" id="tree_nav_group_4">
       
   <div class="nav-item ">
-    <a class="nav-link nav-leaf" href="extending-extend-templates.html">Template Extension</a>
+    <a class="nav-link nav-leaf" href="templates.html">Templates</a>
   </div>
 
       
   <div class="nav-item ">
-    <a class="nav-link nav-leaf" href="extending-hierarchy.html">Hierarchy Demo</a>
+    <a class="nav-link nav-leaf" href="hierarchy.html">Hierarchy Demo</a>
   </div>
 
       
@@ -262,7 +326,7 @@
 
       
   <div class="nav-item ">
-    <a class="nav-link nav-leaf" href="extending-include_code.html">Code Includer</a>
+    <a class="nav-link nav-leaf" href="include_code.html">Code Includer</a>
   </div>
 
       
