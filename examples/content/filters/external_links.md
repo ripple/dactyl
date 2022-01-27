@@ -11,4 +11,4 @@ This filter adds an "external link" icon to [links to outside websites](https://
 
 A [link to another page](filters.html) won't have the icon.
 
-If you try to combine this filter with the [button links filter >](https://dactyl.link/filter-examples-buttonize.html), make sure **buttonize runs first**. Otherwise, external links will not get styled as buttons when intended.
+If you try to combine this filter with the [button links filter >](https://dactyl.link/buttonize.html), make sure **buttonize runs first**. Otherwise, external links will not get styled as buttons when intended.

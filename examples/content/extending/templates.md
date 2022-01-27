@@ -19,7 +19,7 @@ Many of the built-in templates work better if you set certain fields on your tar
 | `google_analytics_tag` | String tag to use with Google Analytics, e.g. "UA-00000000-0". If not defined, doesn't load Google Analytics. |
 | `repository` | URL to this site's source repository on GitHub. Required for the "Edit on GitHub" button. |
 | `url` | The fully-qualified URL for the base of the site. Required by the sitemap and Google Search templates. |
-| `stylesheet` | URL or path to the default stylesheet. The default includes Bootstrap 4.5 as well as custom CSS for code tabs, callouts, and the page layout. See the [styles dir](./dactyl/styles/) for the source SCSS. The default is served by dactyl.link. |
+| `stylesheet` | URL or path to the default stylesheet. The default includes Bootstrap 4.5 as well as custom CSS for code tabs, callouts, and the page layout. See the [styles dir](https://github.com/ripple/dactyl/tree/master/dactyl/styles) for the source SCSS. The default is served by dactyl.link. |
 | `dactyljs` | URL or path to the Dactyl JavaScript file to use. This defines "jump to top" and code tab behavior. The default is served by dactyl.link. |
 | `bootstrapjs` | URL or path to the Bootstrap JavaScript file to use. The default is served by BootstrapCDN. |
 | `fontawesomecss` | URL or path to FontAwesome (v4) CSS file to use. The default is served by BootstrapCDN. |
@@ -39,7 +39,7 @@ The following built-in templates represent **full pages**, so you can use them w
 | `simple.html` | A minimal template with no dependencies. |
 | `template-sitemap.txt` | A template for a text [sitemap](https://support.google.com/webmasters/answer/183668?hl=en) for use by search engines. |
 
-When extending the default templates, you many of them have blocks you can replace. For the full list, see [the templates](./dactyl/templates/) directly.
+When extending the default templates, you many of them have blocks you can replace. For the full list, see [the templates](https://github.com/ripple/dactyl/tree/master/dactyl/templates) directly.
 
 
 ### Module Templates
@@ -97,8 +97,8 @@ Dactyl provides the following information to templates, which you can access wit
 
 | Field             | Value                                                    |
 |:------------------|:---------------------------------------------------------|
-| `target`          | The [target](#targets) definition of the current target. |
-| `pages`           | The [array of page definitions](#pages) in the current target. Use this to generate navigation across pages. (The default templates don't do this, but you should.) |
+| `target`          | The [target](config.html#targets) definition of the current target. |
+| `pages`           | The [array of page definitions](config.html#pages) in the current target. Use this to generate navigation across pages. (The default templates don't do this, but you should.) |
 | `currentpage`     | The definition of the page currently being rendered.     |
 | `categories`      | A de-duplicated array of categories that are used by at least one page in this target, sorted in the order they first appear. |
 | `config`          | The global Dactyl config object. |

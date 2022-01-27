@@ -84,7 +84,7 @@ Each individual page definition can have the following fields:
 | `category` | String | _(Optional)_ The name of a category to group this page into. This is used by Dactyl's built-in templates to organize the table of contents. |
 | `template`               | String    | _(Optional)_ The filename of a custom [Jinja][] HTML template to use when building this page for HTML, relative to the **template_path** in your config. |
 | `pdf_template`           | String    | _(Optional)_ The filename of a custom [Jinja][] HTML template to use when building this page for PDF, relative to the **template_path** in your config. |
-| `openapi_md_template_path` | String | _(Optional)_ Path to a folder containing [templates to be used for OpenAPI spec parsing](#openapi-spec-templates). If omitted, use the [built-in templates](dactyl/templates/). |
+| `openapi_md_template_path` | String | _(Optional)_ Path to a folder containing [templates to be used for OpenAPI spec parsing](openapi.html). If omitted, use the [built-in templates](templates.html). |
 | `parent`                 | String    | _(Optional)_ The HTML filename of the page to treat as a parent of this one for purposes of hierarchy. If omitted, treat the page as a "top-level" page. |
 | ...                      | (Various) | Additional arbitrary key-value pairs as desired. These values can be used by templates or pre-processing. |
 
