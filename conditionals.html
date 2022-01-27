@@ -76,7 +76,7 @@
               <article class="dactyl-content">
                 <h1 id="conditionals">Conditionals<a aria-hidden="true" class="hover_anchor" href="#conditionals">¶</a></h1>
 <p>You can use the preprocessor to hide or show certain content based on various conditions. For example, you can have a page used in multiple targets, but omit certain portions from the output in some targets. Or, you can have text and markup that only shows up in HTML mode but not PDF mode or similar rules.</p>
-<p>You can use any of <a href="https://github.com/ripple/dactyl/#pre-processing">the fields available to the preprocessor</a> for your conditionals, including <a href="cli-vars.html">commandline variables</a> and any fields defined in the <a href="with-frontmatter.html">frontmatter</a>.</p>
+<p>You can use any of <a href="https://github.com/ripple/dactyl/#pre-processing">the fields available to the preprocessor</a> for your conditionals, including <a href="cli-vars.html">commandline variables</a> and any fields defined in the <a href="frontmatter.html">frontmatter</a>.</p>
 <p>Example of printing different text by :</p>
 <div class="codehilite"><pre><span></span><code><span class="cp">{%</span> <span class="k">if</span> <span class="nv">currentpage.condition</span> <span class="o">==</span> <span class="s1">'tests-2'</span> <span class="cp">%}</span><span class="x"></span>
 <span class="x">some text that only appears when the "condition" field of the current page is "tests-2"</span>
