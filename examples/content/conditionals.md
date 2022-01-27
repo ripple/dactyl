@@ -2,7 +2,7 @@
 
 You can use the preprocessor to hide or show certain content based on various conditions. For example, you can have a page used in multiple targets, but omit certain portions from the output in some targets. Or, you can have text and markup that only shows up in HTML mode but not PDF mode or similar rules.
 
-You can use any of [the fields available to the preprocessor](https://github.com/ripple/dactyl/#pre-processing) for your conditionals, including [commandline variables](cli-vars.html) and any fields defined in the [frontmatter](with-frontmatter.html).
+You can use any of [the fields available to the preprocessor](https://github.com/ripple/dactyl/#pre-processing) for your conditionals, including [commandline variables](cli-vars.html) and any fields defined in the [frontmatter](frontmatter.html).
 
 Example of printing different text by :
 

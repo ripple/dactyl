@@ -18,6 +18,7 @@ from copy import copy
 
 # Necessary for prince
 import subprocess
+import sys
 from time import sleep
 
 # Used to fetch markdown sources from the net
@@ -464,7 +465,7 @@ class DactylBuilder:
         if self.http_port:
             # Start up an HTTP server for Prince. This helps it resolve absolute
             # URLs in hyperlinks correctly (which --fileroot doesn't quite do)
-            server = subprocess.Popen(["python3", "-m", "http.server", str(self.http_port)])
+            server = subprocess.Popen([sys.executable, "-m", "http.server", str(self.http_port)])
             # Wait for server to start
             sleep(1)
 
@@ -493,7 +494,7 @@ class DactylBuilder:
         """
 
         if self.mode == "html" and self.http_port:
-            server = subprocess.Popen(["python3", "-m", "http.server",
+            server = subprocess.Popen([sys.executable, "-m", "http.server",
                                       str(self.http_port), "-d", self.out_path])
 
         event_handler = UpdaterHandler(builder=self)

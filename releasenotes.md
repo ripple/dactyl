@@ -1,3 +1,9 @@
+# v0.15.1 Release Notes
+
+This release fixes a bug that made "watch mode" and PDF builds not work on Windows because it assumed that `python3 -m http.server` would launch the simple Python HTTP server on those systems. The updated version should automatically detect the system's Python executable on all platforms.
+
+This release also fixes some broken links in the updated documentation.
+
 # v0.15.0 Release Notes
 
 This release improves OpenAPI spec parsing, adds a new formula for picking default filenames, overhauls Dactyl's own documentation, and fixes the following minor bugs:

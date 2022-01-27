@@ -11,12 +11,12 @@ GitHub-Flavored Markdown has some stuff that Dactyl doesn't do and vice-versa, a
 
 Dactyl doesn't do any of the following:
 
-* https://github.com/gitlabhq/gitlabhq/blob/master/doc/markdown/markdown.md#url-auto-linking
-* [Emoji codes](https://github.com/gitlabhq/gitlabhq/blob/master/doc/markdown/markdown.md#emoji)
+* [Automatically make URLs into hyperlinks](https://github.github.com/gfm/#autolinks-extension-)
+* [Emoji codes](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#using-emoji)
 * Task lists
     - [x] completed
     - [ ] incomplete
-* [GitLab references](https://github.com/gitlabhq/gitlabhq/blob/master/doc/markdown/markdown.md#special-gitlab-references)
+* [Automatic references to GitHub (or GitLab) issues, commits, or external resources](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/autolinked-references-and-urls)
 
 **Suggestion:** Avoid using these.
 

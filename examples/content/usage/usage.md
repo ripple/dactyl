@@ -42,7 +42,7 @@ By default, Dactyl looks for a config file named `dactyl-config.yml` in the curr
 $ dactyl_build -c path/to/alt-config.yml
 ```
 
-For more information on configuration, see the `default-config.yml` and the [examples](examples/) folder.
+For more information on configuration, see [Configuration](config.html) and the [examples](https://github.com/ripple/dactyl/tree/master/examples) folder.
 
 ## Specifying a Target
 
