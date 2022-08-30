@@ -1,3 +1,7 @@
+# v0.15.2 Release Notes
+
+This release updates the style checker to be compatible with pyspellchecker version 0.7.0.
+
 # v0.15.1 Release Notes
 
 This release fixes a bug that made "watch mode" and PDF builds not work on Windows because it assumed that `python3 -m http.server` would launch the simple Python HTTP server on those systems. The updated version should automatically detect the system's Python executable on all platforms.

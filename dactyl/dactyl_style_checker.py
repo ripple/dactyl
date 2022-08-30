@@ -380,7 +380,7 @@ class DactylStyleChecker:
         if unknown:
             logger.info("Unknown/misspelled words: %s"%unknown)
 
-        return {w: list(self.spell.candidates(w)-{w})[:3] for w in unknown}
+        return {w: list((self.spell.candidates(w) or set())-{w})[:3] for w in unknown}
 
 
 
