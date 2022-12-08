@@ -1,3 +1,26 @@
+# v0.15.3 Release Notes
+
+This release updates the style checker so that style checker overrides apply to the entire page, not just the same block. This means that you don't need to put the override comment in the same line if it applies to a header, and you only need one override if a page uses a discouraged term in an acceptable way across many paragraphs.
+
+In previous releases, you would have to do this:
+
+```
+# Discouraged word or phrase here <!-- STYLE_OVERRIDE: discouraged word -->
+
+This paragraph uses the discouraged word or phrase again. <!-- STYLE_OVERRIDE: discouraged word -->
+```
+
+In this release, that still works, but you can do this instead:
+
+```
+# Discouraged word or phrase here
+<!-- STYLE_OVERRIDE: discouraged word -->
+
+This paragraph uses the discouraged word or phrase again, but the override above still applies.
+```
+
+This release also reduces the severity level of several log messages, especially for the `dactyl_build` command. The default output is now less noisy.
+
 # v0.15.2 Release Notes
 
 This release updates the style checker to be compatible with pyspellchecker version 0.7.0.

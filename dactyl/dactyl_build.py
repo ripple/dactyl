@@ -218,14 +218,14 @@ class DactylBuilder:
         # Join folders in case the filepath is not just a flat file
         out_folder = os.path.join(base_folder, os.path.dirname(filepath))
         if not os.path.isdir(out_folder):
-            logger.info("creating output folder %s" % out_folder)
+            logger.debug("creating output folder %s" % out_folder)
             os.makedirs(out_folder)
         fileout = os.path.join(base_folder, filepath)
         if os.path.isdir(fileout):
-            logger.info("Writing index file for out-file '%s'" % fileout)
+            logger.debug("Writing index file for out-file '%s'" % fileout)
             fileout = fileout+"index.html"
         with open(fileout, "w", encoding="utf-8") as f:
-            logger.info("writing to file: %s..." % fileout)
+            logger.debug("writing to file: %s..." % fileout)
             f.write(page_text)
 
     def copy_static(self, template_static=None, content_static=None, out_path=None):
@@ -428,7 +428,7 @@ class DactylBuilder:
 
         # Make sure the path we're going to write the PDF to exists
         if not os.path.isdir(self.out_path):
-            logger.info("creating output folder %s" % self.out_path)
+            logger.debug("creating output folder %s" % self.out_path)
             os.makedirs(self.out_path)
         abs_pdf_path = os.path.abspath(os.path.join(self.out_path, pdf_filename))
 

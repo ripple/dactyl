@@ -120,7 +120,7 @@ class DactylPage:
                 self.gain_filters(frontmatter["filters"])
             self.twolines = pp_env.loader.twolines[self.data["md"]]
         else:
-            logger.info("... reading markdown from file")
+            logger.debug("... reading markdown from file")
             fullpath = os.path.join(self.config["content_path"], self.data["md"])
             with open(fullpath, "r", encoding="utf-8") as f:
                 ftext = f.read()
@@ -238,7 +238,7 @@ class DactylPage:
                                   (filter_name, self, e),
                                   self.config.bypass_errors, error=e)
 
-        logger.info("... markdown is ready")
+        logger.debug("... markdown is ready")
         self.md = md
         return md
 
@@ -266,7 +266,7 @@ class DactylPage:
         md = self.md_content(context)
 
         if md:
-            logger.info("... parsing markdown...")
+            logger.debug("... parsing markdown...")
             extensions = ["markdown.extensions.extra",
                           "markdown.extensions.sane_lists"]
             no_highlighting = self.config.get("no_highlighting", False)
@@ -323,7 +323,7 @@ class DactylPage:
                                   (filter_name, self, e),
                                   self.config.bypass_errors, error=e)
 
-        logger.info("... re-rendering HTML from soup...")
+        logger.debug("... re-rendering HTML from soup...")
         html2 = str(soup)
         if save:
             self.html = html2

@@ -198,7 +198,7 @@ class DactylStyleChecker:
         if page.data.get("skip_spell_checker", False):
             logger.info("Skipping spell checker for page %s." % page)
         for block in blocks:
-            overrides = self.get_overrides(block)
+            overrides = self.get_overrides(page.soup)
             # "Wipe" inlined <code> elements so we don't style-check
             # code samples.
             [code.clear() for code in block.find_all("code")]
@@ -344,7 +344,7 @@ class DactylStyleChecker:
                 new_overrides = {o.strip() for o in new_overrides}
                 if use_regex == SPELLING_OVERRIDE_REGEX:
                     new_overrides = {o.lower() for o in new_overrides}
-                logger.info("Overrides found: %s" % new_overrides)
+                logger.debug("Overrides found: %s" % new_overrides)
                 overrides |= new_overrides
 
         return overrides
@@ -357,14 +357,14 @@ class DactylStyleChecker:
         for t in tokens:
             if t.lower() in self.disallowed_words:
                 if t.lower() in overrides:
-                    logger.info("Unplain word violation %s overridden" % t)
+                    logger.info("Unplain word violation '%s 'overridden" % t)
                     continue
                 issues.append( ("Unplain Word", t.lower()) )
 
         for phrase,sub in self.disallowed_phrases.items():
             if phrase.lower() in self.depunctuate(passage):
                 if phrase.lower() in overrides:
-                    logger.info("Unplain phrase violation %s overridden" % t)
+                    logger.info("Unplain phrase violation '%s' overridden" % t)
                     continue
                 issues.append( ("Unplain Phrase", phrase.lower()) )
 
@@ -387,6 +387,8 @@ class DactylStyleChecker:
 
 def main(cli_args, config):
     target = DactylTarget(config, name=cli_args.target)
+    if not target.data.get("no_cover", False):
+        target.add_cover()
     checker = DactylStyleChecker(target, config)
 
     if cli_args.only:
