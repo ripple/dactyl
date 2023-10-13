@@ -1,3 +1,7 @@
+# v0.15.4 Release Notes
+
+This release adds `blurb` to the list of fields that is not automatically inherited from target to page, so that automatically providing page blurbs works as intended. (If you don't specify a `blurb` field for a page, Dactyl uses the text of the first body paragraph as the blurb.)
+
 # v0.15.3 Release Notes
 
 This release updates the style checker so that style checker overrides apply to the entire page, not just the same block. This means that you don't need to put the override comment in the same line if it applies to a header, and you only need one override if a page uses a discouraged term in an acceptable way across many paragraphs.

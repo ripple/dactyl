@@ -35,6 +35,7 @@ RESERVED_KEYS_TARGET = [
     "name",
     "display_name",
     "pages",
+    "blurb",
 ]
 ADHOC_TARGET = "__ADHOC__"
 UNTITLED_TARGET = "(Untitled)"
